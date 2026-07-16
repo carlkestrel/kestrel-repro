@@ -1,0 +1,25 @@
+{
+  "name": "dl-paper-repro",
+  "displayName": "Deep Learning Paper Reproduction",
+  "version": "0.2.0",
+  "description": "Evidence-driven reproduction, auditing and hardware optimization for deep-learning paper repositories. Features staged reproduction gates, GitHub repository discovery and acquisition, hardware-fit auditing, and machine-readable evidence chains for PyTorch-based papers.",
+  "author": {
+    "name": "Research Automation"
+  },
+  "license": "MIT",
+  "keywords": [
+    "deep-learning",
+    "paper-reproduction",
+    "benchmark",
+    "pytorch",
+    "point-cloud",
+    "reproducibility",
+    "evidence-chain"
+  ],
+  "category": "developer-tools",
+  "homepage": "https://github.com/research-automation/dl-paper-repro",
+  "skills": "./skills/",
+  "rules": "./rules/",
+  "agents": "./agents/",
+  "commands": "./commands/"
+}

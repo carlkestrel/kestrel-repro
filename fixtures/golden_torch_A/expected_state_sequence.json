@@ -1,0 +1,13 @@
+{
+  "plan_id": "golden_torch_A",
+  "expected_sequence": [
+    {"task_id": "T1_init", "expected_status": "PASS", "max_attempts": 1},
+    {"task_id": "T2_env", "expected_status": "PASS", "max_attempts": 1},
+    {"task_id": "T3_train", "expected_status": "PASS", "max_attempts": 3},
+    {"task_id": "T4_verify", "expected_status": "PASS", "max_attempts": 2},
+    {"task_id": "T5_checkpoint", "expected_status": "PASS", "max_attempts": 1},
+    {"task_id": "T6_audit", "expected_status": "PASS", "max_attempts": 1}
+  ],
+  "expected_exit": "COMPLETE",
+  "expected_final_losses": [0.5, 0.3, 0.1]
+}

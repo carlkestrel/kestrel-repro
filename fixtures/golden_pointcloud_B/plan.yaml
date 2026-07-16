@@ -1,0 +1,80 @@
+plan_id: golden_pointcloud_B
+schema_version: "1.0.0"
+mode: strict
+automation: safe-auto
+tasks:
+  - id: P1_init
+    name: Initialize point cloud project
+    gate: init
+    deps: []
+    command: echo "init" && mkdir -p checkpoints logs
+    timeout_min: 1
+    acceptance_tests:
+      - type: file_exists
+        path: checkpoints
+    retry_policy:
+      max_attempts: 0
+  - id: P2_env
+    name: Environment check
+    gate: env_check
+    deps: [P1_init]
+    command: python -c "import torch; print(torch.__version__)"
+    timeout_min: 2
+    acceptance_tests:
+      - type: command
+        command: python -c "import torch; assert torch.__version__"
+    retry_policy:
+      max_attempts: 1
+  - id: P3_data
+    name: Prepare point cloud data
+    gate: train
+    deps: [P2_env]
+    command: python -c "from pathlib import Path; Path('test_data').mkdir(exist_ok=True); print('data ready')"
+    timeout_min: 2
+    acceptance_tests:
+      - type: file_exists
+        path: test_data
+    retry_policy:
+      max_attempts: 0
+  - id: P4_train
+    name: PointNet training
+    gate: train
+    deps: [P3_data]
+    command: python train.py --epochs 2 --seed 42 --output-dir checkpoints
+    timeout_min: 5
+    acceptance_tests:
+      - type: file_exists
+        path: checkpoints/pointnet.pt
+      - type: numeric_range
+        path: checkpoints/metrics.json
+        min: 0
+        max: 100
+    retry_policy:
+      max_attempts: 2
+  - id: P5_verify
+    name: Verify model
+    gate: verify
+    deps: [P4_train]
+    command: python -c "import torch; m=torch.load('checkpoints/pointnet.pt'); print('ok')"
+    timeout_min: 2
+    acceptance_tests:
+      - type: command
+        command: python -c "import torch; torch.load('checkpoints/pointnet.pt'); print('ok')"
+    retry_policy:
+      max_attempts: 1
+  - id: P6_audit
+    name: Final audit
+    gate: audit
+    deps: [P5_verify]
+    command: echo "audit complete"
+    timeout_min: 1
+    acceptance_tests:
+      - type: command
+        command: echo "audit pass"
+    retry_policy:
+      max_attempts: 0
+approvals_required: false
+mandatory_task_ids: [P1_init, P2_env, P4_train, P6_audit]
+budgets:
+  max_runtime_min: 15
+  max_retries: 5

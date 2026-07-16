@@ -1,0 +1,15 @@
+command,exit_on_pass,exit_on_dry_run,exit_on_duplicate,exit_on_invalid_plan,covered_test_id
+reproctl start  --project <P> --plan <P>,0,0,4,5,"1, 2, 3, 4, 9"
+reproctl doctor --project <P> [--plan <P>],0,0,0,0,"doctor_clean, doctor_no_gpu"
+reproctl status --project <P>,0,0,0,0,status command help
+reproctl resume --project <P>,0,0,4,8,"11, 12"
+reproctl stop --project <P>,0,0,0,0,15
+reproctl verify --project <P>,0,0,0,0,verify evidence chain
+reproctl version,0,0,0,0,version_command
+reproctl start --bad-config,2,2,2,2,5
+reproctl start --doctor-fail (disk full),3,3,3,3,8
+reproctl start --corrupt-state,8,8,8,8,13
+reproctl start --corrupt-checkpoint,0 (warn),0 (warn),0,0,14
+reproctl resume --plan-hash-changed,8,8,8,8,12
+reproctl start --no-gpu,0 (warning),0,0,0,6
+reproctl start --cuda-mismatch,3,3,3,3,7

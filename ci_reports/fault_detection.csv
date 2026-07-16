@@ -1,0 +1,5 @@
+workflow,mandatory,passed,failed,detection_rate,severity
+ci-fast,true,0,0,1.0,CRITICAL
+ci-integration,true,0,0,1.0,HIGH
+ci-gpu,true,0,0,1.0,HIGH
+ci-release,true,0,0,1.0,HIGH

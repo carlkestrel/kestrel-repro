@@ -1,0 +1,46 @@
+# Rollback Configuration
+# Applied when optimized_performance.yaml causes issues
+
+default_config: strict_performance.yaml
+
+rollbacks:
+  - trigger:
+      type: OOM
+      description: OOM during training or validation
+    action: use strict_performance.yaml
+    reason: optimized config exceeds safe memory capacity
+
+  - trigger:
+      type: NUMERICAL_DIFFERENT
+      description: Numerical parity check failed
+    action: use strict_performance.yaml
+    reason: optimized config produces numerically divergent results
+
+  - trigger:
+      type: LOSS_NAN
+      description: Loss became NaN or Inf
+    action: use strict_performance.yaml
+    action_detail: restore last checkpoint and resume
+
+  - trigger:
+      type: METRIC_DEVIATION
+      description: Metric > 5% off from baseline
+    action: use strict_performance.yaml
+    reason: optimized config changes reproduction semantics
+
+  - trigger:
+      type: THERMAL_THROTTLING
+      description: GPU thermal throttling detected
+    action: reduce power limit or use strict_performance.yaml
+    reason: hardware safety threshold exceeded
+
+  - trigger:
+      type: SOAK_TEST_FAIL
+      description: Soak test failed
+    action: use strict_performance.yaml
+    reason: optimized config unstable under sustained load
+
+rollback_commands:
+  strict: (verbatim command to launch with strict_performance.yaml)
+  optimized: (verbatim command to launch with optimized_performance.yaml)
+  last_checkpoint: (path to last valid checkpoint)

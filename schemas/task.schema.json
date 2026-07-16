@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "task.schema.json",
+  "title": "Task Definition Schema",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["id", "name", "gate", "deps", "command", "timeout_min", "acceptance_tests", "retry_policy"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"},
+    "name": {"type": "string"},
+    "gate": {"type": "string", "enum": ["init", "env_check", "train", "verify", "audit"]},
+    "deps": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "command": {"type": "string"},
+    "timeout_min": {"type": "number", "minimum": 0.1},
+    "acceptance_tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "path"],
+        "properties": {
+          "type": {"type": "string", "enum": ["file_exists", "regex_match", "numeric_range", "command"]},
+          "path": {"type": "string"},
+          "pattern": {"type": "string"},
+          "min": {"type": "number"},
+          "max": {"type": "number"},
+          "command": {"type": "string"}
+        }
+      }
+    },
+    "retry_policy": {
+      "type": "object",
+      "properties": {
+        "max_attempts": {"type": "integer", "minimum": 0},
+        "backoff_seconds": {"type": "number", "minimum": 0}
+      },
+      "required": ["max_attempts"]
+    },
+    "requires_approval": {"type": "boolean", "default": false},
+    "approval_timeout_min": {"type": "number", "default": 30},
+    "allowed_modes": {
+      "type": "array",
+      "items": {"type": "string", "enum": ["strict", "safe", "fast"]}
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "config.schema.json",
+  "title": "Reproctl Config Schema",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["mode", "log_level"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["strict", "safe", "fast"],
+      "default": "strict"
+    },
+    "log_level": {
+      "type": "string",
+      "enum": ["DEBUG", "INFO", "WARNING", "ERROR"],
+      "default": "INFO"
+    },
+    "expected_cuda": {"type": "string", "default": ""},
+    "auto_proceed": {"type": "boolean", "default": false},
+    "human_checkpoint": {"type": "boolean", "default": true},
+    "automation": {
+      "type": "string",
+      "enum": ["safe-auto", "auto", "manual"],
+      "default": "safe-auto"
+    },
+    "retention": {
+      "type": "object",
+      "properties": {
+        "raw_data": {"type": "string", "enum": ["never_delete", "delete_after_days"]},
+        "best_checkpoint": {"type": "string", "enum": ["keep", "delete_after_days"]},
+        "last_checkpoint": {"type": "string", "enum": ["keep", "delete_after_days"]},
+        "intermediate_checkpoints": {"type": "integer", "minimum": 0, "default": 3},
+        "failed_run_logs": {"type": "string", "enum": ["keep", "keep_until_final_audit", "delete_after_days"]},
+        "generated_plots": {"type": "string", "enum": ["keep", "regenerable", "delete_after_days"]},
+        "cache": {"type": "string", "enum": ["keep", "removable"]}
+      }
+    },
+    "disk_policy": {
+      "type": "object",
+      "properties": {
+        "warning_free_gb": {"type": "integer", "minimum": 1, "default": 50},
+        "stop_free_gb": {"type": "integer", "minimum": 1, "default": 20},
+        "emergency_free_gb": {"type": "integer", "minimum": 1, "default": 10}
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "network_access": {"type": "boolean", "default": true},
+        "github_read": {"type": "boolean", "default": true},
+        "github_write": {"type": "boolean", "default": false},
+        "training_execute": {"type": "boolean", "default": true}
+      }
+    }
+  }
+}

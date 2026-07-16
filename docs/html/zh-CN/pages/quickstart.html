@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快速上手 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="quickstart">快速上手指南</h1>
+          <p class="subtitle">5 分钟内启动 dl-paper-repro</p>
+        </header>
+
+        <section id="workflow">
+          <h2 id="workflow">命令工作流</h2>
+          <p>典型的项目生命周期遵循以下序列：</p>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">1</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py doctor --project .</div>
+              <p>运行预检以验证环境</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">2</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode strict</div>
+              <p>引导并启动项目</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">3</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator run --project . --plan output/PAPER_PLAN.md</div>
+              <p>运行任务编排器</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">4</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator status --project .</div>
+              <p>监控项目状态</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">5</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator pause --project .</div>
+              <p>如需要，暂停执行</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">6</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator continue --project .</div>
+              <p>恢复执行</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">7</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py stop --project .</div>
+              <p>完成后优雅停止</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">8</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py verify --project .</div>
+              <p>验证证据链</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="examples">
+          <h2 id="examples">命令示例</h2>
+          
+          <h3 id="doctor">Doctor 检查</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 运行预检
+python scripts/reproctl.py doctor --project .
+
+# 指定期望的 CUDA 版本
+python scripts/reproctl.py doctor --project . --expected-cuda 12.0
+
+# 预期输出:
+# {
+#   "checks": [...],
+#   "summary": "PASS",
+#   "exit_code": 0
+# }</code></pre>
+          </div>
+          
+          <h3 id="start">启动项目</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 以严格模式启动
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode strict
+
+# 预演（不获取锁）
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --dry-run
+
+# 以优化模式启动
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode optimized</code></pre>
+          </div>
+          
+          <h3 id="status">查看状态</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 启动状态
+python scripts/reproctl.py status --project .
+
+# 编排器状态
+python scripts/reproctl.py orchestrator status --project .
+
+# 预期输出:
+# {
+#   "project_root": "/path/to/project",
+#   "control_state": "RUNNING",
+#   "counts": {"PASS": 5, "RUNNING": 1, "PENDING": 3},
+#   "tasks": [...],
+#   "pending_approvals": [...]
+# }</code></pre>
+          </div>
+          
+          <h3 id="resume">恢复</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 恢复中断的项目
+python scripts/reproctl.py resume --project .</code></pre>
+          </div>
+          
+          <h3 id="stop">停止</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 优雅停止
+python scripts/reproctl.py stop --project .</code></pre>
+          </div>
+          
+          <h3 id="verify">验证</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 验证证据链
+python scripts/reproctl.py verify --project .
+
+# 退出码:
+# 0 = 验证通过
+# 8 = 验证失败</code></pre>
+          </div>
+        </section>
+
+        <section id="exit-codes">
+          <h2 id="exit-codes">退出码</h2>
+          <table>
+            <thead>
+              <tr><th>代码</th><th>含义</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>0</code></td><td>成功</td></tr>
+              <tr><td><code>1</code></td><td>失败 / 参数错误</td></tr>
+              <tr><td><code>2</code></td><td>配置错误</td></tr>
+              <tr><td><code>3</code></td><td>Doctor 检查失败</td></tr>
+              <tr><td><code>4</code></td><td>已在运行</td></tr>
+              <tr><td><code>5</code></td><td>无效计划</td></tr>
+              <tr><td><code>8</code></td><td>恢复失败</td></tr>
+              <tr><td><code>10</code></td><td>内部错误</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="installation.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 安装</span>
+          </a>
+          <a href="architecture.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">架构 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#workflow" class="toc-link">命令工作流</a></li>
+          <li class="toc-item"><a href="#examples" class="toc-link">命令示例</a></li>
+          <li class="toc-item"><a href="#exit-codes" class="toc-link">退出码</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

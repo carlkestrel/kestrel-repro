@@ -1,0 +1,34 @@
+# Safe Capacity Configuration
+
+> Config ID: (generated)
+> Generated at: (ISO-8601)
+> Mode: strict_repro
+
+## Recommended Micro-Batch
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| OOM micro-batch |  | |
+| Safe micro-batch |  | 80% of OOM |
+| Safety margin | 20% | reserved for variance |
+| Recommended micro-batch |  | |
+| Grad accumulation steps |  | to maintain global batch |
+| Effective global batch |  | same as paper |
+
+## OOM Boundary
+
+| Parameter | Value |
+|---|---|
+| Maximum successful micro-batch | |
+| First OOM micro-batch | |
+| P95 validation batch (max points) | |
+
+## Safety Analysis
+
+- Memory headroom: XX MB
+- Thermal headroom: XX°C
+- Power headroom: XX W
+
+## Source
+
+`performance/safe_capacity.yaml`

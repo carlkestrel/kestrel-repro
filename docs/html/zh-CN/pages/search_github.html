@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub 搜索 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="search-github">搜索与 GitHub</h1>
+          <p class="subtitle">查找和评估论文相关仓库</p>
+        </header>
+
+        <section id="crawler">
+          <h2 id="crawler">GitHub 搜索爬虫</h2>
+          
+          <h3 id="basic-usage">基本用法</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/research_crawler.py --query "semantic segmentation pytorch" --max-results 50</code></pre>
+          </div>
+          
+          <h3 id="parameters">参数</h3>
+          <table>
+            <thead>
+              <tr><th>参数</th><th>描述</th><th>默认值</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>--query</code></td><td>搜索查询</td><td>必需</td></tr>
+              <tr><td><code>--max-results</code></td><td>最大结果数</td><td>50</td></tr>
+              <tr><td><code>--language</code></td><td>编程语言</td><td>python</td></tr>
+              <tr><td><code>--stars-min</code></td><td>最低星数</td><td>0</td></tr>
+              <tr><td><code>--sort</code></td><td>排序方式</td><td>stars</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="evaluation">
+          <h2 id="evaluation">仓库评估标准</h2>
+          <table>
+            <thead>
+              <tr><th>标准</th><th>描述</th><th>权重</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>is_official</td><td>是否官方仓库</td><td>高</td></tr>
+              <tr><td>stars</td><td>Star 数</td><td>中</td></tr>
+              <tr><td>has_train</td><td>是否有训练脚本</td><td>高</td></tr>
+              <tr><td>has_readme</td><td>是否有 README</td><td>中</td></tr>
+              <tr><td>license</td><td>许可证类型</td><td>中</td></tr>
+              <tr><td>last_commit</td><td>最后提交时间</td><td>低</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="best-practices">
+          <h2 id="best-practices">最佳实践</h2>
+          
+          <h3 id="search-strategy">搜索策略</h3>
+          <ol>
+            <li><strong>从论文开始</strong>：论文通常包含 GitHub 链接</li>
+            <li><strong>关键词扩展</strong>：同义词、行业术语</li>
+            <li><strong>多轮搜索</strong>：迭代细化搜索结果</li>
+            <li><strong>官方优先</strong>：优先选择官方实现</li>
+          </ol>
+          
+          <h3 id="evaluation-strategy">评估策略</h3>
+          <ol>
+            <li><strong>完整性</strong>：是否有训练、评估、推理代码</li>
+            <li><strong>活跃度</strong>：最后一次提交时间</li>
+            <li><strong>社区</strong>：Star 数、Issue 反馈</li>
+            <li><strong>兼容性</strong>：依赖是否易安装</li>
+          </ol>
+        </section>
+
+        <nav class="page-nav">
+          <a href="reproduction.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 复现协议</span>
+          </a>
+          <a href="performance.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">性能 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#crawler" class="toc-link">GitHub 搜索爬虫</a></li>
+          <li class="toc-item"><a href="#evaluation" class="toc-link">仓库评估标准</a></li>
+          <li class="toc-item"><a href="#best-practices" class="toc-link">最佳实践</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dl-paper-repro - Deep Learning Paper Reproduction</title>
+  <meta name="description" content="Evidence-driven reproduction, auditing and hardware optimization for deep-learning paper repositories">
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32" fill="none">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#2563eb"/>
+              <stop offset="100%" style="stop-color:#3b82f6"/>
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="6" fill="url(#logo-grad)"/>
+          <path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/>
+          <path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/>
+        </svg>
+        <div>
+          <div class="sidebar-title">dl-paper-repro</div>
+          <div class="sidebar-version">v0.2.0</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Getting Started</div>
+          <a href="index.html" class="nav-item active">
+            <svg><use href="assets/icons.svg#icon-home"/></svg>
+            Overview
+          </a>
+          <a href="pages/installation.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-cpu"/></svg>
+            Installation
+          </a>
+          <a href="pages/quickstart.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-play"/></svg>
+            Quick Start
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Core Topics</div>
+          <a href="pages/architecture.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-book"/></svg>
+            Architecture
+          </a>
+          <a href="pages/commands.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-terminal"/></svg>
+            Commands
+          </a>
+          <a href="pages/configuration.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-settings"/></svg>
+            Configuration
+          </a>
+          <a href="pages/project_structure.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-folder"/></svg>
+            Project Structure
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Workflows</div>
+          <a href="pages/new_project.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-file"/></svg>
+            New Project
+          </a>
+          <a href="pages/takeover.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-refresh"/></svg>
+            Takeover Project
+          </a>
+          <a href="pages/automation.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-zap"/></svg>
+            Automation
+          </a>
+          <a href="pages/reproduction.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-check"/></svg>
+            Reproduction Protocol
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Tools & Operations</div>
+          <a href="pages/search_github.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-search"/></svg>
+            Search GitHub
+          </a>
+          <a href="pages/performance.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-hard-drive"/></svg>
+            Performance
+          </a>
+          <a href="pages/backup_recovery.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-database"/></svg>
+            Backup & Recovery
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Operations</div>
+          <a href="pages/testing_ci.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-list"/></svg>
+            Testing & CI
+          </a>
+          <a href="pages/bug_repair.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-bug"/></svg>
+            Bug Repair
+          </a>
+          <a href="pages/security.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-shield"/></svg>
+            Security
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Reference</div>
+          <a href="pages/troubleshooting.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-alert"/></svg>
+            Troubleshooting
+          </a>
+          <a href="pages/faq.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-question"/></svg>
+            FAQ
+          </a>
+          <a href="pages/glossary.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-book-open"/></svg>
+            Glossary
+          </a>
+        </div>
+        <div class="nav-section" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <a href="complete_manual.html" class="nav-item" style="font-weight: 500;">
+            <svg><use href="assets/icons.svg#icon-book"/></svg>
+            Complete Manual
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay"></div>
+
+    <!-- Main content -->
+    <main class="main">
+      <!-- Top bar -->
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" class="search-input" placeholder="Search documentation... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </header>
+
+      <!-- Content -->
+      <div class="content">
+        <header class="content-header">
+          <h1>Deep Learning Paper Reproduction</h1>
+          <p class="subtitle">Evidence-driven reproduction, auditing and hardware optimization for deep-learning paper repositories</p>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero">
+          <svg class="hero-logo" viewBox="0 0 80 80" fill="none">
+            <defs>
+              <linearGradient id="hero-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#2563eb"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <rect width="80" height="80" rx="16" fill="url(#hero-grad)"/>
+            <path d="M20 30h15v5H25v15h10v5H20V30z" fill="white"/>
+            <path d="M40 20h20v5h-15v10h12.5v5H45v15h-5V20z" fill="white"/>
+            <circle cx="60" cy="60" r="7.5" fill="white" opacity="0.8"/>
+            <path d="M55 60h10M60 55v10" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <h1>dl-paper-repro</h1>
+          <p class="hero-subtitle">Cursor plugin + CLI for evidence-driven paper reproduction</p>
+          <div class="hero-badges">
+            <span class="badge badge-stable">STABLE v0.2.0</span>
+            <span class="badge badge-stable">PyTorch</span>
+            <span class="badge badge-stable">CUDA Ready</span>
+          </div>
+          <div class="hero-meta">
+            <strong>Plugin Root:</strong> <code>~/.cursor/plugins/local/dl-paper-repro</code><br>
+            <strong>CLI Entry:</strong> <code>python scripts/reproctl.py</code><br>
+            <strong>Git Commit:</strong> <code>not-a-git-repo</code>
+          </div>
+        </section>
+
+        <!-- Quick action cards -->
+        <section id="quickstart">
+          <h2>Quick Actions</h2>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <h3>5-Minute Start</h3>
+              <p>Run preflight checks and bootstrap your first reproduction project.</p>
+              <div class="code-block">
+                <button class="copy-button">Copy</button>
+                <pre><code>python scripts/reproctl.py doctor --project .
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode strict</code></pre>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+              </div>
+              <h3>Takeover Project</h3>
+              <p>Resume an interrupted or existing reproduction project.</p>
+              <div class="code-block">
+                <button class="copy-button">Copy</button>
+                <pre><code>python scripts/reproctl.py status --project .
+python scripts/reproctl.py resume --project .</code></pre>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+              </div>
+              <h3>View Architecture</h3>
+              <p>Understand the system components and data flow.</p>
+              <a href="pages/architecture.html" class="card-link">Read architecture docs →</a>
+            </div>
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <h3>Troubleshooting</h3>
+              <p>Fix common issues with Doctor checks, locks, and recovery.</p>
+              <a href="pages/troubleshooting.html" class="card-link">View troubleshooting →</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Core commands -->
+        <section id="commands">
+          <h2>Core Commands</h2>
+          <p>All commands use <code>python scripts/reproctl.py &lt;command&gt;</code>:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>doctor</code></td>
+                <td>Startup</td>
+                <td>Run preflight checks (no state mutation)</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>start</code></td>
+                <td>Startup</td>
+                <td>Bootstrap and start project</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>status</code></td>
+                <td>Startup</td>
+                <td>Show project state and lock status</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>resume</code></td>
+                <td>Startup</td>
+                <td>Resume interrupted project</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>stop</code></td>
+                <td>Startup</td>
+                <td>Stop gracefully and clear lock</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>verify</code></td>
+                <td>Startup</td>
+                <td>Verify startup evidence chain</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>version</code></td>
+                <td>Startup</td>
+                <td>Print plugin and CLI version</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>orchestrator run</code></td>
+                <td>Orchestrator</td>
+                <td>Run persistent controller loop</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>orchestrator daemon</code></td>
+                <td>Orchestrator</td>
+                <td>Background daemon control</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+              <tr>
+                <td><code>storage</code></td>
+                <td>Storage</td>
+                <td>Disk policy and cleanup</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Feature status -->
+        <section id="features">
+          <h2>Feature Status</h2>
+          <table class="status-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Status</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Startup System</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>Project initialization, preflight checks, lock management</td>
+              </tr>
+              <tr>
+                <td>Orchestrator</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>Task scheduling, execution, monitoring with SQLite state</td>
+              </tr>
+              <tr>
+                <td>Gate 0-5 System</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>Staged reproduction gates with evidence tracking</td>
+              </tr>
+              <tr>
+                <td>L0-L3 Short Loop</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>Smoke, overfit, mini-loop, checkpoint resume tests</td>
+              </tr>
+              <tr>
+                <td>Storage Governance</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>Disk policy, retention, cleanup planning</td>
+              </tr>
+              <tr>
+                <td>Backup & Restore</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>State snapshots and recovery</td>
+              </tr>
+              <tr>
+                <td>Human Checkpoints</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>12-item mandatory pause-and-ask workflow</td>
+              </tr>
+              <tr>
+                <td>Secrets Redaction</td>
+                <td><span class="badge badge-stable">STABLE</span></td>
+                <td>Credential detection and log sanitization</td>
+              </tr>
+              <tr>
+                <td>GitHub Crawler</td>
+                <td><span class="badge badge-beta">BETA</span></td>
+                <td>Repository discovery and evaluation</td>
+              </tr>
+              <tr>
+                <td>Point Cloud Support</td>
+                <td><span class="badge badge-experimental">EXPERIMENTAL</span></td>
+                <td>Specialized reproduction for point cloud papers</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Mode comparison -->
+        <section id="modes">
+          <h2>Execution Modes</h2>
+          <p>Choose the appropriate mode for your reproduction goals:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>Description</th>
+                <th>Gate 3 Required</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>strict</code></td>
+                <td>Exact paper reproduction, no optimizations</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><code>optimized</code></td>
+                <td>Allow AMP and DDP optimizations</td>
+                <td><strong>Yes</strong> (parity test)</td>
+              </tr>
+              <tr>
+                <td><code>diagnose</code></td>
+                <td>Debug mode, relaxed constraints</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><code>test</code></td>
+                <td>Testing mode with minimal checks</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><code>extend</code></td>
+                <td>Extend original findings</td>
+                <td>Varies</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="alert alert-info">
+            <div class="alert-title">Note on Tolerance</div>
+            <p>Both <code>strict</code> and <code>optimized</code> modes allow ±0.5 percentage points tolerance on reported metrics.</p>
+          </div>
+        </section>
+
+        <!-- Security notices -->
+        <section id="security">
+          <h2>Security Notices</h2>
+          <div class="alert alert-warning">
+            <div class="alert-title">API Tokens</div>
+            <p>Never hardcode API tokens or credentials in config files. Use environment variables and ensure <code>.repro/</code> is in your <code>.gitignore</code>.</p>
+          </div>
+          <div class="alert alert-info">
+            <div class="alert-title">Secrets Scanning</div>
+            <p>The <code>doctor</code> command scans for common credential patterns and will warn if detected. Review logs before sharing.</p>
+          </div>
+        </section>
+
+        <!-- Complete manual link -->
+        <section id="complete-manual">
+          <h2>Complete Manual</h2>
+          <p>For offline reading or printing, see the <a href="complete_manual.html">Complete Manual</a> which combines all documentation into a single file with inlined assets.</p>
+        </section>
+
+        <!-- Page navigation -->
+        <nav class="page-nav">
+          <span></span>
+          <a href="pages/installation.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">Installation →</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- TOC -->
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#quickstart" class="toc-link">Quick Actions</a></li>
+          <li class="toc-item"><a href="#commands" class="toc-link">Core Commands</a></li>
+          <li class="toc-item"><a href="#features" class="toc-link">Feature Status</a></li>
+          <li class="toc-item"><a href="#modes" class="toc-link">Execution Modes</a></li>
+          <li class="toc-item"><a href="#security" class="toc-link">Security Notices</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Back to top -->
+  <button class="back-to-top" aria-label="Back to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="19" x2="12" y2="5"/>
+      <polyline points="5 12 12 5 19 12"/>
+    </svg>
+  </button>
+</body>
+</html>

@@ -1,0 +1,1 @@
+run_id,timestamp,commit,branch,seed,mode,epochs,config,best_val_metric,best_epoch,test_metric,status,failure_reason,evidence_path,notes

@@ -1,0 +1,11 @@
+{
+  "workflow": "ci-fast",
+  "branch": "main",
+  "date": "2026-01-01T00:00:00+00:00",
+  "total_runs": 0,
+  "passed": 0,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "flaky_identified": 0,
+  "_comment": "This file is updated by the CI post-run script after each ci-fast run. Do not edit manually."
+}

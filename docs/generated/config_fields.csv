@@ -1,0 +1,17 @@
+field_name,source_module,type,default,description
+mode,startup/cli.py,string,strict,Execution mode
+mode,reproctl.py (legacy),string,strict_repro,Execution mode (legacy)
+expected_cuda,startup/cli.py,string,None,Expected CUDA version
+log_level,startup/cli.py,string,INFO,Logging level
+automation,orchestrator/cli.py,string,safe-auto,Automation policy
+plan,startup/cli.py,string,None,Path to plan file
+project,startup/cli.py,string,None,Project root path
+dry_run,startup/cli.py,bool,False,Check-only mode
+resume,orchestrator/cli.py,bool,False,Resume interrupted execution
+control_state,state_store.py,enum,"RUNNING",Control state (RUNNING/PAUSED/STOPPED)
+task_status,state_store.py,enum,PENDING,Task status (PENDING/READY/RUNNING/etc)
+gate_status,reproctl.py,enum,pending,Gate status (pending/passed/failed)
+seed,reproctl.py,int,42,Random seed
+epochs,reproctl.py,int,300,Number of training epochs
+overfit_steps,reproctl.py,int,100,L1 overfit test steps
+test_level,reproctl.py,string,all,Short loop test level (L0/L1/L2/L3/all)

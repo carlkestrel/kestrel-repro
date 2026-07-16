@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Run Handoff",
+  "description": "Snapshot of project state at the moment of a context boundary (end of chat, end of agent run, mid-flight abort). Used by /repro-handoff to resume.",
+  "type": "object",
+  "required": [
+    "project_mode",
+    "current_phase",
+    "completed_phases",
+    "current_run_id",
+    "run_command",
+    "process_id",
+    "log_path",
+    "checkpoint_path",
+    "next_step",
+    "recovery_required_files",
+    "blockers",
+    "timestamp"
+  ],
+  "properties": {
+    "project_mode":           { "type": "string", "enum": ["plan", "reproduce", "evolve", "extend"] },
+    "current_phase":          { "type": "string", "description": "P0_preparation ... P12_delivery_template" },
+    "completed_phases":       { "type": "array",  "items": { "type": "string" } },
+    "current_run_id":         { "type": "string", "description": "UUID prefix or short slug" },
+    "run_command":            { "type": "string", "description": "Exact command that launched the current run" },
+    "process_id":             { "type": ["integer", "string", "null"], "description": "PID of training process (null if not yet started)" },
+    "log_path":               { "type": "string" },
+    "checkpoint_path":        { "type": "string", "description": "Path to most recent .pth (or '—' if none)" },
+    "next_step":              { "type": "string", "description": "Free-text description of what to do next" },
+    "recovery_required_files": { "type": "array", "items": { "type": "string" }, "description": "Paths that MUST exist for recovery to succeed" },
+    "blockers":               { "type": "array",  "items": { "type": "string" }, "description": "Open human-required items" },
+    "timestamp":              { "type": "string", "description": "ISO-8601, UTC" }
+  },
+  "example": {
+    "project_mode": "reproduce",
+    "current_phase": "P4_monitor",
+    "completed_phases": ["P0_preparation", "P1_mode_contract", "P2_claim_evidence", "P3_human_checkpoint"],
+    "current_run_id": "r-001",
+    "run_command": "python scripts/reproctl.py launch --mode=strict_repro --seed=42 --epochs=300",
+    "process_id": 12345,
+    "log_path": "experiments/r-001/logs/train.log",
+    "checkpoint_path": "experiments/r-001/checkpoints/epoch_050.pth",
+    "next_step": "Resume from epoch 50, monitor for divergence after epoch 80 (paper reports lr drop at 0.1×).",
+    "recovery_required_files": [
+      "experiments/r-001/config/override.yaml",
+      "experiments/r-001/checkpoints/epoch_050.pth",
+      "experiments/r-001/metrics/raw_metrics.json"
+    ],
+    "blockers": [],
+    "timestamp": "2026-07-15T22:30:00Z"
+  }
+}

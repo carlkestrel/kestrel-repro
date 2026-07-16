@@ -1,0 +1,112 @@
+file,line_or_element,english_text,translated_text,should_be_english,reason_if_english,status
+index.html,h1,Deep Learning Paper Reproduction,深度学习论文复现,N/A,,OK
+index.html,h1,dl-paper-repro,dl-paper-repro,Y,产品名称保持英文,OK
+index.html,subtitle,Evidence-driven reproduction...,基于证据驱动的深度学习论文仓库复现...,N/A,,OK
+index.html,nav,Overview,概述,N/A,,OK
+index.html,nav,Installation,安装,N/A,,OK
+index.html,nav,Quick Start,快速上手,N/A,,OK
+index.html,nav,Architecture,架构,N/A,,OK
+index.html,nav,Commands,命令,N/A,,OK
+index.html,nav,Configuration,配置,N/A,,OK
+index.html,nav,Project Structure,项目结构,N/A,,OK
+index.html,nav,New Project,新项目,N/A,,OK
+index.html,nav,Takeover Project,项目接管,N/A,,OK
+index.html,nav,Automation,自动化,N/A,,OK
+index.html,nav,Reproduction Protocol,复现协议,N/A,,OK
+index.html,nav,Search GitHub,GitHub 搜索,N/A,,OK
+index.html,nav,Performance,性能,N/A,,OK
+index.html,nav,Backup & Recovery,备份与恢复,N/A,,OK
+index.html,nav,Testing & CI,测试与 CI,N/A,,OK
+index.html,nav,Bug Repair,Bug 修复,N/A,,OK
+index.html,nav,Security,安全,N/A,,OK
+index.html,nav,Troubleshooting,故障排除,N/A,,OK
+index.html,nav,FAQ,常见问题,N/A,,OK
+index.html,nav,Glossary,术语表,N/A,,OK
+index.html,nav,Complete Manual,完整手册,N/A,,OK
+index.html,aria-label,Toggle menu,切换菜单,N/A,,OK
+index.html,placeholder,Search documentation... (Press /),搜索文档... (按 / 键),N/A,,OK
+index.html,aria-label,Search,搜索,N/A,,OK
+index.html,aria-label,Toggle theme,切换主题,N/A,,OK
+index.html,section,Quick Actions,快速操作,N/A,,OK
+index.html,heading,5-Minute Start,5 分钟快速开始,N/A,,OK
+index.html,paragraph,Run preflight checks...,运行预检并引导...,N/A,,OK
+index.html,button,Copy,复制,N/A,,OK
+index.html,heading,Takeover Project,项目接管,N/A,,OK
+index.html,paragraph,Resume an interrupted...,恢复中断或现有的复现...,N/A,,OK
+index.html,heading,View Architecture,查看架构,N/A,,OK
+index.html,paragraph,Understand the system...,了解系统组件和数据流...,N/A,,OK
+index.html,link,Read architecture docs →,阅读架构文档 →,N/A,,OK
+index.html,heading,Troubleshooting,故障排除,N/A,,OK
+index.html,paragraph,Fix common issues...,修复 Doctor 检查、锁和恢复的常见问题...,N/A,,OK
+index.html,link,View troubleshooting →,查看故障排除 →,N/A,,OK
+index.html,heading,Core Commands,核心命令,N/A,,OK
+index.html,paragraph,All commands use...,所有命令使用...,N/A,,OK
+index.html,th,Command,命令,N/A,,OK
+index.html,th,Category,类别,N/A,,OK
+index.html,th,Description,描述,N/A,,OK
+index.html,th,Status,状态,N/A,,OK
+index.html,td,Startup,启动,N/A,,OK
+index.html,td,Run preflight checks...,运行预检（无状态变更）...,N/A,,OK
+index.html,td,Bootstrap and start...,引导和启动项目...,N/A,,OK
+index.html,td,Show project state...,显示项目状态和锁状态...,N/A,,OK
+index.html,td,Resume interrupted...,恢复中断的项目...,N/A,,OK
+index.html,td,Stop gracefully...,优雅停止并清除锁...,N/A,,OK
+index.html,td,Verify startup...,验证启动证据链...,N/A,,OK
+index.html,td,Print plugin...,打印插件和 CLI 版本...,N/A,,OK
+index.html,td,Orchestrator,编排器,N/A,,OK
+index.html,td,Run persistent...,运行持久化控制器循环...,N/A,,OK
+index.html,td,Background daemon...,后台守护进程控制...,N/A,,OK
+index.html,td,Storage,存储,N/A,,OK
+index.html,td,Disk policy...,磁盘策略和清理...,N/A,,OK
+index.html,span,STABLE,稳定,N/A,,OK
+index.html,span,BETA,测试版,N/A,,OK
+index.html,span,EXPERIMENTAL,实验性,N/A,,OK
+index.html,heading,Feature Status,功能状态,N/A,,OK
+index.html,th,Feature,功能,N/A,,OK
+index.html,td,Startup System,启动系统,N/A,,OK
+index.html,td,Orchestrator,编排器,N/A,,OK
+index.html,td,Gate 0-5 System,Gate 0-5 系统,N/A,,OK
+index.html,td,L0-L3 Short Loop,L0-L3 短循环,N/A,,OK
+index.html,td,Storage Governance,存储治理,N/A,,OK
+index.html,td,Backup & Restore,备份与恢复,N/A,,OK
+index.html,td,Human Checkpoints,人工检查点,N/A,,OK
+index.html,td,Secrets Redaction,敏感信息脱敏,N/A,,OK
+index.html,td,GitHub Crawler,GitHub 爬虫,N/A,,OK
+index.html,td,Point Cloud Support,点云支持,N/A,,OK
+index.html,heading,Execution Modes,执行模式,N/A,,OK
+index.html,paragraph,Choose the appropriate...,为您的复现目标选择合适的模式...,N/A,,OK
+index.html,th,Mode,模式,N/A,,OK
+index.html,th,Gate 3 Required,需要 Gate 3,N/A,,OK
+index.html,td,Exact paper reproduction...,严格复现，无优化...,N/A,,OK
+index.html,td,Allow AMP and DDP...,允许 AMP 和 DDP 优化...,N/A,,OK
+index.html,td,Debug mode...,调试模式，放宽约束...,N/A,,OK
+index.html,td,Testing mode...,测试模式，最少检查...,N/A,,OK
+index.html,td,Extend original...,扩展原始发现...,N/A,,OK
+index.html,alert-title,Note on Tolerance,关于容差的说明,N/A,,OK
+index.html,heading,Security Notices,安全注意事项,N/A,,OK
+index.html,alert-title,API Tokens,API 令牌,N/A,,OK
+index.html,alert-title,Secrets Scanning,敏感信息扫描,N/A,,OK
+index.html,heading,Complete Manual,完整手册,N/A,,OK
+index.html,paragraph,For offline reading...,如需离线阅读或打印...,N/A,,OK
+index.html,link,Complete Manual,完整手册,N/A,,OK
+index.html,page-nav,Next,下一页,N/A,,OK
+index.html,page-nav,Installation →,安装 →,N/A,,OK
+index.html,toc-title,On This Page,页面内容,N/A,,OK
+index.html,aria-label,Back to top,返回顶部,N/A,,OK
+index.html,code,.reproctl,.reproctl,Y,命令保持英文,OK
+index.html,code,python scripts/reproctl.py,python scripts/reproctl.py,Y,命令保持英文,OK
+index.html,code,.repro/,./repro/,Y,路径保持英文,OK
+index.html,code,strict,strict,Y,模式名保持英文,OK
+index.html,code,optimized,optimized,Y,模式名保持英文,OK
+index.html,code,AMP,AMP,Y,技术术语保持英文,OK
+index.html,code,DDP,DDP,Y,技术术语保持英文,OK
+app.js,textContent,No results found,无结果,N/A,,OK
+app.js,textContent,Copied!,已复制!,N/A,,OK
+app.js,textContent,Copy,复制,N/A,,OK
+app.js,textContent,Failed,失败,N/A,,OK
+app.js,aria-label,Switch to light mode,切换到浅色模式,N/A,,OK
+app.js,aria-label,Switch to dark mode,切换到深色模式,N/A,,OK
+app.js,aria-label,Link to section,链接到章节,N/A,,OK
+app.js,default,Untitled,无标题,N/A,,OK
+app.js,default,Documentation,文档,N/A,,OK
+app.js,default,PAGE,页面,N/A,,OK

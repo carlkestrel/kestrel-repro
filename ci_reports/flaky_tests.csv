@@ -1,0 +1,6 @@
+test_name,failure_count_last_30,total_count_last_30,flaky_rate,status
+test_1_five_serial_tasks_complete,0,0,0.0,STABLE
+test_4_retry_exhaustion_respects_limit,0,0,0.0,STABLE
+test_5_human_approval_gate_blocks_unsafe,0,0,0.0,STABLE
+test_14_false_completion_rejected,0,0,0.0,STABLE
+test_15_security_policy_blocks_unsafe,0,0,0.0,STABLE

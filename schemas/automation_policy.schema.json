@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "automation_policy.schema.json",
+  "title": "Automation Policy Schema",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["policy_version", "rules"],
+  "properties": {
+    "policy_version": {"type": "string"},
+    "mode": {"type": "string", "enum": ["strict", "safe", "fast"]},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "action", "operation"],
+        "properties": {
+          "name": {"type": "string"},
+          "action": {"type": "string", "enum": ["allow", "deny", "require_approval", "block"]},
+          "operation": {"type": "string"},
+          "path_pattern": {"type": "string"},
+          "conditions": {"type": "object"}
+        }
+      }
+    },
+    "writes": {
+      "type": "object",
+      "properties": {
+        "allowed_dirs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "default": [".repro", ".execution", "output", "reports"]
+        },
+        "blocked_dirs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "default": ["src", "tests", "README.md", "setup.py"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统架构 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="architecture">系统架构</h1>
+          <p class="subtitle">了解 dl-paper-repro 的三层架构</p>
+        </header>
+
+        <section id="overview">
+          <h2 id="overview">架构概述</h2>
+          <p>dl-paper-repro 采用三层架构：</p>
+          <div class="flow-diagram">
+            <svg viewBox="0 0 700 200" width="100%">
+              <!-- Layer backgrounds -->
+              <rect x="10" y="10" width="680" height="50" rx="8" fill="#e3f2fd" stroke="#2563eb" stroke-width="2"/>
+              <rect x="10" y="75" width="680" height="50" rx="8" fill="#e8f5e9" stroke="#059669" stroke-width="2"/>
+              <rect x="10" y="140" width="680" height="50" rx="8" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+              
+              <!-- Layer labels -->
+              <text x="20" y="40" font-size="14" font-weight="bold" fill="#1a1a2e">CLI 层</text>
+              <text x="120" y="40" font-size="12" fill="#4a4a68">reproctl.py 分发器</text>
+              <text x="20" y="105" font-size="14" font-weight="bold" fill="#1a1a2e">启动子系统</text>
+              <text x="200" y="105" font-size="12" fill="#4a4a68">doctor | lock | state_machine | recovery | config</text>
+              <text x="20" y="170" font-size="14" font-weight="bold" fill="#1a1a2e">编排器子系统</text>
+              <text x="220" y="170" font-size="12" fill="#4a4a68">controller | scheduler | executor | watchdog | verifier</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="components">
+          <h2 id="components">核心组件</h2>
+          
+          <h3 id="cli-layer">CLI 层</h3>
+          <p><code>reproctl.py</code> 是唯一入口点，分发到：</p>
+          <ul>
+            <li><strong>启动 CLI</strong> (<code>startup/cli.py</code>)：start, doctor, status, resume, stop, verify, version</li>
+            <li><strong>编排器 CLI</strong> (<code>orchestrator/cli.py</code>)：run, pause, continue, events, approve, reject, daemon</li>
+            <li><strong>遗留命令</strong>：init, launch, can-launch, report, update-gate（向后兼容）</li>
+          </ul>
+
+          <h3 id="startup-subsystem">启动子系统</h3>
+          <table>
+            <thead>
+              <tr><th>组件</th><th>文件</th><th>描述</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>doctor</td><td>doctor.py</td><td>环境预检</td></tr>
+              <tr><td>lock</td><td>lock.py</td><td>PID 文件锁管理</td></tr>
+              <tr><td>state_machine</td><td>state_machine.py</td><td>项目状态转换</td></tr>
+              <tr><td>recovery</td><td>recovery.py</td><td>中断恢复</td></tr>
+              <tr><td>config</td><td>config.py</td><td>配置加载和合并</td></tr>
+              <tr><td>secrets_redactor</td><td>secrets_redactor.py</td><td>日志凭证脱敏</td></tr>
+              <tr><td>storage_governance</td><td>storage_governance.py</td><td>磁盘策略和清理</td></tr>
+            </tbody>
+          </table>
+
+          <h3 id="orchestrator-subsystem">编排器子系统</h3>
+          <table>
+            <thead>
+              <tr><th>组件</th><th>文件</th><th>描述</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>controller</td><td>controller.py</td><td>主编排循环</td></tr>
+              <tr><td>state_store</td><td>state_store.py</td><td>SQLite 状态持久化</td></tr>
+              <tr><td>scheduler</td><td>scheduler.py</td><td>任务依赖调度</td></tr>
+              <tr><td>task_executor</td><td>task_executor.py</td><td>命令执行</td></tr>
+              <tr><td>watchdog</td><td>watchdog.py</td><td>超时和崩溃检测</td></tr>
+              <tr><td>verifier</td><td>verifier.py</td><td>任务验收测试</td></tr>
+              <tr><td>policy_engine</td><td>policy_engine.py</td><td>审批策略规则</td></tr>
+              <tr><td>approval_gate</td><td>approval_gate.py</td><td>人工审批工作流</td></tr>
+              <tr><td>event_journal</td><td>event_journal.py</td><td>事件日志</td></tr>
+              <tr><td>process_manager</td><td>process_manager.py</td><td>进程生命周期</td></tr>
+              <tr><td>backup</td><td>backup.py</td><td>状态快照</td></tr>
+              <tr><td>migrate</td><td>migrate.py</td><td>版本迁移</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="statestore">
+          <h2 id="statestore">StateStore (SQLite)</h2>
+          <p>编排器使用带 WAL 模式的 SQLite 进行持久化状态：</p>
+          
+          <h3 id="database-schema">数据库模式</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>-- 数据库: .repro/execution/state.sqlite3
+-- 模式: WAL (预写日志)
+
+-- metadata: 键值控制状态
+CREATE TABLE metadata (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+-- 键: control_state, plan_id, plan_path, mode, automation, mandatory_task_ids, budgets
+
+-- tasks: 任务定义和状态
+CREATE TABLE tasks (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  gate TEXT NOT NULL,
+  deps_json TEXT NOT NULL,
+  command TEXT NOT NULL,
+  timeout_min REAL NOT NULL,
+  acceptance_json TEXT NOT NULL,
+  retry_json TEXT NOT NULL,
+  task_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  attempts INTEGER DEFAULT 0,
+  pid INTEGER,
+  log_path TEXT,
+  started_at TEXT,
+  finished_at TEXT,
+  retry_at REAL,
+  failure_reason TEXT,
+  updated_at TEXT NOT NULL
+);
+
+-- approvals: 人工审批工作流
+CREATE TABLE approvals (
+  approval_id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  reason TEXT,
+  created_at TEXT NOT NULL,
+  expires_at REAL,
+  decided_at TEXT
+);
+
+-- events: 事件日志
+CREATE TABLE events (
+  seq INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  task_id TEXT,
+  payload_json TEXT NOT NULL
+);
+
+-- heartbeats: 进程心跳
+CREATE TABLE heartbeats (
+  owner TEXT PRIMARY KEY,
+  pid INTEGER NOT NULL,
+  timestamp REAL NOT NULL,
+  detail_json TEXT NOT NULL
+);</code></pre>
+          </div>
+        </section>
+
+        <section id="taskstate">
+          <h2 id="taskstate">任务状态机</h2>
+          <p>任务遵循定义的状态转换机：</p>
+          <div class="flow-diagram">
+            <svg viewBox="0 0 600 300" width="100%">
+              <!-- State boxes -->
+              <rect x="250" y="10" width="100" height="35" rx="5" fill="#e3f2fd" stroke="#2563eb" stroke-width="2"/>
+              <text x="300" y="33" text-anchor="middle" font-size="12" font-weight="bold">PENDING</text>
+              
+              <rect x="250" y="60" width="100" height="35" rx="5" fill="#e8f5e9" stroke="#059669" stroke-width="2"/>
+              <text x="300" y="83" text-anchor="middle" font-size="12" font-weight="bold">READY</text>
+              
+              <rect x="250" y="110" width="100" height="35" rx="5" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+              <text x="300" y="133" text-anchor="middle" font-size="12" font-weight="bold">RUNNING</text>
+              
+              <rect x="250" y="160" width="100" height="35" rx="5" fill="#fce4ec" stroke="#dc2626" stroke-width="2"/>
+              <text x="300" y="183" text-anchor="middle" font-size="12" font-weight="bold">VERIFYING</text>
+              
+              <rect x="250" y="210" width="100" height="35" rx="5" fill="#c8e6c9" stroke="#059669" stroke-width="2"/>
+              <text x="300" y="233" text-anchor="middle" font-size="12" font-weight="bold">PASS</text>
+              
+              <rect x="120" y="210" width="100" height="35" rx="5" fill="#ffcdd2" stroke="#dc2626" stroke-width="2"/>
+              <text x="170" y="233" text-anchor="middle" font-size="12" font-weight="bold">FAIL</text>
+              
+              <rect x="380" y="210" width="100" height="35" rx="5" fill="#fff9c4" stroke="#d97706" stroke-width="2"/>
+              <text x="430" y="233" text-anchor="middle" font-size="12" font-weight="bold">RETRY_WAIT</text>
+              
+              <!-- Arrows -->
+              <path d="M300 45 L300 57" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M300 95 L300 107" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M300 145 L300 157" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M300 195 L300 207" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              
+              <path d="M250 227 L225 227" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M350 227 L380 227" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              
+              <!-- Marker -->
+              <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+                </marker>
+              </defs>
+            </svg>
+          </div>
+          
+          <h3 id="state-transitions">有效转换</h3>
+          <table>
+            <thead>
+              <tr><th>从</th><th>到</th><th>触发器</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>PENDING</td><td>READY</td><td>依赖满足</td></tr>
+              <tr><td>READY</td><td>RUNNING</td><td>调度器选择任务</td></tr>
+              <tr><td>RUNNING</td><td>VERIFYING</td><td>命令完成</td></tr>
+              <tr><td>VERIFYING</td><td>PASS</td><td>验收测试通过</td></tr>
+              <tr><td>VERIFYING</td><td>FAIL</td><td>验收测试失败</td></tr>
+              <tr><td>FAIL</td><td>RETRY_WAIT</td><td>重试策略允许</td></tr>
+              <tr><td>RETRY_WAIT</td><td>READY</td><td>重试延迟已过</td></tr>
+              <tr><td>READY</td><td>WAITING_APPROVAL</td><td>策略需要审批</td></tr>
+              <tr><td>WAITING_APPROVAL</td><td>APPROVED</td><td>人工批准</td></tr>
+              <tr><td>WAITING_APPROVAL</td><td>REJECTED</td><td>人工拒绝</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="gates">
+          <h2 id="gates">门控系统</h2>
+          <p>六个分阶段门控确保继续前的质量：</p>
+          <table>
+            <thead>
+              <tr><th>Gate</th><th>名称</th><th>描述</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>gate_0</td><td>论文审计</td><td>验证论文数据和声明</td></tr>
+              <tr><td>gate_1</td><td>预检</td><td>环境和依赖</td></tr>
+              <tr><td>gate_2</td><td>短循环</td><td>L0-L3 验证测试</td></tr>
+              <tr><td>gate_3</td><td>奇偶校验</td><td>优化奇偶性检查</td></tr>
+              <tr><td>gate_4</td><td>完整训练</td><td>完整训练运行</td></tr>
+              <tr><td>gate_5</td><td>证据</td><td>最终证据验证</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="exitcodes">
+          <h2 id="exitcodes">退出码</h2>
+          <table>
+            <thead>
+              <tr><th>代码</th><th>名称</th><th>描述</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>0</code></td><td>成功</td><td>命令成功完成</td></tr>
+              <tr><td><code>1</code></td><td>失败</td><td>一般失败或参数错误</td></tr>
+              <tr><td><code>2</code></td><td>配置错误</td><td>配置验证失败</td></tr>
+              <tr><td><code>3</code></td><td>EXIT_DOCTOR_FAIL</td><td>Doctor 检查失败（必需项）</td></tr>
+              <tr><td><code>4</code></td><td>EXIT_ALREADY_RUNNING</td><td>另一个实例正在运行</td></tr>
+              <tr><td><code>5</code></td><td>INVALID_PLAN</td><td>计划文件无效或缺失</td></tr>
+              <tr><td><code>6</code></td><td>TASK_FAILED</td><td>任务执行失败</td></tr>
+              <tr><td><code>7</code></td><td>TASK_BLOCKED</td><td>所有任务被阻塞（编排器）</td></tr>
+              <tr><td><code>8</code></td><td>EXIT_RESUME_FAILED</td><td>恢复失败</td></tr>
+              <tr><td><code>9</code></td><td>SECURITY_BLOCKED</td><td>安全检查阻止操作</td></tr>
+              <tr><td><code>10</code></td><td>INTERNAL_ERROR</td><td>内部错误（导入等）</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="quickstart.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 快速上手</span>
+          </a>
+          <a href="commands.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">命令 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#overview" class="toc-link">架构概述</a></li>
+          <li class="toc-item"><a href="#components" class="toc-link">核心组件</a></li>
+          <li class="toc-item"><a href="#statestore" class="toc-link">StateStore</a></li>
+          <li class="toc-item"><a href="#taskstate" class="toc-link">任务状态机</a></li>
+          <li class="toc-item"><a href="#gates" class="toc-link">门控系统</a></li>
+          <li class="toc-item"><a href="#exitcodes" class="toc-link">退出码</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

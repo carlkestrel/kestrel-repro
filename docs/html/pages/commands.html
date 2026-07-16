@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commands - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="commands">Command Reference</h1>
+          <p class="subtitle">Complete reference for all reproctl commands</p>
+        </header>
+
+        <section id="startup-commands">
+          <h2 id="startup-commands">Startup Commands</h2>
+          <p>These commands manage the project lifecycle and use <code>python scripts/reproctl.py &lt;command&gt;</code>:</p>
+
+          <h3 id="start">start</h3>
+          <p>Bootstrap and start the project with unified entry point.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py start --project PATH --plan PLAN [--mode MODE] [--dry-run] [--expected-cuda VERSION]</code></pre>
+          </div>
+          <table>
+            <thead><tr><th>Argument</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>--project</code></td><td>Yes</td><td>-</td><td>Project root directory</td></tr>
+              <tr><td><code>--plan</code></td><td>Yes</td><td>-</td><td>Plan file path</td></tr>
+              <tr><td><code>--mode</code></td><td>No</td><td>strict</td><td>Execution mode (strict/optimized/diagnose/test/extend)</td></tr>
+              <tr><td><code>--dry-run</code></td><td>No</td><td>false</td><td>Check only, no lock acquired</td></tr>
+              <tr><td><code>--expected-cuda</code></td><td>No</td><td>-</td><td>Expected CUDA version</td></tr>
+            </tbody>
+          </table>
+
+          <h3 id="doctor">doctor</h3>
+          <p>Run preflight checks without state mutation.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py doctor --project PATH [--expected-cuda VERSION]</code></pre>
+          </div>
+          <p>Exit codes: 0 for PASS/WARNING, 3 for FAIL.</p>
+
+          <h3 id="status">status</h3>
+          <p>Show project state, lock status, and plan hash.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py status --project PATH</code></pre>
+          </div>
+
+          <h3 id="resume">resume</h3>
+          <p>Resume an interrupted project.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py resume --project PATH</code></pre>
+          </div>
+          <p>Exit codes: 0 success, 2 config error, 4 already running, 8 recovery failed.</p>
+
+          <h3 id="stop">stop</h3>
+          <p>Stop gracefully and clear the lock.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py stop --project PATH</code></pre>
+          </div>
+
+          <h3 id="verify">verify</h3>
+          <p>Verify the startup evidence chain.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py verify --project PATH</code></pre>
+          </div>
+
+          <h3 id="version">version</h3>
+          <p>Print plugin and CLI version.</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py version</code></pre>
+          </div>
+        </section>
+
+        <section id="legacy-commands">
+          <h2 id="legacy-commands">Legacy Commands</h2>
+          <p>These commands are retained for backward compatibility:</p>
+
+          <h3 id="init">init</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py init [--paper URL] [--target METRIC]</code></pre>
+          </div>
+
+          <h3 id="can-launch">can-launch</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py can-launch [--mode MODE]
+# Modes: strict_repro, optimized_repro_safe, experimental_fast</code></pre>
+          </div>
+
+          <h3 id="launch">launch</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py launch [--mode MODE] [--seed SEED] [--epochs EPOCHS] [--config CONFIG] [extra...]</code></pre>
+          </div>
+
+          <h3 id="run-short-loop">run-short-loop</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py run-short-loop [--level LEVEL] [--config CONFIG] [--overfit-steps STEPS] [--epochs EPOCHS]
+# Levels: L0, L1, L2, L3, all (default)</code></pre>
+          </div>
+        </section>
+
+        <section id="orchestrator">
+          <h2 id="orchestrator">Orchestrator Commands</h2>
+          <p>Persistent controller for long-running tasks. Use <code>python scripts/reproctl.py orchestrator &lt;command&gt;</code>:</p>
+
+          <table>
+            <thead><tr><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>run</code></td><td>Start persistent controller loop</td></tr>
+              <tr><td><code>pause</code></td><td>Pause orchestrator</td></tr>
+              <tr><td><code>continue</code></td><td>Continue orchestrator</td></tr>
+              <tr><td><code>stop</code></td><td>Stop orchestrator</td></tr>
+              <tr><td><code>status</code></td><td>Show state summary</td></tr>
+              <tr><td><code>events</code></td><td>Event log stream</td></tr>
+              <tr><td><code>next</code></td><td>Show next task</td></tr>
+              <tr><td><code>approve</code></td><td>Approve pending task</td></tr>
+              <tr><td><code>reject</code></td><td>Reject pending task</td></tr>
+              <tr><td><code>daemon</code></td><td>Background daemon control</td></tr>
+              <tr><td><code>migrate</code></td><td>State migration</td></tr>
+              <tr><td><code>backup</code></td><td>Create backup snapshot</td></tr>
+              <tr><td><code>restore</code></td><td>Restore from backup</td></tr>
+              <tr><td><code>integrity-check</code></td><td>Integrity verification</td></tr>
+              <tr><td><code>rollback-version</code></td><td>Rollback to version</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="storage">
+          <h2 id="storage">Storage Commands</h2>
+          <p>Disk policy and retention management. Use <code>python scripts/reproctl.py storage &lt;command&gt;</code>:</p>
+
+          <table>
+            <thead><tr><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>status</code></td><td>Check disk space against policy</td></tr>
+              <tr><td><code>plan-cleanup</code></td><td>Generate cleanup plan (dry-run)</td></tr>
+              <tr><td><code>cleanup</code></td><td>Execute approved cleanup plan</td></tr>
+              <tr><td><code>apply</code></td><td>Apply retention/disk_policy config</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="architecture.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← Architecture</span>
+          </a>
+          <a href="configuration.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">Configuration →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#startup-commands" class="toc-link">Startup Commands</a></li>
+          <li class="toc-item"><a href="#legacy-commands" class="toc-link">Legacy Commands</a></li>
+          <li class="toc-item"><a href="#orchestrator" class="toc-link">Orchestrator</a></li>
+          <li class="toc-item"><a href="#storage" class="toc-link">Storage</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

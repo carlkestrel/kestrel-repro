@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自动化工作流 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="automation">自动化工作流</h1>
+          <p class="subtitle">无监控运行长时间任务</p>
+        </header>
+
+        <section id="autopilot">
+          <h2 id="autopilot">Autopilot 自动驾驶模式</h2>
+          <p><code>autopilot.py</code> 提供 NORA 风格的统一入口，支持持续执行直到任务完成或阻塞。</p>
+
+          <h3 id="autopilot-commands">Autopilot 命令</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 启动 autopilot - 持续执行直到 blocked 或 complete
+python scripts/autopilot.py run --project . --until blocked-or-complete
+
+# 检查状态
+python scripts/autopilot.py status --project .
+
+# 从中断恢复
+python scripts/autopilot.py recover --project .
+
+# L0-L3 验证循环
+python scripts/autopilot.py l0l3 --project .
+
+# 生成报告
+python scripts/autopilot.py report --project . --format markdown
+
+# 暂停/停止/继续
+python scripts/autopilot.py pause --project .
+python scripts/autopilot.py stop --project .
+python scripts/autopilot.py continue --project .
+
+# 接管已有项目
+python scripts/autopilot.py takeover --project .</code></pre>
+          </div>
+
+          <h3 id="l0l3-loop">L0-L3 验证循环</h3>
+          <p>自动执行 L0 → L1 → L2 → L3 验证层级：</p>
+          <ul>
+            <li><strong>L0</strong>: 静态检查（import、配置、路径）</li>
+            <li><strong>L1</strong>: 真实单 batch（forward/backward/eval）</li>
+            <li><strong>L2</strong>: 微型过拟合（小数据集，验证记忆能力）</li>
+            <li><strong>L3</strong>: 短评估（checkpoint resume，评估 pipeline）</li>
+          </ul>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 完整 L0-L3 循环
+python scripts/l0_l3_loop.py --project .
+
+# 自定义步骤数
+python scripts/l0_l3_loop.py --project . --l1-steps 100 --l2-epochs 5
+
+# 失败后继续
+python scripts/l0_l3_loop.py --project . --continue-on-fail</code></pre>
+          </div>
+
+          <h3 id="autopilot-options">运行选项</h3>
+          <table>
+            <thead><tr><th>选项</th><th>默认值</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>--automation</code></td><td>safe-auto</td><td>自动化级别：safe-auto, auto, manual</td></tr>
+              <tr><td><code>--until</code></td><td>blocked-or-complete</td><td>运行条件：blocked, complete, blocked-or-complete, always</td></tr>
+              <tr><td><code>--mode</code></td><td>-</td><td>执行模式：strict, optimized</td></tr>
+              <tr><td><code>--resume</code></td><td>false</td><td>从中断状态恢复</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="overview">
+          <h2 id="overview">概述</h2>
+          <p>自动化工作流用于无监控运行长时间任务。</p>
+        </section>
+
+        <section id="modes">
+          <h2 id="modes">模式选择</h2>
+          
+          <h3 id="safe-auto">1. 安全自动 (safe-auto)</h3>
+          <p>默认模式。需要人工审批关键决策。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator run \
+  --project . \
+  --plan output/PAPER_PLAN.md \
+  --automation safe-auto</code></pre>
+          </div>
+          
+          <h3 id="manual">2. 手动模式 (manual)</h3>
+          <p>所有任务都需要人工审批。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator run \
+  --project . \
+  --plan output/PAPER_PLAN.md \
+  --automation manual</code></pre>
+          </div>
+          
+          <h3 id="unattended">3. 无监控模式 (unattended)</h3>
+          <p>不等待审批，超时后自动跳过或失败。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator run \
+  --project . \
+  --plan output/PAPER_PLAN.md \
+  --automation unattended</code></pre>
+          </div>
+        </section>
+
+        <section id="daemon">
+          <h2 id="daemon">守护进程模式</h2>
+          
+          <h3 id="start-daemon">启动守护进程</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator daemon \
+  --project . \
+  start \
+  --plan output/PAPER_PLAN.md \
+  --mode optimized</code></pre>
+          </div>
+          
+          <h3 id="daemon-status">检查守护进程状态</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator daemon \
+  --project . \
+  status</code></pre>
+          </div>
+          
+          <h3 id="stop-daemon">停止守护进程</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator daemon \
+  --project . \
+  stop</code></pre>
+          </div>
+        </section>
+
+        <section id="policies">
+          <h2 id="policies">运行策略</h2>
+          
+          <h3 id="until-blocked">直到完成或阻塞</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator run \
+  --project . \
+  --plan output/PAPER_PLAN.md \
+  --until blocked-or-complete</code></pre>
+          </div>
+          
+          <h3 id="until-complete">直到完成</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator run \
+  --project . \
+  --plan output/PAPER_PLAN.md \
+  --until complete</code></pre>
+          </div>
+        </section>
+
+        <section id="pause-continue">
+          <h2 id="pause-continue">暂停和继续</h2>
+          
+          <h3 id="pause">暂停</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator pause --project .</code></pre>
+          </div>
+          
+          <h3 id="resume-automation">继续</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py orchestrator continue --project .</code></pre>
+          </div>
+        </section>
+
+        <nav class="page-nav">
+          <a href="takeover.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 项目接管</span>
+          </a>
+          <a href="reproduction.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">复现协议 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#autopilot" class="toc-link">Autopilot 自动驾驶</a></li>
+          <li class="toc-item"><a href="#overview" class="toc-link">概述</a></li>
+          <li class="toc-item"><a href="#modes" class="toc-link">模式选择</a></li>
+          <li class="toc-item"><a href="#daemon" class="toc-link">守护进程模式</a></li>
+          <li class="toc-item"><a href="#policies" class="toc-link">运行策略</a></li>
+          <li class="toc-item"><a href="#pause-continue" class="toc-link">暂停和继续</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

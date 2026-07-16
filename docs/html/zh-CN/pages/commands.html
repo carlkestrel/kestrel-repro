@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>命令参考 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="commands">命令参考</h1>
+          <p class="subtitle">所有 reproctl 命令的完整参考</p>
+        </header>
+
+        <section id="startup-commands">
+          <h2 id="startup-commands">启动命令</h2>
+          <p>这些命令管理项目生命周期，使用 <code>python scripts/reproctl.py &lt;命令&gt;</code>：</p>
+
+          <h3 id="start">start</h3>
+          <p>使用统一入口引导和启动项目。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py start --project PATH --plan PLAN [--mode MODE] [--dry-run] [--expected-cuda VERSION]</code></pre>
+          </div>
+          <table>
+            <thead><tr><th>参数</th><th>必选</th><th>默认值</th><th>描述</th></tr></thead>
+            <tbody>
+              <tr><td><code>--project</code></td><td>是</td><td>-</td><td>项目根目录</td></tr>
+              <tr><td><code>--plan</code></td><td>是</td><td>-</td><td>计划文件路径</td></tr>
+              <tr><td><code>--mode</code></td><td>否</td><td>strict</td><td>执行模式 (strict/optimized/diagnose/test/extend)</td></tr>
+              <tr><td><code>--dry-run</code></td><td>否</td><td>false</td><td>仅检查，不获取锁</td></tr>
+              <tr><td><code>--expected-cuda</code></td><td>否</td><td>-</td><td>期望的 CUDA 版本</td></tr>
+            </tbody>
+          </table>
+
+          <h3 id="doctor">doctor</h3>
+          <p>运行预检（无状态变更）。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py doctor --project PATH [--expected-cuda VERSION]</code></pre>
+          </div>
+          <p>退出码：0 表示 PASS/WARNING，3 表示 FAIL。</p>
+
+          <h3 id="status">status</h3>
+          <p>显示项目状态、锁状态和计划哈希。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py status --project PATH</code></pre>
+          </div>
+
+          <h3 id="resume">resume</h3>
+          <p>恢复中断的项目。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py resume --project PATH</code></pre>
+          </div>
+          <p>退出码：0 成功，2 配置错误，4 已在运行，8 恢复失败。</p>
+
+          <h3 id="stop">stop</h3>
+          <p>优雅停止并清除锁。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py stop --project PATH</code></pre>
+          </div>
+
+          <h3 id="verify">verify</h3>
+          <p>验证启动证据链。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py verify --project PATH</code></pre>
+          </div>
+
+          <h3 id="version">version</h3>
+          <p>打印插件和 CLI 版本。</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py version</code></pre>
+          </div>
+        </section>
+
+        <section id="legacy-commands">
+          <h2 id="legacy-commands">遗留命令</h2>
+          <p>这些命令为保持向后兼容而保留：</p>
+
+          <h3 id="init">init</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py init [--paper URL] [--target METRIC]</code></pre>
+          </div>
+
+          <h3 id="can-launch">can-launch</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py can-launch [--mode MODE]
+# 模式: strict_repro, optimized_repro_safe, experimental_fast</code></pre>
+          </div>
+
+          <h3 id="launch">launch</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py launch [--mode MODE] [--seed SEED] [--epochs EPOCHS] [--config CONFIG] [extra...]</code></pre>
+          </div>
+
+          <h3 id="run-short-loop">run-short-loop</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py run-short-loop [--level LEVEL] [--config CONFIG] [--overfit-steps STEPS] [--epochs EPOCHS]
+# 级别: L0, L1, L2, L3, all (默认)</code></pre>
+          </div>
+        </section>
+
+        <section id="orchestrator">
+          <h2 id="orchestrator">编排器命令</h2>
+          <p>长时间运行任务的持久化控制器。使用 <code>python scripts/reproctl.py orchestrator &lt;命令&gt;</code>：</p>
+
+          <table>
+            <thead><tr><th>命令</th><th>描述</th></tr></thead>
+            <tbody>
+              <tr><td><code>run</code></td><td>启动持久化控制器循环</td></tr>
+              <tr><td><code>pause</code></td><td>暂停编排器</td></tr>
+              <tr><td><code>continue</code></td><td>继续编排器</td></tr>
+              <tr><td><code>stop</code></td><td>停止编排器</td></tr>
+              <tr><td><code>status</code></td><td>显示状态摘要</td></tr>
+              <tr><td><code>events</code></td><td>事件日志流</td></tr>
+              <tr><td><code>next</code></td><td>显示下一个任务</td></tr>
+              <tr><td><code>approve</code></td><td>批准待审批任务</td></tr>
+              <tr><td><code>reject</code></td><td>拒绝待审批任务</td></tr>
+              <tr><td><code>daemon</code></td><td>后台守护进程控制</td></tr>
+              <tr><td><code>migrate</code></td><td>状态迁移</td></tr>
+              <tr><td><code>backup</code></td><td>创建备份快照</td></tr>
+              <tr><td><code>restore</code></td><td>从备份恢复</td></tr>
+              <tr><td><code>integrity-check</code></td><td>完整性验证</td></tr>
+              <tr><td><code>rollback-version</code></td><td>回滚到指定版本</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="storage">
+          <h2 id="storage">存储命令</h2>
+          <p>磁盘策略和保留管理。使用 <code>python scripts/reproctl.py storage &lt;命令&gt;</code>：</p>
+
+          <table>
+            <thead><tr><th>命令</th><th>描述</th></tr></thead>
+            <tbody>
+              <tr><td><code>status</code></td><td>根据策略检查磁盘空间</td></tr>
+              <tr><td><code>plan-cleanup</code></td><td>生成清理计划（预演）</td></tr>
+              <tr><td><code>cleanup</code></td><td>执行已批准的清理计划</td></tr>
+              <tr><td><code>apply</code></td><td>应用保留/磁盘策略配置</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="architecture.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 架构</span>
+          </a>
+          <a href="configuration.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">配置 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#startup-commands" class="toc-link">启动命令</a></li>
+          <li class="toc-item"><a href="#legacy-commands" class="toc-link">遗留命令</a></li>
+          <li class="toc-item"><a href="#orchestrator" class="toc-link">编排器</a></li>
+          <li class="toc-item"><a href="#storage" class="toc-link">存储</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

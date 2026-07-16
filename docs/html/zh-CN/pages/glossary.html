@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>术语表 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="glossary">术语表</h1>
+          <p class="subtitle">dl-paper-repro 核心术语定义</p>
+        </header>
+
+        <section id="core-concepts">
+          <h2 id="core-concepts">核心概念</h2>
+          
+          <dl class="glossary-list">
+            <dt>论文复现 (Paper Reproduction)</dt>
+            <dd>验证论文中报告的实验结果的过程，确保可以独立复现。</dd>
+            
+            <dt>证据链 (Evidence Chain)</dt>
+            <dd>记录复现过程每一步的数据和结果的审计跟踪。</dd>
+            
+            <dt>数据契约 (Data Contract)</dt>
+            <dd>定义输入数据格式和约束的规范，确保数据一致性。</dd>
+            
+            <dt>指标协议 (Metric Protocol)</dt>
+            <dd>定义如何计算和比较性能指标的标准方法。</dd>
+          </dl>
+        </section>
+
+        <section id="gates">
+          <h2 id="gates">Gate 系统</h2>
+          
+          <dl class="glossary-list">
+            <dt>Gate 0 - 环境</dt>
+            <dd>验证软件环境、依赖和配置。</dd>
+            
+            <dt>Gate 1 - 数据</dt>
+            <dd>验证数据集完整性、格式和下载。</dd>
+            
+            <dt>Gate 2 - 代码</dt>
+            <dd>验证代码适配性和运行时正确性。</dd>
+            
+            <dt>Gate 3 - 基线</dt>
+            <dd>验证基线训练可以正常运行。</dd>
+            
+            <dt>Gate 4 - 对比</dt>
+            <dd>对比复现结果与原始论文报告。</dd>
+            
+            <dt>Gate 5 - 审计</dt>
+            <dd>最终审计和报告生成。</dd>
+          </dl>
+        </section>
+
+        <section id="modes">
+          <h2 id="modes">执行模式</h2>
+          
+          <dl class="glossary-list">
+            <dt>Strict Mode</dt>
+            <dd>严格复现模式，不允许优化。</dd>
+            
+            <dt>Optimized Mode</dt>
+            <dd>优化复现模式，允许 AMP、DDP 等优化。</dd>
+            
+            <dt>Diagnose Mode</dt>
+            <dd>诊断模式，用于调试。</dd>
+            
+            <dt>Test Mode</dt>
+            <dd>测试模式，最小检查。</dd>
+            
+            <dt>Extend Mode</dt>
+            <dd>扩展模式，用于在原始结果上扩展。</dd>
+          </dl>
+        </section>
+
+        <section id="loops">
+          <h2 id="loops">短循环测试</h2>
+          
+          <dl class="glossary-list">
+            <dt>L0 - 冒烟测试</dt>
+            <dd>基本功能验证。</dd>
+            
+            <dt>L1 - 过拟合测试</dt>
+            <dd>验证模型在小数据集上过拟合。</dd>
+            
+            <dt>L2 - 小循环测试</dt>
+            <dd>端到端小规模运行。</dd>
+            
+            <dt>L3 - 恢复测试</dt>
+            <dd>验证从中断恢复。</dd>
+          </dl>
+        </section>
+
+        <section id="components">
+          <h2 id="components">系统组件</h2>
+          
+          <dl class="glossary-list">
+            <dt>编排器 (Orchestrator)</dt>
+            <dd>任务调度和状态管理。</dd>
+            
+            <dt>验证器 (Verifier)</dt>
+            <dd>验证任务执行结果。</dd>
+            
+            <dt>存储管理器 (Storage Governor)</dt>
+            <dd>管理磁盘空间和清理策略。</dd>
+            
+            <dt>执行控制器 (Execution Controller)</dt>
+            <dd>控制任务执行流程。</dd>
+            
+            <dt>策略引擎 (Policy Engine)</dt>
+            <dd>执行存储和执行策略。</dd>
+            
+            <dt>监控守护进程 (Watchdog)</dt>
+            <dd>监控任务状态和健康。</dd>
+          </dl>
+        </section>
+
+        <section id="status">
+          <h2 id="status">状态值</h2>
+          
+          <dl class="glossary-list">
+            <dt>PASS</dt>
+            <dd>检查通过。</dd>
+            
+            <dt>FAIL</dt>
+            <dd>检查失败。</dd>
+            
+            <dt>PENDING</dt>
+            <dd>等待处理。</dd>
+            
+            <dt>RUNNING</dt>
+            <dd>正在运行。</dd>
+            
+            <dt>SKIPPED</dt>
+            <dd>已跳过。</dd>
+          </dl>
+        </section>
+
+        <nav class="page-nav">
+          <a href="faq.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 常见问题</span>
+          </a>
+          <a href="../index.html" class="page-nav-link next">
+            <span class="page-nav-label">返回</span>
+            <span class="page-nav-title">概述 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#core-concepts" class="toc-link">核心概念</a></li>
+          <li class="toc-item"><a href="#gates" class="toc-link">Gate 系统</a></li>
+          <li class="toc-item"><a href="#modes" class="toc-link">执行模式</a></li>
+          <li class="toc-item"><a href="#loops" class="toc-link">短循环测试</a></li>
+          <li class="toc-item"><a href="#components" class="toc-link">系统组件</a></li>
+          <li class="toc-item"><a href="#status" class="toc-link">状态值</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

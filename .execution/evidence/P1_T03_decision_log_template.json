@@ -1,0 +1,33 @@
+{
+  "task_id": "P1_T03",
+  "phase": "P1_mode_contract",
+  "title": "新建 templates/decision_log.md 模板",
+  "status": "PASS",
+  "ts": "2026-07-15T22:00:00+08:00",
+  "acceptance_tests": {
+    "file_exists": "PASS",
+    "all_required_columns": "PASS"
+  },
+  "evidence": {
+    "template_path": "templates/decision_log.md",
+    "template_bytes": 1951,
+    "header_columns": ["id", "ts", "actor", "phase", "task_id", "decision_type", "before → after", "reason", "links"],
+    "seed_row_present": true,
+    "seed_row": "| D000 | 2026-07-15T21:51:30+08:00 | agent | P1_mode_contract | P1_T01 | note | — → project_mode='reproduce' in default state | Phase 1 baseline established; reproduce mode is the project default per Plan §4 | evidence/P1_T01_state_diff.json |"
+  },
+  "runtime_check": {
+    "import_module": "scripts/reproctl.py",
+    "function": "_append_decision_log",
+    "executed_from_cwd": "/tmp",
+    "result": "OK",
+    "notes": "Template materialization path is correctly absolute (script_dir.parent / templates / decision_log.md); function does NOT throw when cwd is not project root. Audit dir (.repro/repro_audit/) is still relative to cwd — observed but out-of-scope for P1_T03."
+  },
+  "out_of_scope_observations": [
+    {
+      "id": "OBS-P1-T03-1",
+      "description": "_append_decision_log creates .repro/ relative to cwd, not project root. If cwd != project root during a set_project_mode call, the audit log will land outside the repo.",
+      "suggested_fix": "Use script_dir = Path(__file__).resolve().parent.parent (the repo root) for audit_dir, then create .repro/repro_audit/ inside it.",
+      "tracked_in": "P1_followups (suggested)"
+    }
+  ]
+}

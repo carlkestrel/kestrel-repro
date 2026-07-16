@@ -1,0 +1,8 @@
+{
+  "phase": "P3_human_checkpoint",
+  "tasks": {
+    "P3_T01": {"status": "PASS", "file": "templates/human_checkpoints.md", "items": 12},
+    "P3_T02": {"status": "PASS", "command": "human-checkpoint", "tests_passed": 5, "tests_failed": 0},
+    "P3_T03": {"status": "PASS", "file": "commands/repro-launch.md", "pre_checks": ["human-checkpoint","compute-budget","mode-not-extend"]}
+  }
+}

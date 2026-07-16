@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>复现协议 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="reproduction">复现协议</h1>
+          <p class="subtitle">论文复现的标准流程和验收标准</p>
+        </header>
+
+        <section id="overview">
+          <h2 id="overview">概述</h2>
+          <p>复现协议定义了论文复现的标准流程和验收标准。</p>
+        </section>
+
+        <section id="phases">
+          <h2 id="phases">复现阶段</h2>
+          
+          <h3 id="gate0">Gate 0: 论文审计</h3>
+          <p><strong>目标</strong>：验证论文数据和声明的完整性。</p>
+          <p><strong>检查项</strong>：</p>
+          <ul>
+            <li>论文 PDF 可访问</li>
+            <li>论文声明可提取</li>
+            <li>目标指标已定义</li>
+            <li>数据集可用</li>
+            <li>硬件要求明确</li>
+          </ul>
+          
+          <h3 id="gate1">Gate 1: 预检</h3>
+          <p><strong>目标</strong>：验证环境满足复现要求。</p>
+          <p><strong>检查项</strong>：</p>
+          <ul>
+            <li>Python 环境正确</li>
+            <li>PyTorch 安装</li>
+            <li>CUDA 版本匹配</li>
+            <li>GPU 可用</li>
+            <li>磁盘空间充足</li>
+            <li>依赖安装完成</li>
+          </ul>
+          
+          <h3 id="gate2">Gate 2: 短循环测试</h3>
+          <p><strong>目标</strong>：验证代码可运行且基本正确。</p>
+          
+          <h4 id="l0">L0: 冒烟测试</h4>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py run-short-loop --level L0</code></pre>
+          </div>
+          <p><strong>检查项</strong>：</p>
+          <ul>
+            <li>单批次前向传播成功</li>
+            <li>单批次反向传播成功</li>
+            <li>梯度计算正确</li>
+            <li>损失函数输出有效值</li>
+          </ul>
+          
+          <h4 id="l1">L1: 过拟合测试</h4>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py run-short-loop --level L1 --overfit-steps 100</code></pre>
+          </div>
+          
+          <h4 id="l2">L2: 小数据集循环</h4>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py run-short-loop --level L2 --epochs 3</code></pre>
+          </div>
+          
+          <h4 id="l3">L3: 检查点恢复</h4>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py run-short-loop --level L3</code></pre>
+          </div>
+          
+          <h3 id="gate3">Gate 3: 奇偶校验</h3>
+          <p><strong>目标</strong>：验证优化和标准实现的一致性。</p>
+          
+          <h3 id="gate4">Gate 4: 完整训练</h3>
+          <p><strong>目标</strong>：运行完整训练并达到目标指标。</p>
+          
+          <h3 id="gate5">Gate 5: 证据链</h3>
+          <p><strong>目标</strong>：生成完整的可审计证据链。</p>
+        </section>
+
+        <section id="tolerance">
+          <h2 id="tolerance">指标验收标准</h2>
+          
+          <h3 id="strict-mode">严格模式 (strict_repro)</h3>
+          <table>
+            <thead>
+              <tr><th>指标类型</th><th>容差</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>主要指标</td><td>±0.5 pp</td></tr>
+              <tr><td>次要指标</td><td>±1.0 pp</td></tr>
+              <tr><td>效率指标</td><td>±10%</td></tr>
+            </tbody>
+          </table>
+          
+          <h3 id="optimized-mode">优化模式 (optimized_repro_safe)</h3>
+          <table>
+            <thead>
+              <tr><th>指标类型</th><th>容差</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>主要指标</td><td>±0.5 pp</td></tr>
+              <tr><td>次要指标</td><td>±1.0 pp</td></tr>
+              <tr><td>效率指标</td><td>±10%</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="automation.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 自动化</span>
+          </a>
+          <a href="search_github.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">GitHub 搜索 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#overview" class="toc-link">概述</a></li>
+          <li class="toc-item"><a href="#phases" class="toc-link">复现阶段</a></li>
+          <li class="toc-item"><a href="#tolerance" class="toc-link">指标验收标准</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

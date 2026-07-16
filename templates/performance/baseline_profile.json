@@ -1,0 +1,73 @@
+{
+  "config_id": "",
+  "mode": "strict_repro",
+  "config": {
+    "precision": "",
+    "micro_batch": null,
+    "grad_accum_steps": null,
+    "global_batch": null,
+    "num_workers": null,
+    "prefetch_factor": null,
+    "pin_memory": false,
+    "persistent_workers": false,
+    "torch_compile": false,
+    "activation_checkpointing": false,
+    "world_size": 1,
+    "device": ""
+  },
+  "protocol": {
+    "model": "",
+    "dataset": "",
+    "loss": "",
+    "optimizer": "",
+    "lr": "",
+    "scheduler": "",
+    "epochs": null,
+    "eval_protocol": ""
+  },
+  "warmup": {
+    "steps": 0,
+    "duration_s": null
+  },
+  "measurement": {
+    "steps": 0,
+    "duration_s": null,
+    "samples_per_second": null,
+    "points_per_second": null,
+    "step_time_mean_s": null,
+    "step_time_p50_s": null,
+    "step_time_p95_s": null
+  },
+  "memory": {
+    "gpu_memory_used_mb": null,
+    "gpu_memory_peak_mb": null,
+    "ram_used_gb": null
+  },
+  "gpu_metrics": {
+    "utilization_pct": null,
+    "temperature_c": null,
+    "power_draw_w": null
+  },
+  "loss": {
+    "final": null,
+    "trajectory": []
+  },
+  "gradient_norm": {
+    "final": null,
+    "mean": null,
+    "max": null
+  },
+  "validation": {
+    "step": null,
+    "metric_value": null,
+    "metric_name": ""
+  },
+  "numerical": {
+    "nan_count": 0,
+    "inf_count": 0,
+    "gradient_vanishing": false,
+    "gradient_exploding": false
+  },
+  "created_at": "",
+  "source": "performance/baseline_profile.json"
+}

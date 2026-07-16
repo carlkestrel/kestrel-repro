@@ -1,0 +1,29 @@
+# Patch: BUG-001 — Fix state key inconsistency
+
+## Bug
+`get_default_state()` used key `control_flags` but `save_state()`/`load_state()` used `flags`.  
+This caused state fields to be inconsistent across code paths.
+
+## Root Cause
+`get_default_state()` (line 163) returned `{"control_flags": {...}}`  
+`save_state()`/`load_state()` use key `"flags"`
+
+## Fix
+Changed line 163 in `scripts/reproctl.py`:
+```diff
+-        "control_flags": {
++        "flags": {
+```
+
+## Verification
+```
+$ python3 tests/test_state_machine.py
+test_state_machine: 3/3 PASS
+```
+
+## Rollback
+Revert line 163:
+```diff
+-        "flags": {
++        "control_flags": {
+```

@@ -1,0 +1,29 @@
+precision: (FP32 / TF32 / BF16 / FP16)
+micro_batch: (recommended from capacity search)
+grad_accum_steps: (adjusted to match paper global batch)
+effective_global_batch: (from paper — must match)
+num_workers: (recommended from dataloader search)
+prefetch_factor: (recommended)
+pin_memory: (true/false)
+persistent_workers: (true/false)
+torch_compile: (true/false)
+activation_checkpointing: (true/false)
+world_size: 1
+device: cuda
+protocol_preserved: true
+protocol_deviations: []
+numerical_reference: (baseline config id)
+numerical_parity_report: performance/numerical_parity_report.md
+performance_reference:
+  throughput_samples_per_s: null
+  step_time_mean_s: null
+  speedup_vs_baseline: null
+  gpu_memory_peak_mb: null
+  source: performance/tuning_trials.csv
+comparisons:
+  - baseline_config_id: (baseline)
+    candidate_config_id: (this)
+    throughput_delta_pct: null
+    memory_delta_mb: null
+    numerical_delta: (within tolerance)
+    status: (NUMERICAL_EQUIVALENT / NUMERICAL_DIFFERENT)

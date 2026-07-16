@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "adapter.schema.json",
+  "title": "Repo Adapter Schema",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["adapter_version", "repo_url", "commit"],
+  "properties": {
+    "adapter_version": {"type": "string"},
+    "repo_url": {"type": "string", "format": "uri"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+    "branch": {"type": "string"},
+    "is_official": {"type": "boolean"},
+    "detected_train_script": {"type": "string"},
+    "config_files": {"type": "array", "items": {"type": "string"}},
+    "dataset_info": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "size_gb": {"type": "number"},
+        "path": {"type": "string"}
+      }
+    },
+    "model_info": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "params_m": {"type": "number"}
+      }
+    }
+  }
+}

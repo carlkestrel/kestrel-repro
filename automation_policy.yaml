@@ -1,0 +1,277 @@
+# Automation Policy for dl-paper-repro
+# 
+# This file defines the automation behavior for the NORA-style autopilot.
+# It is loaded dynamically and can be modified without restarting the autopilot.
+#
+# Modes:
+#   safe-auto  - Conservative mode, requires approval for most modifications
+#   auto      - More permissive, fewer approval gates
+#   manual    - All operations require approval
+#
+# Risk Levels:
+#   R0 - Read-only checks, automatic execution
+#   R1 - Project-internal, reversible modifications, automatic with diff logging
+#   R2 - Within budget downloads, mini-loops, short benchmarks
+#   R3 - Full training, over-budget downloads, remote GPU (pre-approved if conditions met)
+#   R4 - Delete data, overwrite checkpoint, change evaluation protocol, publish, 
+#        process credentials (always requires approval)
+
+mode: safe-auto
+run_until: blocked-or-complete
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Budget limits
+# ─────────────────────────────────────────────────────────────────────────────
+
+budgets:
+  max_gpu_hours: 24              # Maximum GPU training hours
+  max_download_gb: 30             # Maximum data download in GB
+  max_disk_growth_gb: 100        # Maximum disk space growth
+  max_task_minutes: 120          # Maximum time for a single task
+  max_retries: 2                 # Maximum retry attempts for failed tasks
+  approval_wait_seconds: 30       # Seconds to wait for approval before blocking
+  max_parallel_tasks: 4          # Maximum parallel running tasks
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Hardware constraints
+# ─────────────────────────────────────────────────────────────────────────────
+
+hardware:
+  max_gpu_temperature_c: 85       # Maximum GPU temperature before warning
+  min_free_disk_gb: 30           # Minimum free disk space
+  reserve_vram_mb: 1500          # Reserve VRAM for system
+  allow_mixed_precision: true    # Allow AMP (automatic mixed precision)
+  allow_tf32: true              # Allow TF32 on Ampere+
+  allow_compile: benchmark-first # torch.compile only after benchmark
+  oom_recovery_strategy:         # Ordered list of OOM recovery actions
+    - gradient_accumulation
+    - reduce_batch_size
+    - activation_checkpointing
+    - amp
+    - reduce_workers
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Approval requirements by gate type
+# ─────────────────────────────────────────────────────────────────────────────
+
+gates:
+  # R0 gates - automatic execution
+  read_only: AUTO_EXECUTE
+  safe: AUTO_EXECUTE
+  
+  # R1 gates - automatic with logging
+  compute_metrics: AUTO_EXECUTE
+  generate_report: AUTO_EXECUTE
+  
+  # R2 gates - automatic within budget
+  mini_benchmark: AUTO_EXECUTE
+  small_download: AUTO_EXECUTE
+  
+  # R3 gates - require approval or pre-approved conditions
+  gpu_training:
+    decision: REQUIRE_APPROVAL
+    preapproved_if:
+      - readiness_gate_passed
+      - hardware_audit_passed
+      - data_contract_signed
+  
+  full_training: REQUIRE_APPROVAL
+  
+  # R4 gates - always require approval
+  modify_project_files: REQUIRE_APPROVAL
+  destructive: REJECT
+  protocol_change: REQUIRE_APPROVAL
+  external_publish: REQUIRE_APPROVAL
+  credential_access: REQUIRE_APPROVAL
+  large_download_over_budget: REQUIRE_APPROVAL
+  checkpoint_overwrite: REQUIRE_APPROVAL
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Default gate behavior
+# ─────────────────────────────────────────────────────────────────────────────
+
+default: REQUIRE_APPROVAL
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Safe auto execution boundaries
+# ─────────────────────────────────────────────────────────────────────────────
+
+safe_auto_boundary:
+  # Allowed write paths (relative to project root)
+  allowed_write_roots:
+    - .repro
+    - .execution
+    - output
+    - reports
+    - artifacts
+    - logs
+  
+  # Forbidden paths (never auto-execute)
+  forbidden_paths:
+    - src
+    - configs
+    - scripts
+    - README.md
+    - paper
+    - papers
+    - .git
+  
+  # Forbidden operations
+  forbidden_operations:
+    - delete_data
+    - overwrite_checkpoint
+    - change_evaluation_protocol
+    - publish_results
+    - access_credentials
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage-specific policies
+# ─────────────────────────────────────────────────────────────────────────────
+
+stages:
+  takeover:
+    auto_proceed: false
+    require_approval_for:
+      - destructive_cleanup
+  
+  hardware_audit:
+    auto_proceed: true
+    block_on_fail: true
+  
+  data_contract:
+    auto_proceed: false
+    require_approval_for:
+      - external_data_access
+  
+  l0_static_check:
+    auto_proceed: true
+    block_on_fail: true
+  
+  l1_real_batch:
+    auto_proceed: true
+    block_on_fail: true
+    max_minutes: 30
+  
+  l2_tiny_overfit:
+    auto_proceed: true
+    block_on_fail: true
+    max_minutes: 60
+  
+  l3_short_eval:
+    auto_proceed: true
+    block_on_fail: true
+    max_minutes: 60
+  
+  readiness_gate:
+    auto_proceed: false
+    require_approval_for:
+      - proceed_to_full_training
+  
+  full_training:
+    auto_proceed: false
+    require_approval_for:
+      - start_training
+      - extend_training
+  
+  evidence_audit:
+    auto_proceed: true
+    block_on_fail: false
+  
+  reproduction_report:
+    auto_proceed: true
+    block_on_fail: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Evidence requirements
+# ─────────────────────────────────────────────────────────────────────────────
+
+evidence:
+  required_for_all_tasks:
+    - command
+    - config
+    - git_commit
+    - environment
+    - start_time
+    - end_time
+    - exit_code
+  
+  required_for_training:
+    - checkpoint_path
+    - metrics_csv
+    - training_log
+    - hardware_metrics
+    - gpu_utilization
+    - memory_usage
+  
+  required_for_evaluation:
+    - predictions
+    - confusion_matrix
+    - metrics_json
+    - evaluation_log
+    - ground_truth_manifest
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Recovery policies
+# ─────────────────────────────────────────────────────────────────────────────
+
+recovery:
+  on_crash:
+    - detect_last_checkpoint
+    - verify_checkpoint_integrity
+    - resume_from_checkpoint
+    - do_not_mix_pre_post_metrics
+  
+  on_oom:
+    - log_oom_event
+    - apply_next_recovery_strategy
+    - retry_with_reduced_memory
+    - block_if_all_strategies_exhausted
+  
+  on_timeout:
+    - terminate_process
+    - save_partial_results
+    - mark_task_as_timeout
+    - schedule_retry_if_allowed
+  
+  max_recovery_attempts: 3
+  preserve_failed_run_evidence: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Monitoring thresholds
+# ─────────────────────────────────────────────────────────────────────────────
+
+monitoring:
+  heartbeat_interval_seconds: 10
+  stale_heartbeat_seconds: 60
+  gpu_check_interval_seconds: 30
+  log_update_threshold_seconds: 120
+  checkpoint_min_interval_seconds: 300
+  
+  alerts:
+    gpu_temperature_warning: 80
+    gpu_temperature_critical: 90
+    free_disk_warning_gb: 50
+    free_disk_critical_gb: 20
+    memory_usage_warning: 85
+    memory_usage_critical: 95
+    gpu_utilization_low: 20
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Risk thresholds
+# ─────────────────────────────────────────────────────────────────────────────
+
+risk_thresholds:
+  # Training duration
+  short_training_hours: 1
+  medium_training_hours: 8
+  long_training_hours: 24
+  
+  # Download size
+  small_download_mb: 100
+  medium_download_mb: 1000
+  large_download_mb: 10000
+  
+  # Disk usage
+  safe_disk_usage_gb: 50
+  warning_disk_usage_gb: 100
+  critical_disk_usage_gb: 200

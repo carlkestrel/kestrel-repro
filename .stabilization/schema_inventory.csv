@@ -1,0 +1,8 @@
+schema_name,file_path,exists,validated,mandatory_fields,optional_fields,schema_version_field
+config.schema.json,schemas/config.schema.json,NO,NO,,,
+plan.schema.json,schemas/plan.schema.json,NO,NO,,,
+task.schema.json,schemas/task.schema.json,NO,NO,,,
+state.schema.json,schemas/state.schema.json,NO,NO,,,
+adapter.schema.json,schemas/adapter.schema.json,NO,NO,,,
+run_manifest.schema.json,schemas/run_manifest.schema.json,NO,NO,,,
+evidence.schema.json,schemas/evidence.schema.json,NO,NO,,,

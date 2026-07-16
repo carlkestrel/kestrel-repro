@@ -1,0 +1,64 @@
+usage: reproctl.py [-h]
+                   {init,status,can-launch,launch,run-short-loop,verify,report,update-gate,help,record-experiment,update-experiment,get-experiments,human-checkpoint,check-principles,integrity-check} ...
+
+Deep Learning Paper Reproduction Controller
+
+positional arguments:
+  {init,status,can-launch,launch,run-short-loop,verify,report,update-gate,help,record-experiment,update-experiment,get-experiments,human-checkpoint,check-principles,integrity-check}
+    init                Initialize a new reproduction project
+    status              Show current gate status
+    can-launch          Check if training can be launched
+    launch              Launch full training
+    run-short-loop      Run short-loop validation tests
+    verify              Verify metrics from checkpoints
+    report              Generate human-readable report
+    update-gate         Manually update gate status
+    help                Show this help message
+    record-experiment   Append a row to experiments/experiment_tracker.csv
+    update-experiment   Update fields of an existing tracker row
+    get-experiments     Query tracker (AND-combined filters)
+    human-checkpoint    Enforce the 12-item human checkpoint
+    check-principles    Run the 5 highest principles against a JSON spec
+    integrity-check     Verify schema files and core artifact integrity
+
+options:
+  -h, --help            show this help message and exit
+
+reproctl.py — Deep Learning Paper Reproduction Controller (v0.2.0)
+
+This file is BOTH:
+  - The original CLI (init / status / can-launch / launch / run-short-loop /
+    verify / report / update-gate / record-experiment / update-experiment /
+    get-experiments / human-checkpoint / check-principles / help)
+  - A thin dispatcher for the NEW unified startup system
+    (start | doctor | status | resume | stop | verify | version)
+
+The new subcommands live in ``scripts/startup/cli.py`` and are the single
+source of truth for startup behavior. The Cursor commands under
+``commands/repro-*.md`` invoke this same script — there is no parallel
+implementation.
+
+Usage:
+    python reproctl.py <command> [options]
+
+Commands (unified startup system):
+    start           Bootstrap & start the project (unified entry)
+    doctor          Run preflight checks (no state mutation)
+    status          Show project state, lock, plan hash
+    resume          Resume an interrupted project
+    stop            Stop gracefully and clear the lock
+    verify          Verify the startup evidence chain
+    version         Print plugin + CLI version
+
+Commands (legacy, retained for backward compatibility):
+    init           Initialize a new reproduction project
+    can-launch     Check if full training can be launched
+    launch         Launch full training (with gate enforcement)
+    run-short-loop Run short-loop validation tests
+    report         Generate human-readable report
+    update-gate    Manually update gate status
+    record-experiment / update-experiment / get-experiments
+                    Experiment tracker helpers
+    human-checkpoint   Enforce the 12-item human checkpoint
+    check-principles   Run the 5 highest principles against a JSON spec
+    help           Show this help message

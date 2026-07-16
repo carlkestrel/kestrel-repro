@@ -1,0 +1,14 @@
+{
+  "project_mode": "plan",
+  "flags": {
+    "HUMAN_CHECKPOINT": true,
+    "AUTO_RETRY": true,
+    "ALLOW_NETWORK": true,
+    "REQUIRE_GIT_PIN": true,
+    "TOLERANCE_MIOU": 0.5,
+    "WIP_LIMIT": 1,
+    "EVIDENCE_REQUIRED": true
+  },
+  "gates": {},
+  "phase": "P1_mode_contract"
+}

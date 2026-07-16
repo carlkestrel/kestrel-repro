@@ -1,0 +1,30 @@
+# Patch: BUG-002 — Replace hardcoded metric with placeholder
+
+## Bug
+`templates/narrative_report.md` line 30 had `metric: 73.5%` (concrete number without source:)  
+in the traceability rule illustration.
+
+## Root Cause
+The example in the "Traceability rule" section used a concrete number to demonstrate format.
+
+## Fix
+Replaced concrete example values with placeholders:
+```diff
+-metric: 73.5%
+-source: experiments/r-001/metrics/eval_results.json:line_42
+-paper:  Table 3, row "Ours (KPConv)"
+-gap:    -0.4 pp (within ±0.5 pp tolerance)
++metric: [METRIC]
++source: experiments/<run_id>/raw_metrics.json:line_<N>
++paper:  Table X, row "..."
++gap:    ±X.X pp (within ±TOLERANCE_MIOU tolerance)
+```
+
+## Verification
+```
+$ grep -n 'metric:' templates/narrative_report.md | head -5
+(metric: [METRIC] — no concrete number)
+```
+
+## Rollback
+Restore concrete example values in the traceability rule illustration section.

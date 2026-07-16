@@ -1,0 +1,33 @@
+# Rollback Configuration
+
+default_config: strict_performance.yaml
+
+rollbacks:
+  - trigger:
+      type: OOM
+    action: use strict_performance.yaml
+
+  - trigger:
+      type: NUMERICAL_DIFFERENT
+    action: use strict_performance.yaml
+
+  - trigger:
+      type: LOSS_NAN
+    action: use strict_performance.yaml
+
+  - trigger:
+      type: METRIC_DEVIATION
+    action: use strict_performance.yaml
+
+  - trigger:
+      type: THERMAL_THROTTLING
+    action: reduce power limit or use strict_performance.yaml
+
+  - trigger:
+      type: SOAK_TEST_FAIL
+    action: use strict_performance.yaml
+
+rollback_commands:
+  strict: (verbatim command to launch with strict_performance.yaml)
+  optimized: (verbatim command to launch with optimized_performance.yaml)
+  last_checkpoint: (path to last valid checkpoint)

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="architecture">System Architecture</h1>
+          <p class="subtitle">Understanding the three-layer architecture of dl-paper-repro</p>
+        </header>
+
+        <section id="overview">
+          <h2 id="overview">Architecture Overview</h2>
+          <p>dl-paper-repro uses a three-layer architecture:</p>
+          <div class="flow-diagram">
+            <svg viewBox="0 0 700 200" width="100%">
+              <!-- Layer backgrounds -->
+              <rect x="10" y="10" width="680" height="50" rx="8" fill="#e3f2fd" stroke="#2563eb" stroke-width="2"/>
+              <rect x="10" y="75" width="680" height="50" rx="8" fill="#e8f5e9" stroke="#059669" stroke-width="2"/>
+              <rect x="10" y="140" width="680" height="50" rx="8" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+              
+              <!-- Layer labels -->
+              <text x="20" y="40" font-size="14" font-weight="bold" fill="#1a1a2e">CLI Layer</text>
+              <text x="120" y="40" font-size="12" fill="#4a4a68">reproctl.py dispatcher</text>
+              <text x="20" y="105" font-size="14" font-weight="bold" fill="#1a1a2e">Startup Subsystem</text>
+              <text x="200" y="105" font-size="12" fill="#4a4a68">doctor | lock | state_machine | recovery | config</text>
+              <text x="20" y="170" font-size="14" font-weight="bold" fill="#1a1a2e">Orchestrator Subsystem</text>
+              <text x="220" y="170" font-size="12" fill="#4a4a68">controller | scheduler | executor | watchdog | verifier</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="components">
+          <h2 id="components">Core Components</h2>
+          
+          <h3 id="cli-layer">CLI Layer</h3>
+          <p><code>reproctl.py</code> is the single entry point that dispatches to:</p>
+          <ul>
+            <li><strong>Startup CLI</strong> (<code>startup/cli.py</code>): start, doctor, status, resume, stop, verify, version</li>
+            <li><strong>Orchestrator CLI</strong> (<code>orchestrator/cli.py</code>): run, pause, continue, events, approve, reject, daemon</li>
+            <li><strong>Legacy Commands</strong>: init, launch, can-launch, report, update-gate (backward compatible)</li>
+          </ul>
+
+          <h3 id="startup-subsystem">Startup Subsystem</h3>
+          <table>
+            <thead>
+              <tr><th>Component</th><th>File</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>doctor</td><td>doctor.py</td><td>Environment preflight checks</td></tr>
+              <tr><td>lock</td><td>lock.py</td><td>PID file lock management</td></tr>
+              <tr><td>state_machine</td><td>state_machine.py</td><td>Project state transitions</td></tr>
+              <tr><td>recovery</td><td>recovery.py</td><td>Recovery from interruptions</td></tr>
+              <tr><td>config</td><td>config.py</td><td>Configuration loading and merging</td></tr>
+              <tr><td>secrets_redactor</td><td>secrets_redactor.py</td><td>Credential redaction in logs</td></tr>
+              <tr><td>storage_governance</td><td>storage_governance.py</td><td>Disk policy and cleanup</td></tr>
+            </tbody>
+          </table>
+
+          <h3 id="orchestrator-subsystem">Orchestrator Subsystem</h3>
+          <table>
+            <thead>
+              <tr><th>Component</th><th>File</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>controller</td><td>controller.py</td><td>Main orchestration loop</td></tr>
+              <tr><td>state_store</td><td>state_store.py</td><td>SQLite state persistence</td></tr>
+              <tr><td>scheduler</td><td>scheduler.py</td><td>Task dependency scheduling</td></tr>
+              <tr><td>task_executor</td><td>task_executor.py</td><td>Command execution</td></tr>
+              <tr><td>watchdog</td><td>watchdog.py</td><td>Timeout and crash detection</td></tr>
+              <tr><td>verifier</td><td>verifier.py</td><td>Task acceptance testing</td></tr>
+              <tr><td>policy_engine</td><td>policy_engine.py</td><td>Approval policy rules</td></tr>
+              <tr><td>approval_gate</td><td>approval_gate.py</td><td>Human approval workflow</td></tr>
+              <tr><td>event_journal</td><td>event_journal.py</td><td>Event logging</td></tr>
+              <tr><td>process_manager</td><td>process_manager.py</td><td>Process lifecycle</td></tr>
+              <tr><td>backup</td><td>backup.py</td><td>State snapshots</td></tr>
+              <tr><td>migrate</td><td>migrate.py</td><td>Version migrations</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="statestore">
+          <h2 id="statestore">StateStore (SQLite)</h2>
+          <p>The orchestrator uses SQLite with WAL mode for persistent state:</p>
+          
+          <h3 id="database-schema">Database Schema</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>-- Database: .repro/execution/state.sqlite3
+-- Mode: WAL (Write-Ahead Logging)
+
+-- metadata: key-value control state
+CREATE TABLE metadata (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+-- Keys: control_state, plan_id, plan_path, mode, automation, mandatory_task_ids, budgets
+
+-- tasks: task definitions and state
+CREATE TABLE tasks (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  gate TEXT NOT NULL,
+  deps_json TEXT NOT NULL,
+  command TEXT NOT NULL,
+  timeout_min REAL NOT NULL,
+  acceptance_json TEXT NOT NULL,
+  retry_json TEXT NOT NULL,
+  task_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  attempts INTEGER DEFAULT 0,
+  pid INTEGER,
+  log_path TEXT,
+  started_at TEXT,
+  finished_at TEXT,
+  retry_at REAL,
+  failure_reason TEXT,
+  updated_at TEXT NOT NULL
+);
+
+-- approvals: human approval workflow
+CREATE TABLE approvals (
+  approval_id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  reason TEXT,
+  created_at TEXT NOT NULL,
+  expires_at REAL,
+  decided_at TEXT
+);
+
+-- events: event journal
+CREATE TABLE events (
+  seq INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  task_id TEXT,
+  payload_json TEXT NOT NULL
+);
+
+-- heartbeats: process heartbeats
+CREATE TABLE heartbeats (
+  owner TEXT PRIMARY KEY,
+  pid INTEGER NOT NULL,
+  timestamp REAL NOT NULL,
+  detail_json TEXT NOT NULL
+);</code></pre>
+          </div>
+        </section>
+
+        <section id="taskstate">
+          <h2 id="taskstate">Task State Machine</h2>
+          <p>Tasks follow a defined state transition machine:</p>
+          <div class="flow-diagram">
+            <svg viewBox="0 0 600 300" width="100%">
+              <!-- State boxes -->
+              <rect x="250" y="10" width="100" height="35" rx="5" fill="#e3f2fd" stroke="#2563eb" stroke-width="2"/>
+              <text x="300" y="33" text-anchor="middle" font-size="12" font-weight="bold">PENDING</text>
+              
+              <rect x="250" y="60" width="100" height="35" rx="5" fill="#e8f5e9" stroke="#059669" stroke-width="2"/>
+              <text x="300" y="83" text-anchor="middle" font-size="12" font-weight="bold">READY</text>
+              
+              <rect x="250" y="110" width="100" height="35" rx="5" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+              <text x="300" y="133" text-anchor="middle" font-size="12" font-weight="bold">RUNNING</text>
+              
+              <rect x="250" y="160" width="100" height="35" rx="5" fill="#fce4ec" stroke="#dc2626" stroke-width="2"/>
+              <text x="300" y="183" text-anchor="middle" font-size="12" font-weight="bold">VERIFYING</text>
+              
+              <rect x="250" y="210" width="100" height="35" rx="5" fill="#c8e6c9" stroke="#059669" stroke-width="2"/>
+              <text x="300" y="233" text-anchor="middle" font-size="12" font-weight="bold">PASS</text>
+              
+              <rect x="120" y="210" width="100" height="35" rx="5" fill="#ffcdd2" stroke="#dc2626" stroke-width="2"/>
+              <text x="170" y="233" text-anchor="middle" font-size="12" font-weight="bold">FAIL</text>
+              
+              <rect x="380" y="210" width="100" height="35" rx="5" fill="#fff9c4" stroke="#d97706" stroke-width="2"/>
+              <text x="430" y="233" text-anchor="middle" font-size="12" font-weight="bold">RETRY_WAIT</text>
+              
+              <!-- Arrows -->
+              <path d="M300 45 L300 57" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M300 95 L300 107" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M300 145 L300 157" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M300 195 L300 207" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              
+              <path d="M250 227 L225 227" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              <path d="M350 227 L380 227" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+              
+              <!-- Labels -->
+              <text x="310" y="53" font-size="9" fill="#666">READY</text>
+              <text x="310" y="103" font-size="9" fill="#666">RUNNING</text>
+              <text x="310" y="153" font-size="9" fill="#666">PASS/FAIL</text>
+              <text x="310" y="203" font-size="9" fill="#666">PASS</text>
+              <text x="210" y="220" font-size="9" fill="#666">FAIL</text>
+              <text x="385" y="220" font-size="9" fill="#666">RETRY</text>
+              
+              <!-- Marker -->
+              <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+                </marker>
+              </defs>
+            </svg>
+          </div>
+          
+          <h3 id="state-transitions">Valid Transitions</h3>
+          <table>
+            <thead>
+              <tr><th>From</th><th>To</th><th>Trigger</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>PENDING</td><td>READY</td><td>Dependencies satisfied</td></tr>
+              <tr><td>READY</td><td>RUNNING</td><td>Scheduler picks task</td></tr>
+              <tr><td>RUNNING</td><td>VERIFYING</td><td>Command completes</td></tr>
+              <tr><td>VERIFYING</td><td>PASS</td><td>Acceptance tests pass</td></tr>
+              <tr><td>VERIFYING</td><td>FAIL</td><td>Acceptance tests fail</td></tr>
+              <tr><td>FAIL</td><td>RETRY_WAIT</td><td>Retry policy allows</td></tr>
+              <tr><td>RETRY_WAIT</td><td>READY</td><td>Retry delay elapsed</td></tr>
+              <tr><td>READY</td><td>WAITING_APPROVAL</td><td>Policy requires approval</td></tr>
+              <tr><td>WAITING_APPROVAL</td><td>APPROVED</td><td>Human approves</td></tr>
+              <tr><td>WAITING_APPROVAL</td><td>REJECTED</td><td>Human rejects</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="gates">
+          <h2 id="gates">Gate System</h2>
+          <p>Six staged gates ensure quality before proceeding:</p>
+          <table>
+            <thead>
+              <tr><th>Gate</th><th>Name</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>gate_0</td><td>Paper Audit</td><td>Verify paper data and claims</td></tr>
+              <tr><td>gate_1</td><td>Preflight</td><td>Environment and dependencies</td></tr>
+              <tr><td>gate_2</td><td>Short Loop</td><td>L0-L3 validation tests</td></tr>
+              <tr><td>gate_3</td><td>Parity</td><td>Optimization parity check</td></tr>
+              <tr><td>gate_4</td><td>Full Training</td><td>Complete training run</td></tr>
+              <tr><td>gate_5</td><td>Evidence</td><td>Final evidence verification</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="exitcodes">
+          <h2 id="exitcodes">Exit Codes</h2>
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Name</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>0</code></td><td>SUCCESS</td><td>Command completed successfully</td></tr>
+              <tr><td><code>1</code></td><td>FAILURE</td><td>General failure or parameter error</td></tr>
+              <tr><td><code>2</code></td><td>CONFIG_ERROR</td><td>Configuration validation failed</td></tr>
+              <tr><td><code>3</code></td><td>EXIT_DOCTOR_FAIL</td><td>Doctor check failed (required items)</td></tr>
+              <tr><td><code>4</code></td><td>EXIT_ALREADY_RUNNING</td><td>Another instance is running</td></tr>
+              <tr><td><code>5</code></td><td>INVALID_PLAN</td><td>Plan file invalid or missing</td></tr>
+              <tr><td><code>6</code></td><td>TASK_FAILED</td><td>Task execution failed</td></tr>
+              <tr><td><code>7</code></td><td>TASK_BLOCKED</td><td>All tasks blocked (orchestrator)</td></tr>
+              <tr><td><code>8</code></td><td>EXIT_RESUME_FAILED</td><td>Recovery failed</td></tr>
+              <tr><td><code>9</code></td><td>SECURITY_BLOCKED</td><td>Security check blocked operation</td></tr>
+              <tr><td><code>10</code></td><td>INTERNAL_ERROR</td><td>Internal error (imports, etc.)</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="quickstart.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← Quick Start</span>
+          </a>
+          <a href="commands.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">Commands →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#overview" class="toc-link">Architecture Overview</a></li>
+          <li class="toc-item"><a href="#components" class="toc-link">Core Components</a></li>
+          <li class="toc-item"><a href="#statestore" class="toc-link">StateStore</a></li>
+          <li class="toc-item"><a href="#taskstate" class="toc-link">Task State Machine</a></li>
+          <li class="toc-item"><a href="#gates" class="toc-link">Gate System</a></li>
+          <li class="toc-item"><a href="#exitcodes" class="toc-link">Exit Codes</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

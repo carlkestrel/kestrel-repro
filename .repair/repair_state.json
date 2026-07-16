@@ -1,0 +1,28 @@
+{
+  "bug_id": "BUG-001",
+  "title": "test_state_machine fails — state key inconsistency",
+  "severity": "HIGH",
+  "fix_status": "FIXED",
+  "verification_status": "VERIFIED",
+  "fix_summary": "Changed get_default_state() to use 'flags' key (consistent with load_state/save_state)",
+  "files_modified": [
+    "scripts/reproctl.py (line 163: control_flags -> flags)"
+  ],
+  "tests_run": ["test_state_machine.py (3/3 PASS)"],
+  "regression_pass": true,
+  "fixed_at": "2026-07-16T02:20:00+08:00"
+}
+{
+  "bug_id": "BUG-002",
+  "title": "Hardcoded metric 73.5% in narrative_report.md",
+  "severity": "MEDIUM",
+  "fix_status": "FIXED",
+  "verification_status": "VERIFIED",
+  "fix_summary": "Replaced concrete example with placeholders [METRIC], <run_id>, etc.",
+  "files_modified": [
+    "templates/narrative_report.md (lines 30-33)"
+  ],
+  "tests_run": ["test_hardcoded_metrics.py (0 hardcoded metrics found)"],
+  "regression_pass": true,
+  "fixed_at": "2026-07-16T02:20:00+08:00"
+}

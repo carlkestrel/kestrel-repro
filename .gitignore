@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Cache
+.cache/
+.cache_*
+
+# Logs
+*.log
+logs/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Local artifacts
+.artifacts/
+artifacts/
+*.pt
+*.pth
+*.ckpt
+*.zip
+*.tar.gz
+
+# Test
+.pytest_cache/
+.coverage
+
+# Temporary
+*.tmp
+*.bak
+*~

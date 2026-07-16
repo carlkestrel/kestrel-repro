@@ -1,0 +1,73 @@
+# Search Plan Template
+# The machine-readable canonical form is templates/search_plan.json.
+# This YAML file is kept for human reference and shows every field with comments.
+# When you customize the search plan, edit the JSON; this file documents the schema.
+
+paper:
+  title: ""                 # Full paper title
+  url: ""                   # Open-access PDF or arXiv abstract URL
+  arxiv_id: ""              # e.g., 2401.12345
+  doi: ""                   # 10.xxxx/...
+  semantic_scholar_id: ""   # SS graph ID (e.g., "0e2d...")
+
+task_name: ""               # e.g., "point cloud change detection"
+model_name: ""              # e.g., "KPConv"
+dataset_name: ""            # primary Tier-A dataset
+
+metrics:                    # list of {name, paper_value, tolerance_pp}
+  - name: ""
+    paper_value: null
+    tolerance_pp: 0.5
+
+framework: "pytorch"         # pytorch | jax | tensorflow
+
+target_hardware:
+  gpu_model: ""             # e.g., "A100-80GB"
+  vram_gb: 24
+  num_gpus: 1
+  wall_clock_hours: 72
+
+search:
+  max_results_per_query: 50
+  year_min: 2020
+  year_max: 2026
+  backends: ["arxiv", "semantic_scholar", "github", "papers_with_code"]
+  max_total_queries: 500
+  max_pages_per_domain: 100
+  max_total_pages: 1000
+  max_response_bytes: 5242880   # 5 MB
+  max_total_runtime_seconds: 1800  # 30 min
+  rate_limit_per_second: 2.0
+  retry_max: 3
+  retry_initial_backoff_seconds: 1.0
+  retry_max_backoff_seconds: 30.0
+  cache_etag: true
+
+crawler:
+  user_agent: "dl-paper-repro-crawler/1.0 (+research-only)"
+  robots_respect: true
+  domain_whitelist:
+    - "arxiv.org"
+    - "semanticscholar.org"
+    - "github.com"
+    - "raw.githubusercontent.com"
+    - "paperswithcode.com"
+    - "openaccess.thecvf.com"
+    - "openreview.net"
+    - "neurips.cc"
+    - "icml.cc"
+    - "cvf.io"
+  forbid_patterns:
+    - "*/admin/*"
+    - "*/login*"
+    - "*/api/private*"
+
+output_paths:
+  candidate_sources_csv: "candidate_sources.csv"
+  ranked_repositories_csv: "ranked_repositories.csv"
+  paper_code_links_json: "paper_code_links.json"
+  dataset_checkpoint_links_json: "dataset_checkpoint_links.json"
+  evidence_graph_json: "evidence_graph.json"
+  search_gaps_md: "search_gaps.md"
+  search_lessons_jsonl: "search_lessons.jsonl"
+  raw_crawl_dir: "raw_crawl_data/"

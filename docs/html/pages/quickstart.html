@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Start - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="quickstart">Quick Start Guide</h1>
+          <p class="subtitle">Get up and running with dl-paper-repro in 5 minutes</p>
+        </header>
+
+        <section id="workflow">
+          <h2 id="workflow">Command Workflow</h2>
+          <p>The typical project lifecycle follows this sequence:</p>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">1</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py doctor --project .</div>
+              <p>Run preflight checks to verify environment</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">2</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode strict</div>
+              <p>Bootstrap and start the project</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">3</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator run --project . --plan output/PAPER_PLAN.md</div>
+              <p>Run the task orchestrator</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">4</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator status --project .</div>
+              <p>Monitor project status</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">5</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator pause --project .</div>
+              <p>Pause execution if needed</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">6</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py orchestrator continue --project .</div>
+              <p>Resume execution</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">7</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py stop --project .</div>
+              <p>Stop gracefully when done</p>
+            </div>
+          </div>
+          
+          <div class="flow-step">
+            <div class="flow-step-number">8</div>
+            <div class="flow-step-content">
+              <div class="flow-step-command">python scripts/reproctl.py verify --project .</div>
+              <p>Verify the evidence chain</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="examples">
+          <h2 id="examples">Command Examples</h2>
+          
+          <h3 id="doctor">Doctor Check</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Run preflight checks
+python scripts/reproctl.py doctor --project .
+
+# Specify expected CUDA version
+python scripts/reproctl.py doctor --project . --expected-cuda 12.0
+
+# Expected output:
+# {
+#   "checks": [...],
+#   "summary": "PASS",
+#   "exit_code": 0
+# }</code></pre>
+          </div>
+          
+          <h3 id="start">Start Project</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Start in strict mode
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode strict
+
+# Dry run (no lock acquired)
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --dry-run
+
+# Start in optimized mode
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode optimized</code></pre>
+          </div>
+          
+          <h3 id="status">Check Status</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Startup status
+python scripts/reproctl.py status --project .
+
+# Orchestrator status
+python scripts/reproctl.py orchestrator status --project .
+
+# Expected output:
+# {
+#   "project_root": "/path/to/project",
+#   "control_state": "RUNNING",
+#   "counts": {"PASS": 5, "RUNNING": 1, "PENDING": 3},
+#   "tasks": [...],
+#   "pending_approvals": [...]
+# }</code></pre>
+          </div>
+          
+          <h3 id="resume">Resume</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Resume interrupted project
+python scripts/reproctl.py resume --project .</code></pre>
+          </div>
+          
+          <h3 id="stop">Stop</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Graceful stop
+python scripts/reproctl.py stop --project .</code></pre>
+          </div>
+          
+          <h3 id="verify">Verify</h3>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Verify evidence chain
+python scripts/reproctl.py verify --project .
+
+# Exit codes:
+# 0 = verification passed
+# 8 = verification failed</code></pre>
+          </div>
+        </section>
+
+        <section id="exit-codes">
+          <h2 id="exit-codes">Exit Codes</h2>
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Meaning</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>0</code></td><td>Success</td></tr>
+              <tr><td><code>1</code></td><td>Failure / parameter error</td></tr>
+              <tr><td><code>2</code></td><td>Configuration error</td></tr>
+              <tr><td><code>3</code></td><td>Doctor check failed</td></tr>
+              <tr><td><code>4</code></td><td>Already running</td></tr>
+              <tr><td><code>5</code></td><td>Invalid plan</td></tr>
+              <tr><td><code>8</code></td><td>Recovery failed</td></tr>
+              <tr><td><code>10</code></td><td>Internal error</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="installation.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← Installation</span>
+          </a>
+          <a href="architecture.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">Architecture →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#workflow" class="toc-link">Command Workflow</a></li>
+          <li class="toc-item"><a href="#examples" class="toc-link">Command Examples</a></li>
+          <li class="toc-item"><a href="#doctor" class="toc-link">Doctor</a></li>
+          <li class="toc-item"><a href="#start" class="toc-link">Start</a></li>
+          <li class="toc-item"><a href="#status" class="toc-link">Status</a></li>
+          <li class="toc-item"><a href="#resume" class="toc-link">Resume</a></li>
+          <li class="toc-item"><a href="#stop" class="toc-link">Stop</a></li>
+          <li class="toc-item"><a href="#verify" class="toc-link">Verify</a></li>
+          <li class="toc-item"><a href="#exit-codes" class="toc-link">Exit Codes</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

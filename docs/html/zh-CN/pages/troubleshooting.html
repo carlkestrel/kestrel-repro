@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>故障排除 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="troubleshooting">故障排除</h1>
+          <p class="subtitle">常见问题和解决方案</p>
+        </header>
+
+        <section id="quick-diagnosis">
+          <h2 id="quick-diagnosis">快速诊断</h2>
+          
+          <h3 id="run-doctor">运行 Doctor</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py doctor --project .</code></pre>
+          </div>
+          <p>Doctor 会检查：</p>
+          <ul>
+            <li>Python 环境</li>
+            <li>依赖</li>
+            <li>GPU/CUDA</li>
+            <li>磁盘空间</li>
+            <li>配置文件</li>
+            <li>Git 状态</li>
+          </ul>
+        </section>
+
+        <section id="common-issues">
+          <h2 id="common-issues">常见问题</h2>
+          
+          <h3 id="q1-doctor-fail">Q1: Doctor 检查失败怎么办？</h3>
+          <p><strong>解决方案</strong>：</p>
+          <ol>
+            <li>查看详细报告：<code>cat .repro/startup/doctor_report.json</code></li>
+            <li>找到 FAIL 项</li>
+            <li>根据 fix 字段修复</li>
+          </ol>
+          
+          <h3 id="q2-lock-conflict">Q2: 锁文件冲突？</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 检查锁状态
+cat .repro/run.lock
+
+# 如果 PID 不存在，手动删除
+rm .repro/run.lock
+
+# 或停止旧实例
+python scripts/reproctl.py stop --project .</code></pre>
+          </div>
+          
+          <h3 id="q3-resume-fail">Q3: 恢复失败？</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 检查状态文件
+cat .repro/execution/execution_state.json
+
+# 如果 corrupt，手动修复或删除
+rm .repro/execution/execution_state.json
+
+# 重新启动
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --dry-run</code></pre>
+          </div>
+          
+          <h3 id="q4-task-stuck">Q4: 任务一直卡住？</h3>
+          <ol>
+            <li>检查任务状态：<code>python scripts/reproctl.py orchestrator status --project .</code></li>
+            <li>查看事件日志：<code>python scripts/reproctl.py orchestrator events --project . --limit 20</code></li>
+            <li>查看任务日志：<code>cat .repro/execution/tasks/&lt;task-id&gt;.log</code></li>
+          </ol>
+          
+          <h3 id="q5-gpu-unavailable">Q5: GPU 不可用？</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 检查 CUDA
+python -c "import torch; print(torch.cuda.is_available())"
+
+# 检查 nvidia-smi
+nvidia-smi</code></pre>
+          </div>
+          
+          <h3 id="q6-sqlite-locked">Q6: SQLite 数据库锁定？</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 检查 WAL 文件
+ls -la .repro/execution/state.sqlite3*
+
+# 删除 WAL
+rm .repro/execution/state.sqlite3-wal
+rm .repro/execution/state.sqlite3-shm
+
+# 重启
+python scripts/reproctl.py orchestrator stop --project .
+python scripts/reproctl.py orchestrator daemon --project . start --plan output/PAPER_PLAN.md</code></pre>
+          </div>
+          
+          <h3 id="q7-oom">Q7: 训练 OOM？</h3>
+          <ol>
+            <li>减小 batch size</li>
+            <li>减小图像分辨率</li>
+            <li>启用 AMP（混合精度）</li>
+            <li>启用 gradient checkpointing</li>
+          </ol>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py launch --mode optimized_repro_safe --epochs 300</code></pre>
+          </div>
+        </section>
+
+        <section id="get-help">
+          <h2 id="get-help">获取帮助</h2>
+          
+          <h3 id="command-help">查看命令帮助</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py --help
+python scripts/reproctl.py start --help
+python scripts/reproctl.py doctor --help</code></pre>
+          </div>
+        </section>
+
+        <nav class="page-nav">
+          <a href="security.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← 安全</span>
+          </a>
+          <a href="faq.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">常见问题 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#quick-diagnosis" class="toc-link">快速诊断</a></li>
+          <li class="toc-item"><a href="#common-issues" class="toc-link">常见问题</a></li>
+          <li class="toc-item"><a href="#get-help" class="toc-link">获取帮助</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

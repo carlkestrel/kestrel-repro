@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automation - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="automation">Automation Workflow</h1>
+          <p class="subtitle">Configure and run automated task execution</p>
+        </header>
+
+        <section id="autopilot">
+          <h2 id="autopilot">Autopilot (NORA-style)</h2>
+          <p>The <code>autopilot.py</code> command provides a unified NORA-style entry point for continuous paper reproduction execution. It wraps the orchestrator with additional features for GPU monitoring, recovery, and status reporting.</p>
+          
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Start autopilot - continuous execution until blocked or complete
+python scripts/autopilot.py run --project . --until blocked-or-complete
+
+# Check status
+python scripts/autopilot.py status --project .
+
+# Recover from interruption
+python scripts/autopilot.py recover --project .
+
+# Pause/Stop/Continue
+python scripts/autopilot.py pause --project .
+python scripts/autopilot.py stop --project .
+python scripts/autopilot.py continue --project .
+
+# Takeover existing project
+python scripts/autopilot.py takeover --project .</code></pre>
+          </div>
+          
+          <h3>Autopilot Commands</h3>
+          <table>
+            <thead><tr><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>run</code></td><td>Continuous execution with automatic recovery</td></tr>
+              <tr><td><code>status</code></td><td>Show autopilot status, task counts, and heartbeat</td></tr>
+              <tr><td><code>recover</code></td><td>Recover from interrupted state</td></tr>
+              <tr><td><code>takeover</code></td><td>Analyze and takeover existing project</td></tr>
+              <tr><td><code>events</code></td><td>Stream the event log</td></tr>
+              <tr><td><code>approve</code></td><td>Approve a pending task</td></tr>
+              <tr><td><code>reject</code></td><td>Reject a pending task</td></tr>
+              <tr><td><code>daemon</code></td><td>Control daemon mode</td></tr>
+            </tbody>
+          </table>
+          
+          <h3>Run Options</h3>
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>--automation</code></td><td>safe-auto</td><td>Automation level: safe-auto, auto, manual</td></tr>
+              <tr><td><code>--until</code></td><td>blocked-or-complete</td><td>Run until: blocked, complete, blocked-or-complete, always</td></tr>
+              <tr><td><code>--mode</code></td><td>-</td><td>Execution mode: strict, optimized</td></tr>
+              <tr><td><code>--resume</code></td><td>false</td><td>Resume from interrupted state</td></tr>
+              <tr><td><code>--skip-doctor</code></td><td>false</td><td>Skip preflight checks</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="modes">
+          <h2 id="modes">Automation Modes</h2>
+          <table>
+            <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>safe-auto</code></td><td>Default. Pauses for approval on critical decisions.</td></tr>
+              <tr><td><code>auto</code></td><td>More permissive, fewer approval gates.</td></tr>
+              <tr><td><code>manual</code></td><td>All tasks require approval.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="daemon">
+          <h2 id="daemon">Daemon Mode</h2>
+          <p>Run the autopilot as a background daemon:</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Start daemon
+python scripts/autopilot.py daemon --project . start --plan output/PAPER_PLAN.md
+
+# Check status
+python scripts/autopilot.py daemon --project . status
+
+# Stop daemon
+python scripts/autopilot.py daemon --project . stop</code></pre>
+          </div>
+          <p>Or using the legacy reproctl command:</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Start daemon
+python scripts/reproctl.py orchestrator daemon --project . start --plan output/PAPER_PLAN.md
+
+# Check status
+python scripts/reproctl.py orchestrator daemon --project . status
+
+# Stop daemon
+python scripts/reproctl.py orchestrator daemon --project . stop</code></pre>
+          </div>
+        </section>
+
+        <section id="policy">
+          <h2 id="policy">Policy Files</h2>
+          <p>Create a policy file to control task approval:</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>{
+  "policy_id": "custom-policy",
+  "rules": [
+    {"condition": "task.gate == 'gate_0'", "action": "auto_approve"},
+    {"condition": "task.timeout_min > 60", "action": "require_approval"}
+  ],
+  "defaults": {
+    "approval_required": false,
+    "retry_on_failure": true,
+    "max_retries": 3
+  }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Use policy
+python scripts/reproctl.py orchestrator run --project . --plan output/PAPER_PLAN.md --policy policy.json</code></pre>
+          </div>
+        </section>
+
+        <section id="approval">
+          <h2 id="approval">Approval Workflow</h2>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># View pending approvals
+python scripts/reproctl.py orchestrator status --project .
+
+# Approve
+python scripts/reproctl.py orchestrator approve --project . apr_xxxxx
+
+# Reject
+python scripts/reproctl.py orchestrator reject --project . apr_xxxxx --reason "reason"</code></pre>
+          </div>
+        </section>
+
+        <section id="run-strategies">
+          <h2 id="run-strategies">Run Strategies</h2>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Until blocked or complete
+python scripts/reproctl.py orchestrator run --project . --plan output/PAPER_PLAN.md --until blocked-or-complete
+
+# Until complete
+python scripts/reproctl.py orchestrator run --project . --plan output/PAPER_PLAN.md --until complete
+
+# Run indefinitely
+python scripts/reproctl.py orchestrator run --project . --plan output/PAPER_PLAN.md</code></pre>
+          </div>
+        </section>
+
+        <nav class="page-nav">
+          <a href="takeover.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← Takeover Project</span>
+          </a>
+          <a href="reproduction.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">Reproduction Protocol →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#autopilot" class="toc-link">Autopilot (NORA-style)</a></li>
+          <li class="toc-item"><a href="#modes" class="toc-link">Automation Modes</a></li>
+          <li class="toc-item"><a href="#daemon" class="toc-link">Daemon Mode</a></li>
+          <li class="toc-item"><a href="#policy" class="toc-link">Policy Files</a></li>
+          <li class="toc-item"><a href="#approval" class="toc-link">Approval Workflow</a></li>
+          <li class="toc-item"><a href="#run-strategies" class="toc-link">Run Strategies</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

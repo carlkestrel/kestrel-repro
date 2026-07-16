@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glossary - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="glossary">Glossary</h1>
+          <p class="subtitle">Terms and definitions used in dl-paper-repro</p>
+        </header>
+
+        <section id="a">
+          <h2 id="a">A</h2>
+          
+          <h3 id="amp">AMP (Automatic Mixed Precision)</h3>
+          <p>Training technique that automatically switches between fp16 and fp32 to improve speed and reduce memory usage. Enable with <code>--amp</code> flag.</p>
+
+          <h3 id="api">API (Application Programming Interface)</h3>
+          <p>The CLI and Python functions provided by dl-paper-repro for programmatic access.</p>
+        </section>
+
+        <section id="b">
+          <h2 id="b">B</h2>
+          
+          <h3 id="backup">Backup</h3>
+          <p>Snapshot of state.sqlite3, startup directory, and experiment tracker. Created with <code>orchestrator backup</code>.</p>
+        </section>
+
+        <section id="c">
+          <h2 id="c">C</h2>
+          
+          <h3 id="cli">CLI (Command Line Interface)</h3>
+          <p>The <code>reproctl.py</code> script and its subcommands.</p>
+
+          <h3 id="controller">Controller</h3>
+          <p>Core orchestrator component that manages the task execution loop.</p>
+
+          <h3 id="cuda">CUDA</h3>
+          <p>NVIDIA's parallel computing platform and programming model. Required for GPU training.</p>
+
+          <h3 id="cursor-commands">Cursor Commands</h3>
+          <p>Slash commands available in Cursor IDE, defined in <code>commands/*.md</code>.</p>
+        </section>
+
+        <section id="d">
+          <h2 id="d">D</h2>
+          
+          <h3 id="ddp">DDP (Distributed Data Parallel)</h3>
+          <p>Multi-GPU training that distributes batches across GPUs. Use with <code>torchrun --nproc_per_node=N</code>.</p>
+
+          <h3 id="doctor">Doctor</h3>
+          <p>Preflight system that runs environment checks. Use <code>doctor --project .</code> to run.</p>
+        </section>
+
+        <section id="e">
+          <h2 id="e">E</h2>
+          
+          <h3 id="evidence-chain">Evidence Chain</h3>
+          <p>Complete record proving reproduction results are traceable and reproducible.</p>
+        </section>
+
+        <section id="g">
+          <h2 id="g">G</h2>
+          
+          <h3 id="gate">Gate</h3>
+          <p>Staged checkpoint that must pass before proceeding. Gates 0-5 cover paper audit through evidence verification.</p>
+
+          <h3 id="gpu">GPU</h3>
+          <p>Graphics Processing Unit, the primary hardware for deep learning training.</p>
+        </section>
+
+        <section id="h">
+          <h2 id="h">H</h2>
+          
+          <h3 id="heartbeat">Heartbeat</h3>
+          <p>Regular signal sent by the controller to indicate it's alive. Stored in <code>controller.heartbeat</code>.</p>
+        </section>
+
+        <section id="l">
+          <h2 id="l">L</h2>
+          
+          <h3 id="l0-l3">L0-L3</h3>
+          <p>Short loop test levels:</p>
+          <ul>
+            <li><strong>L0</strong> - Smoke test (single batch forward + backward)</li>
+            <li><strong>L1</strong> - Overfit test (memorize single batch)</li>
+            <li><strong>L2</strong> - Mini-loop test (end-to-end on small data)</li>
+            <li><strong>L3</strong> - Checkpoint resume test</li>
+          </ul>
+
+          <h3 id="lock">Lock</h3>
+          <p>Mechanism preventing concurrent access. Stored in <code>.repro/run.lock</code>.</p>
+        </section>
+
+        <section id="m">
+          <h2 id="m">M</h2>
+          
+          <h3 id="mode">Mode</h3>
+          <p>Execution configuration: strict (exact reproduction), optimized (with AMP/DDP), diagnose (debug), test, extend.</p>
+        </section>
+
+        <section id="o">
+          <h2 id="o">O</h2>
+          
+          <h3 id="orchestrator">Orchestrator</h3>
+          <p>Task scheduling and execution control subsystem. Commands: run, pause, continue, stop, status, events.</p>
+
+          <h3 id="oom">OOM (Out Of Memory)</h3>
+          <p>Error when GPU memory is exhausted. Solutions: reduce batch size, enable AMP, use gradient checkpointing.</p>
+        </section>
+
+        <section id="p">
+          <h2 id="p">P</h2>
+          
+          <h3 id="parity">Parity</h3>
+          <p>Verification that optimized mode produces equivalent results to strict mode. Required for Gate 3.</p>
+
+          <h3 id="pid">PID (Process ID)</h3>
+          <p>Unique identifier for a running process. Used in lock files to track running instances.</p>
+
+          <h3 id="plan">Plan</h3>
+          <p><code>PAPER_PLAN.md</code> file defining tasks and dependencies for a reproduction project.</p>
+
+          <h3 id="policy">Policy</h3>
+          <p>Rules controlling task execution and approval. Defined in JSON policy files.</p>
+        </section>
+
+        <section id="s">
+          <h2 id="s">S</h2>
+          
+          <h3 id="safe-auto">safe-auto</h3>
+          <p>Default automation strategy that pauses for human approval on critical decisions.</p>
+
+          <h3 id="schema">Schema</h3>
+          <p>JSON structure definition. dl-paper-repro uses schemas for config, plan, task, and other files.</p>
+
+          <h3 id="secrets">Secrets</h3>
+          <p>Credentials and API keys that should be protected. Automatically redacted in logs.</p>
+
+          <h3 id="startup">Startup</h3>
+          <p>Subsystem managing project initialization, preflight, and lock management.</p>
+
+          <h3 id="state-store">StateStore</h3>
+          <p>SQLite database storing orchestrator state with WAL mode. Located at <code>.repro/execution/state.sqlite3</code>.</p>
+        </section>
+
+        <section id="t">
+          <h2 id="t">T</h2>
+          
+          <h3 id="task">Task</h3>
+          <p>Minimum unit of work defined in a plan. Has command, timeout, acceptance tests, and retry policy.</p>
+
+          <h3 id="tolerance">Tolerance</h3>
+          <p>Allowed deviation in metrics. Both strict and optimized modes allow ±0.5 percentage points.</p>
+        </section>
+
+        <section id="w">
+          <h2 id="w">W</h2>
+          
+          <h3 id="wal">WAL (Write-Ahead Logging)</h3>
+          <p>SQLite journal mode that improves concurrent read performance. WAL files: <code>state.sqlite3-wal</code>, <code>state.sqlite3-shm</code>.</p>
+
+          <h3 id="watchdog">Watchdog</h3>
+          <p>Component monitoring task timeout and exceptions. Triggers FAIL if task exceeds timeout.</p>
+        </section>
+
+        <nav class="page-nav">
+          <a href="faq.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← FAQ</span>
+          </a>
+          <a href="../index.html" class="page-nav-link next">
+            <span class="page-nav-label">Back to</span>
+            <span class="page-nav-title">Overview</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#a" class="toc-link">A</a></li>
+          <li class="toc-item"><a href="#b" class="toc-link">B</a></li>
+          <li class="toc-item"><a href="#c" class="toc-link">C</a></li>
+          <li class="toc-item"><a href="#d" class="toc-link">D</a></li>
+          <li class="toc-item"><a href="#e" class="toc-link">E</a></li>
+          <li class="toc-item"><a href="#g" class="toc-link">G</a></li>
+          <li class="toc-item"><a href="#h" class="toc-link">H</a></li>
+          <li class="toc-item"><a href="#l" class="toc-link">L</a></li>
+          <li class="toc-item"><a href="#m" class="toc-link">M</a></li>
+          <li class="toc-item"><a href="#o" class="toc-link">O</a></li>
+          <li class="toc-item"><a href="#p" class="toc-link">P</a></li>
+          <li class="toc-item"><a href="#s" class="toc-link">S</a></li>
+          <li class="toc-item"><a href="#t" class="toc-link">T</a></li>
+          <li class="toc-item"><a href="#w" class="toc-link">W</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dl-paper-repro - 深度学习论文复现</title>
+  <meta name="description" content="基于证据驱动的深度学习论文仓库复现、审计和硬件优化系统">
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32" fill="none">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#2563eb"/>
+              <stop offset="100%" style="stop-color:#3b82f6"/>
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="6" fill="url(#logo-grad)"/>
+          <path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/>
+          <path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/>
+        </svg>
+        <div>
+          <div class="sidebar-title">dl-paper-repro</div>
+          <div class="sidebar-version">v0.2.0</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">快速开始</div>
+          <a href="index.html" class="nav-item active">
+            <svg><use href="assets/icons.svg#icon-home"/></svg>
+            概述
+          </a>
+          <a href="pages/installation.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-cpu"/></svg>
+            安装
+          </a>
+          <a href="pages/quickstart.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-play"/></svg>
+            快速上手
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">核心主题</div>
+          <a href="pages/architecture.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-book"/></svg>
+            架构
+          </a>
+          <a href="pages/commands.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-terminal"/></svg>
+            命令
+          </a>
+          <a href="pages/configuration.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-settings"/></svg>
+            配置
+          </a>
+          <a href="pages/project_structure.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-folder"/></svg>
+            项目结构
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">工作流</div>
+          <a href="pages/new_project.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-file"/></svg>
+            新项目
+          </a>
+          <a href="pages/takeover.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-refresh"/></svg>
+            项目接管
+          </a>
+          <a href="pages/automation.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-zap"/></svg>
+            自动化
+          </a>
+          <a href="pages/reproduction.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-check"/></svg>
+            复现协议
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">工具与操作</div>
+          <a href="pages/search_github.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-search"/></svg>
+            GitHub 搜索
+          </a>
+          <a href="pages/performance.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-hard-drive"/></svg>
+            性能
+          </a>
+          <a href="pages/backup_recovery.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-database"/></svg>
+            备份与恢复
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">运维</div>
+          <a href="pages/testing_ci.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-list"/></svg>
+            测试与 CI
+          </a>
+          <a href="pages/bug_repair.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-bug"/></svg>
+            Bug 修复
+          </a>
+          <a href="pages/security.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-shield"/></svg>
+            安全
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">参考</div>
+          <a href="pages/troubleshooting.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-alert"/></svg>
+            故障排除
+          </a>
+          <a href="pages/faq.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-question"/></svg>
+            常见问题
+          </a>
+          <a href="pages/glossary.html" class="nav-item">
+            <svg><use href="assets/icons.svg#icon-book-open"/></svg>
+            术语表
+          </a>
+        </div>
+        <div class="nav-section" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <a href="complete_manual.html" class="nav-item" style="font-weight: 500;">
+            <svg><use href="assets/icons.svg#icon-book"/></svg>
+            完整手册
+          </a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="切换菜单">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" class="search-input" placeholder="搜索文档... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="切换主题">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1>深度学习论文复现</h1>
+          <p class="subtitle">基于证据驱动的深度学习论文仓库复现、审计和硬件优化系统</p>
+        </header>
+        <section class="hero">
+          <svg class="hero-logo" viewBox="0 0 80 80" fill="none">
+            <defs>
+              <linearGradient id="hero-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#2563eb"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <rect width="80" height="80" rx="16" fill="url(#hero-grad)"/>
+            <path d="M20 30h15v5H25v15h10v5H20V30z" fill="white"/>
+            <path d="M40 20h20v5h-15v10h12.5v5H45v15h-5V20z" fill="white"/>
+            <circle cx="60" cy="60" r="7.5" fill="white" opacity="0.8"/>
+            <path d="M55 60h10M60 55v10" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <h1>dl-paper-repro</h1>
+          <p class="hero-subtitle">基于证据驱动的论文复现 Cursor 插件 + CLI</p>
+          <div class="hero-badges">
+            <span class="badge badge-stable">稳定版 v0.2.0</span>
+            <span class="badge badge-stable">PyTorch</span>
+            <span class="badge badge-stable">CUDA 就绪</span>
+          </div>
+          <div class="hero-meta">
+            <strong>插件路径:</strong> <code>~/.cursor/plugins/local/dl-paper-repro</code><br>
+            <strong>CLI 入口:</strong> <code>python scripts/reproctl.py</code><br>
+            <strong>Git 提交:</strong> <code>not-a-git-repo</code>
+          </div>
+        </section>
+        <section id="quickstart">
+          <h2>快速操作</h2>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <h3>5 分钟快速开始</h3>
+              <p>运行预检并引导您的第一个复现项目。</p>
+              <div class="code-block">
+                <button class="copy-button">复制</button>
+                <pre><code>python scripts/reproctl.py doctor --project .
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --mode strict</code></pre>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+              </div>
+              <h3>项目接管</h3>
+              <p>恢复中断或现有的复现项目。</p>
+              <div class="code-block">
+                <button class="copy-button">复制</button>
+                <pre><code>python scripts/reproctl.py status --project .
+python scripts/reproctl.py resume --project .</code></pre>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+              </div>
+              <h3>查看架构</h3>
+              <p>了解系统组件和数据流。</p>
+              <a href="pages/architecture.html" class="card-link">阅读架构文档 →</a>
+            </div>
+            <div class="card">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <h3>故障排除</h3>
+              <p>修复 Doctor 检查、锁和恢复的常见问题。</p>
+              <a href="pages/troubleshooting.html" class="card-link">查看故障排除 →</a>
+            </div>
+          </div>
+        </section>
+        <section id="commands">
+          <h2>核心命令</h2>
+          <p>所有命令使用 <code>python scripts/reproctl.py &lt;命令&gt;</code>：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>命令</th>
+                <th>类别</th>
+                <th>描述</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>doctor</code></td>
+                <td>启动</td>
+                <td>运行预检（无状态变更）</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>start</code></td>
+                <td>启动</td>
+                <td>引导和启动项目</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>status</code></td>
+                <td>启动</td>
+                <td>显示项目状态和锁状态</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>resume</code></td>
+                <td>启动</td>
+                <td>恢复中断的项目</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>stop</code></td>
+                <td>启动</td>
+                <td>优雅停止并清除锁</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>verify</code></td>
+                <td>启动</td>
+                <td>验证启动证据链</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>version</code></td>
+                <td>启动</td>
+                <td>打印插件和 CLI 版本</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>orchestrator run</code></td>
+                <td>编排器</td>
+                <td>运行持久化控制器循环</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>orchestrator daemon</code></td>
+                <td>编排器</td>
+                <td>后台守护进程控制</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+              <tr>
+                <td><code>storage</code></td>
+                <td>存储</td>
+                <td>磁盘策略和清理</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section id="features">
+          <h2>功能状态</h2>
+          <table class="status-table">
+            <thead>
+              <tr>
+                <th>功能</th>
+                <th>状态</th>
+                <th>描述</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>启动系统</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>项目初始化、预检、锁管理</td>
+              </tr>
+              <tr>
+                <td>编排器</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>任务调度、执行、使用 SQLite 状态监控</td>
+              </tr>
+              <tr>
+                <td>Gate 0-5 系统</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>分阶段复现门控与证据跟踪</td>
+              </tr>
+              <tr>
+                <td>L0-L3 短循环</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>冒烟测试、过拟合测试、小循环、恢复测试</td>
+              </tr>
+              <tr>
+                <td>存储治理</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>磁盘策略、保留、清理规划</td>
+              </tr>
+              <tr>
+                <td>备份与恢复</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>状态快照和恢复</td>
+              </tr>
+              <tr>
+                <td>人工检查点</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>12 项强制暂停-询问工作流</td>
+              </tr>
+              <tr>
+                <td>敏感信息脱敏</td>
+                <td><span class="badge badge-stable">稳定</span></td>
+                <td>凭证检测和日志清理</td>
+              </tr>
+              <tr>
+                <td>GitHub 爬虫</td>
+                <td><span class="badge badge-beta">测试版</span></td>
+                <td>仓库发现和评估</td>
+              </tr>
+              <tr>
+                <td>点云支持</td>
+                <td><span class="badge badge-experimental">实验性</span></td>
+                <td>点云论文专业复现</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section id="modes">
+          <h2>执行模式</h2>
+          <p>为您的复现目标选择合适的模式：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>模式</th>
+                <th>描述</th>
+                <th>需要 Gate 3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>strict</code></td>
+                <td>严格复现，无优化</td>
+                <td>否</td>
+              </tr>
+              <tr>
+                <td><code>optimized</code></td>
+                <td>允许 AMP 和 DDP 优化</td>
+                <td><strong>是</strong>（需要 parity 测试）</td>
+              </tr>
+              <tr>
+                <td><code>diagnose</code></td>
+                <td>调试模式，放宽约束</td>
+                <td>否</td>
+              </tr>
+              <tr>
+                <td><code>test</code></td>
+                <td>测试模式，最少检查</td>
+                <td>否</td>
+              </tr>
+              <tr>
+                <td><code>extend</code></td>
+                <td>扩展原始发现</td>
+                <td>不定</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="alert alert-info">
+            <div class="alert-title">关于容差的说明</div>
+            <p><code>strict</code> 和 <code>optimized</code> 模式都允许报告指标 ±0.5 个百分点的容差。</p>
+          </div>
+        </section>
+        <section id="security">
+          <h2>安全注意事项</h2>
+          <div class="alert alert-warning">
+            <div class="alert-title">API 令牌</div>
+            <p>切勿在配置文件中硬编码 API 令牌或凭证。使用环境变量，并确保 <code>.repro/</code> 在您的 <code>.gitignore</code> 中。</p>
+          </div>
+          <div class="alert alert-info">
+            <div class="alert-title">敏感信息扫描</div>
+            <p><code>doctor</code> 命令会扫描常见凭证模式，并在检测到时发出警告。分享日志前请先审查。</p>
+          </div>
+        </section>
+        <section id="complete-manual">
+          <h2>完整手册</h2>
+          <p>如需离线阅读或打印，请参阅 <a href="complete_manual.html">完整手册</a>，它将所有文档合并为包含内联资源的单个文件。</p>
+        </section>
+        <nav class="page-nav">
+          <span></span>
+          <a href="pages/installation.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">安装 →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#quickstart" class="toc-link">快速操作</a></li>
+          <li class="toc-item"><a href="#commands" class="toc-link">核心命令</a></li>
+          <li class="toc-item"><a href="#features" class="toc-link">功能状态</a></li>
+          <li class="toc-item"><a href="#modes" class="toc-link">执行模式</a></li>
+          <li class="toc-item"><a href="#security" class="toc-link">安全注意事项</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="19" x2="12" y2="5"/>
+      <polyline points="5 12 12 5 19 12"/>
+    </svg>
+  </button>
+</body>
+</html>

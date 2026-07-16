@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>硬件与性能 - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">快速开始</div>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>安装</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>快速上手</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">核心主题</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>架构</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>命令</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>配置</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>项目结构</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工作流</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>新项目</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>项目接管</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>自动化</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>复现协议</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">工具与操作</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>GitHub 搜索</a>
+          <a href="performance.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>性能</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>备份与恢复</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">运维</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>测试与 CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug 修复</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>安全</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">参考</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>故障排除</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>常见问题</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>术语表</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="菜单"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="搜索... (按 / 键)" aria-label="搜索">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="主题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="performance">硬件与性能</h1>
+          <p class="subtitle">GPU 要求、性能优化和监控</p>
+        </header>
+
+        <section id="requirements">
+          <h2 id="requirements">GPU 要求</h2>
+          
+          <h3 id="minimum">最低要求</h3>
+          <table>
+            <thead>
+              <tr><th>规格</th><th>要求</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>显存</td><td>8 GB</td></tr>
+              <tr><td>计算能力</td><td>7.0+</td></tr>
+              <tr><td>CUDA</td><td>11.0+</td></tr>
+            </tbody>
+          </table>
+          
+          <h3 id="recommended">推荐配置</h3>
+          <table>
+            <thead>
+              <tr><th>规格</th><th>推荐</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>显存</td><td>16-24 GB</td></tr>
+              <tr><td>计算能力</td><td>8.0+</td></tr>
+              <tr><td>CUDA</td><td>12.0+</td></tr>
+              <tr><td>多卡</td><td>2-4 卡</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="detection">
+          <h2 id="detection">GPU 检测</h2>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py doctor --project .</code></pre>
+          </div>
+          <p>Doctor 检查项：</p>
+          <ul>
+            <li><code>gpu</code>: GPU 可用性</li>
+            <li><code>cuda_match</code>: CUDA 版本匹配</li>
+            <li><code>driver</code>: NVIDIA 驱动</li>
+            <li><code>torch</code>: PyTorch 安装</li>
+          </ul>
+        </section>
+
+        <section id="optimization">
+          <h2 id="optimization">性能优化</h2>
+          
+          <h3 id="amp">混合精度 (AMP)</h3>
+          <p>启用 AMP 可加速训练并减少显存：</p>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/reproctl.py launch --mode optimized_repro_safe --epochs 300</code></pre>
+          </div>
+          
+          <h3 id="ddp">分布式训练 (DDP)</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code># 单机多卡
+torchrun --nproc_per_node=2 train.py
+
+# 多机多卡
+torchrun --nnodes=2 --nproc_per_node=2 --master_addr=$ADDR train.py</code></pre>
+          </div>
+        </section>
+
+        <section id="monitoring">
+          <h2 id="monitoring">性能监控</h2>
+          
+          <h3 id="realtime">实时监控</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>python scripts/training_monitor.py --interval 5</code></pre>
+          </div>
+          
+          <h3 id="gpu-util">GPU 利用率</h3>
+          <div class="code-block">
+            <button class="copy-button">复制</button>
+            <pre><code>nvidia-smi dmon -s u</code></pre>
+          </div>
+        </section>
+
+        <nav class="page-nav">
+          <a href="search_github.html" class="page-nav-link prev">
+            <span class="page-nav-label">上一页</span>
+            <span class="page-nav-title">← GitHub 搜索</span>
+          </a>
+          <a href="testing_ci.html" class="page-nav-link next">
+            <span class="page-nav-label">下一页</span>
+            <span class="page-nav-title">测试与 CI →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">页面内容</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#requirements" class="toc-link">GPU 要求</a></li>
+          <li class="toc-item"><a href="#detection" class="toc-link">GPU 检测</a></li>
+          <li class="toc-item"><a href="#optimization" class="toc-link">性能优化</a></li>
+          <li class="toc-item"><a href="#monitoring" class="toc-link">性能监控</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="返回顶部"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

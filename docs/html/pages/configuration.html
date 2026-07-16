@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuration - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="configuration">Configuration Reference</h1>
+          <p class="subtitle">Configuration fields, sources, and defaults</p>
+        </header>
+
+        <section id="fields">
+          <h2 id="fields">Configuration Fields</h2>
+          <p>Configuration sources (highest to lowest priority):</p>
+          <ol>
+            <li>CLI arguments</li>
+            <li>Environment variables (<code>REPRO_*</code>)</li>
+            <li>Project config (<code>.repro/config.yaml</code>, <code>repro.yaml</code>)</li>
+            <li>Defaults</li>
+          </ol>
+
+          <h3 id="core-fields">Core Fields</h3>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>mode</code></td><td>string</td><td>strict</td><td>Execution mode</td></tr>
+              <tr><td><code>log_level</code></td><td>string</td><td>INFO</td><td>Logging level</td></tr>
+              <tr><td><code>expected_cuda</code></td><td>string</td><td>-</td><td>Expected CUDA version</td></tr>
+              <tr><td><code>auto_proceed</code></td><td>boolean</td><td>false</td><td>Auto-proceed on warnings</td></tr>
+              <tr><td><code>human_checkpoint</code></td><td>boolean</td><td>true</td><td>Enforce 12-item checkpoint</td></tr>
+              <tr><td><code>automation</code></td><td>string</td><td>safe-auto</td><td>Automation strategy</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="modes">
+          <h2 id="modes">Execution Modes</h2>
+          <table>
+            <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>strict</code></td><td>Exact paper reproduction, no optimizations</td></tr>
+              <tr><td><code>safe</code></td><td>Safe mode with basic optimizations</td></tr>
+              <tr><td><code>fast</code></td><td>Fast mode with aggressive optimizations</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="retention">
+          <h2 id="retention">Retention Policy</h2>
+          <p>Controls how long different data types are kept:</p>
+          <table>
+            <thead><tr><th>Field</th><th>Options</th><th>Default</th></tr></thead>
+            <tbody>
+              <tr><td><code>raw_data</code></td><td>never_delete, delete_after_days</td><td>-</td></tr>
+              <tr><td><code>best_checkpoint</code></td><td>keep, delete_after_days</td><td>keep</td></tr>
+              <tr><td><code>intermediate_checkpoints</code></td><td>integer</td><td>3</td></tr>
+              <tr><td><code>failed_run_logs</code></td><td>keep, keep_until_final_audit, delete_after_days</td><td>-</td></tr>
+              <tr><td><code>generated_plots</code></td><td>keep, regenerable, delete_after_days</td><td>-</td></tr>
+              <tr><td><code>cache</code></td><td>keep, removable</td><td>-</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="diskpolicy">
+          <h2 id="diskpolicy">Disk Policy</h2>
+          <p>Controls disk space thresholds:</p>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>warning_free_gb</code></td><td>integer</td><td>50</td><td>Warn when free space below</td></tr>
+              <tr><td><code>stop_free_gb</code></td><td>integer</td><td>20</td><td>Stop when free space below</td></tr>
+              <tr><td><code>emergency_free_gb</code></td><td>integer</td><td>10</td><td>Emergency threshold</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="permissions">
+          <h2 id="permissions">Permissions</h2>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Default</th></tr></thead>
+            <tbody>
+              <tr><td><code>network_access</code></td><td>boolean</td><td>true</td></tr>
+              <tr><td><code>github_read</code></td><td>boolean</td><td>true</td></tr>
+              <tr><td><code>github_write</code></td><td>boolean</td><td>false</td></tr>
+              <tr><td><code>training_execute</code></td><td>boolean</td><td>true</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="envvars">
+          <h2 id="envvars">Environment Variables</h2>
+          <table>
+            <thead><tr><th>Variable</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>REPRO_FAKE_GPU=0</code></td><td>Simulate no GPU available</td></tr>
+              <tr><td><code>REPRO_FAKE_CUDA=11.8</code></td><td>Simulate specific CUDA version</td></tr>
+              <tr><td><code>REPRO_FAKE_DISK_FREE=1073741824</code></td><td>Simulate available disk space in bytes</td></tr>
+              <tr><td><code>REPRO_ORCHESTRATOR_DAEMON=1</code></td><td>Mark as daemon process</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <nav class="page-nav">
+          <a href="commands.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← Commands</span>
+          </a>
+          <a href="project_structure.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">Project Structure →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#fields" class="toc-link">Configuration Fields</a></li>
+          <li class="toc-item"><a href="#modes" class="toc-link">Execution Modes</a></li>
+          <li class="toc-item"><a href="#retention" class="toc-link">Retention Policy</a></li>
+          <li class="toc-item"><a href="#diskpolicy" class="toc-link">Disk Policy</a></li>
+          <li class="toc-item"><a href="#permissions" class="toc-link">Permissions</a></li>
+          <li class="toc-item"><a href="#envvars" class="toc-link">Environment Variables</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{
+  "created_at": "",
+  "hostname": "",
+  "container": "",
+  "os": {
+    "system": "",
+    "release": "",
+    "machine": ""
+  },
+  "cpu": {
+    "model": "",
+    "cores": null,
+    "threads": null,
+    "numa_nodes": null,
+    "topology": {}
+  },
+  "ram": {
+    "total_gb": null,
+    "available_gb": null,
+    "swap_total_gb": null,
+    "swap_free_gb": null
+  },
+  "gpu": [
+    {
+      "index": null,
+      "name": "",
+      "pci_bus_id": "",
+      "driver_version": "",
+      "cuda_version": "",
+      "cudnn_version": "",
+      "memory_total_mb": null,
+      "memory_free_mb": null,
+      "memory_used_mb": null,
+      "compute_capability": "",
+      "tensor_cores": false,
+      "bf16_supported": false,
+      "fp16_supported": false,
+      "topology": "",
+      "current_temperature_c": null,
+      "power_draw_w": null,
+      "power_limit_w": null,
+      "graphics_clock_mhz": null,
+      "sm_clock_mhz": null,
+      "mem_clock_mhz": null,
+      "current_gpu_processes": [],
+      "inconsistent_readings": false
+    }
+  ],
+  "pytorch": {
+    "version": "",
+    "cuda_available": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": false,
+    "torch_compile_available": false
+  },
+  "storage": [
+    {
+      "mount_point": "",
+      "fstype": "",
+      "total_gb": null,
+      "free_gb": null,
+      "read_speed_mbps": null,
+      "write_speed_mbps": null,
+      "is_ssd": null
+    }
+  ],
+  "shm": {
+    "size_gb": null,
+    "available_gb": null
+  },
+  "health_checks": {
+    "ecc_errors": false,
+    "driver_errors": false,
+    "overheating": false,
+    "throttling": false,
+    "hardware_unstable": false,
+    "stop_capacity_test": false,
+    "stop_reason": ""
+  },
+  "source": "performance/hardware_inventory.json"
+}

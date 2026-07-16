@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Troubleshooting - dl-paper-repro</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+  <script src="../assets/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 12h6v2H10v6h4v2H8V12z" fill="white"/><path d="M16 8h8v2h-6v4h5v2h-5v6h-2V8z" fill="white"/></svg>
+        <div><div class="sidebar-title">dl-paper-repro</div><div class="sidebar-version">v0.2.0</div></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section"><div class="nav-section-title">Getting Started</div>
+          <a href="../index.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-home"/></svg>Overview</a>
+          <a href="installation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-cpu"/></svg>Installation</a>
+          <a href="quickstart.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-play"/></svg>Quick Start</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Core Topics</div>
+          <a href="architecture.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book"/></svg>Architecture</a>
+          <a href="commands.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-terminal"/></svg>Commands</a>
+          <a href="configuration.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-settings"/></svg>Configuration</a>
+          <a href="project_structure.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-folder"/></svg>Project Structure</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Workflows</div>
+          <a href="new_project.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-file"/></svg>New Project</a>
+          <a href="takeover.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-refresh"/></svg>Takeover Project</a>
+          <a href="automation.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-zap"/></svg>Automation</a>
+          <a href="reproduction.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-check"/></svg>Reproduction Protocol</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Tools & Operations</div>
+          <a href="search_github.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-search"/></svg>Search GitHub</a>
+          <a href="performance.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-hard-drive"/></svg>Performance</a>
+          <a href="backup_recovery.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-database"/></svg>Backup & Recovery</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Operations</div>
+          <a href="testing_ci.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-list"/></svg>Testing & CI</a>
+          <a href="bug_repair.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-bug"/></svg>Bug Repair</a>
+          <a href="security.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-shield"/></svg>Security</a>
+        </div>
+        <div class="nav-section"><div class="nav-section-title">Reference</div>
+          <a href="troubleshooting.html" class="nav-item active"><svg><use href="../assets/icons.svg#icon-alert"/></svg>Troubleshooting</a>
+          <a href="faq.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-question"/></svg>FAQ</a>
+          <a href="glossary.html" class="nav-item"><svg><use href="../assets/icons.svg#icon-book-open"/></svg>Glossary</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" aria-label="Menu"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Search... (Press /)" aria-label="Search">
+          <div class="search-results"></div>
+        </div>
+        <button class="theme-toggle" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      </header>
+      <div class="content">
+        <header class="content-header">
+          <h1 id="troubleshooting">Troubleshooting Guide</h1>
+          <p class="subtitle">Fix common issues with diagnosis by symptom</p>
+        </header>
+
+        <section id="doctor-failures">
+          <h2 id="doctor-failures">Doctor Check Failures</h2>
+          <p>Run <code>doctor</code> to identify environment issues:</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code>python scripts/reproctl.py doctor --project .
+cat .repro/startup/doctor_report.json</code></pre>
+          </div>
+
+          <h3>Common Failures</h3>
+          <table>
+            <thead><tr><th>Check</th><th>Cause</th><th>Fix</th></tr></thead>
+            <tbody>
+              <tr><td>cuda_match</td><td>CUDA version mismatch</td><td>Install correct CUDA or use --expected-cuda</td></tr>
+              <tr><td>disk_space</td><td>Not enough free space</td><td>Free up disk space</td></tr>
+              <tr><td>security</td><td>Secrets detected in files</td><td>Remove sensitive information</td></tr>
+              <tr><td>leftover_procs</td><td>Old processes still running</td><td>Stop old instances</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="lock-conflicts">
+          <h2 id="lock-conflicts">Lock Conflicts</h2>
+          <div class="alert alert-warning">
+            <div class="alert-title">EXIT_ALREADY_RUNNING: 4</div>
+            <p>Another instance is already running or a stale lock exists.</p>
+          </div>
+
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Check lock contents
+cat .repro/run.lock
+
+# Check if PID exists
+ps aux | grep <PID>
+
+# Stop old instance
+python scripts/reproctl.py stop --project .
+
+# Or manually remove lock
+rm .repro/run.lock</code></pre>
+          </div>
+        </section>
+
+        <section id="recovery-failures">
+          <h2 id="recovery-failures">Recovery Failures</h2>
+          <div class="alert alert-warning">
+            <div class="alert-title">EXIT_RESUME_FAILED: 8</div>
+            <p>Could not recover from interrupted state.</p>
+          </div>
+
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Check execution state
+cat .repro/execution/execution_state.json
+
+# Reinitialize with dry-run
+python scripts/reproctl.py start --project . --plan output/PAPER_PLAN.md --dry-run</code></pre>
+          </div>
+        </section>
+
+        <section id="sqlite-locked">
+          <h2 id="sqlite-locked">SQLite Database Locked</h2>
+          <p>The SQLite database is locked by another process:</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Check WAL files
+ls -la .repro/execution/state.sqlite3*
+
+# Remove WAL to release lock
+rm .repro/execution/state.sqlite3-wal
+rm .repro/execution/state.sqlite3-shm
+
+# Restart orchestrator
+python scripts/reproctl.py orchestrator stop --project .
+python scripts/reproctl.py orchestrator daemon --project . start --plan output/PAPER_PLAN.md</code></pre>
+          </div>
+        </section>
+
+        <section id="gpu-issues">
+          <h2 id="gpu-issues">GPU Issues</h2>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Check CUDA
+python -c "import torch; print(torch.cuda.is_available())"
+python -c "import torch; print(torch.version.cuda)"
+
+# Check driver
+nvidia-smi
+
+# Skip GPU check (for testing)
+REPRO_FAKE_GPU=0 python scripts/reproctl.py doctor --project .</code></pre>
+          </div>
+        </section>
+
+        <section id="approval-stuck">
+          <h2 id="approval-stuck">Approval Workflow Stuck</h2>
+          <p>Tasks stuck in WAITING_APPROVAL state:</p>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># Check pending approvals
+python scripts/reproctl.py orchestrator status --project .
+
+# Approve task
+python scripts/reproctl.py orchestrator approve --project . apr_xxxxx
+
+# Or reject
+python scripts/reproctl.py orchestrator reject --project . apr_xxxxx --reason "reason"</code></pre>
+          </div>
+        </section>
+
+        <section id="diagnostic-commands">
+          <h2 id="diagnostic-commands">Diagnostic Commands</h2>
+          <div class="code-block">
+            <button class="copy-button">Copy</button>
+            <pre><code># 1. Environment
+python scripts/reproctl.py doctor --project .
+
+# 2. Project status
+python scripts/reproctl.py status --project .
+python scripts/reproctl.py orchestrator status --project .
+
+# 3. Events
+python scripts/reproctl.py orchestrator events --project . --limit 50
+
+# 4. Logs
+cat .repro/startup/startup.log
+cat .repro/execution/daemon.log
+
+# 5. Integrity
+python scripts/reproctl.py orchestrator integrity-check --project .
+python scripts/reproctl.py integrity-check</code></pre>
+          </div>
+        </section>
+
+        <nav class="page-nav">
+          <a href="project_structure.html" class="page-nav-link prev">
+            <span class="page-nav-label">Previous</span>
+            <span class="page-nav-title">← Project Structure</span>
+          </a>
+          <a href="faq.html" class="page-nav-link next">
+            <span class="page-nav-label">Next</span>
+            <span class="page-nav-title">FAQ →</span>
+          </a>
+        </nav>
+      </div>
+      <aside class="toc">
+        <div class="toc-title">On This Page</div>
+        <ul class="toc-list">
+          <li class="toc-item"><a href="#doctor-failures" class="toc-link">Doctor Failures</a></li>
+          <li class="toc-item"><a href="#lock-conflicts" class="toc-link">Lock Conflicts</a></li>
+          <li class="toc-item"><a href="#recovery-failures" class="toc-link">Recovery Failures</a></li>
+          <li class="toc-item"><a href="#sqlite-locked" class="toc-link">SQLite Locked</a></li>
+          <li class="toc-item"><a href="#gpu-issues" class="toc-link">GPU Issues</a></li>
+          <li class="toc-item"><a href="#approval-stuck" class="toc-link">Approval Stuck</a></li>
+          <li class="toc-item"><a href="#diagnostic-commands" class="toc-link">Diagnostic Commands</a></li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <button class="back-to-top" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+</body>
+</html>

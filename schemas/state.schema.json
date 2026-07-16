@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "state.schema.json",
+  "title": "Reproduction State Schema",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["paper_url", "phase", "gates", "current_mode"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "plugin_version": {"type": "string"},
+    "paper_url": {"type": "string"},
+    "paper_title": {"type": "string"},
+    "target_metrics": {"type": "array", "items": {"type": "string"}},
+    "phase": {
+      "type": "string",
+      "enum": ["init", "discovery", "short_loop", "full_training", "evidence", "complete"]
+    },
+    "gates": {"type": "object"},
+    "current_mode": {"type": "string", "enum": ["strict_repro", "optimized_repro_safe", "experimental_fast"]},
+    "project_mode": {"type": "string", "enum": ["reproduce", "diagnose", "extend"]},
+    "mode_switches": {"type": "array"},
+    "flags": {
+      "type": "object",
+      "properties": {
+        "AUTO_PROCEED": {"type": "boolean"},
+        "HUMAN_CHECKPOINT": {"type": "boolean"},
+        "EXTERNAL_REVIEW": {"type": "boolean"}
+      }
+    },
+    "repositories": {"type": "object"},
+    "runs": {"type": "array"},
+    "hardware": {"type": "object"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"}
+  }
+}

@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""Unix shebang wrapper for the unified reproctl entry.
+
+Calling `reproctl ...` from any cwd resolves the real script relative to
+this file, so the wrapper is relocatable (no hard-coded absolute paths).
+
+Usage:
+    reproctl start  --project <root> --plan <plan.md>
+    reproctl doctor --project <root>
+    reproctl status --project <root>
+    reproctl resume --project <root>
+    reproctl stop   --project <root>
+    reproctl verify --project <root>
+    reproctl version
+"""
+import os
+import runpy
+import sys
+from pathlib import Path
+
+_HERE = Path(__file__).resolve()
+_REAL = _HERE.parent / "reproctl.py"
+
+# Make the startup package importable from the real script's perspective.
+sys.path.insert(0, str(_HERE.parent))
+
+if __name__ == "__main__":
+    if not _REAL.exists():
+        print(f"[reproctl] real script missing: {_REAL}", file=sys.stderr)
+        sys.exit(10)
+    runpy.run_path(str(_REAL), run_name="__main__")

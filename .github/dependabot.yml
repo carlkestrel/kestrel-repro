@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    registries:
+      - pip-registry
+    open-pull-requests-limit: 10
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: UTC
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+      - "automated"
+    ignore:
+      - dependency-name: torch
+        update-types: ["version-update:semver-major"]
+      - dependency-name: torchvision
+        update-types: ["version-update:semver-major"]
+
+registries:
+  pip-registry:
+    type: pip-registry
+    url: https://pypi.org/simple/
+    token: ${{ secrets.GITHUB_TOKEN }}

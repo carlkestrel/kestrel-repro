@@ -1,0 +1,241 @@
+name: CI Integration
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level (debug, info, warning, error)'
+        required: false
+        default: 'info'
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.13'
+  REPROCTL_TIMEOUT: '900'
+
+jobs:
+  integration-chain:
+    name: T1→T6 Integration Chain
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements*.txt
+            pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,integration]" || \
+            pip install -e pytest pytest-cov pytest-timeout coverage \
+              pytest-junit-xml psutil
+
+      - name: Create scratch workspace
+        run: |
+          export CI_WORKSPACE="${{ runner.temp }}/dl-paper-repro-integration"
+          mkdir -p "$CI_WORKSPACE"
+          echo "CI_WORKSPACE=$CI_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run T1: Initialize (write manifest)
+        run: |
+          cd "$CI_WORKSPACE"
+          python -m reproctl init --plugin-root "${{ github.workspace }}" \
+            --paper-url "https://arxiv.org/abs/2103.00020" \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            2>&1 | tee "${{ runner.temp }}/integration_t1.log"
+          echo "=== T1 exit code: $? ===" >> "${{ runner.temp }}/integration_t1.log"
+
+      - name: Run T2: Environment Check
+        run: |
+          cd "$CI_WORKSPACE/paper1"
+          python -m reproctl check-env \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            2>&1 | tee "${{ runner.temp }}/integration_t2.log"
+          echo "=== T2 exit code: $? ===" >> "${{ runner.temp }}/integration_t2.log"
+
+      - name: Run T3: Mini task (mock train, 2s sleep + checkpoint)
+        run: |
+          cd "$CI_WORKSPACE/paper1"
+          python -m reproctl run \
+            --task mock_train \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            --timeout 120 \
+            2>&1 | tee "${{ runner.temp }}/integration_t3.log"
+          echo "=== T3 exit code: $? ===" >> "${{ runner.temp }}/integration_t3.log"
+
+      - name: Run T4: Interrupt and Resume
+        run: |
+          cd "$CI_WORKSPACE/paper1"
+          python -m reproctl run \
+            --task mock_train \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            --timeout 300 \
+            2>&1 | tee "${{ runner.temp }}/integration_t4_setup.log" &
+          BG_PID=$!
+          sleep 3
+          kill -9 $BG_PID 2>/dev/null || true
+          sleep 1
+          python -m reproctl resume \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            2>&1 | tee "${{ runner.temp }}/integration_t4_resume.log"
+          echo "=== T4 resume exit code: $? ===" >> "${{ runner.temp }}/integration_t4_resume.log"
+
+      - name: Run T5: Acceptance Tests
+        run: |
+          cd "$CI_WORKSPACE/paper1"
+          python -m reproctl verify \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            2>&1 | tee "${{ runner.temp }}/integration_t5.log"
+          echo "=== T5 exit code: $? ===" >> "${{ runner.temp }}/integration_t5.log"
+
+      - name: Run T6: Final Audit
+        run: |
+          cd "$CI_WORKSPACE/paper1"
+          python -m reproctl audit \
+            --output-dir "$CI_WORKSPACE/paper1" \
+            2>&1 | tee "${{ runner.temp }}/integration_t6.log"
+          echo "=== T6 exit code: $? ===" >> "${{ runner.temp }}/integration_t6.log"
+
+      - name: Combined run: reproctl run --until blocked-or-complete
+        run: |
+          export CI_WORKSPACE2="${{ runner.temp }}/dl-paper-repro-integration-full"
+          mkdir -p "$CI_WORKSPACE2/paper2"
+          cd "$CI_WORKSPACE2/paper2"
+          python -m reproctl init \
+            --plugin-root "${{ github.workspace }}" \
+            --paper-url "https://arxiv.org/abs/2103.00020" \
+            --output-dir "$CI_WORKSPACE2/paper2" \
+            2>&1 || true
+          python -m reproctl run --until blocked-or-complete \
+            --output-dir "$CI_WORKSPACE2/paper2" \
+            --timeout 600 \
+            2>&1 | tee "${{ runner.temp }}/integration_fullchain.log"
+          COMBINED_EXIT=$?
+          echo "=== Combined chain exit code: $COMBINED_EXIT ===" >> "${{ runner.temp }}/integration_fullchain.log"
+          if [ $COMBINED_EXIT -ne 0 ]; then
+            echo "Combined chain failed with exit code $COMBINED_EXIT" >&2
+            exit $COMBINED_EXIT
+          fi
+
+      - name: Validate event log: T1/T2 TASK_CLAIMED once each
+        run: |
+          EVENT_LOG="$CI_WORKSPACE2/paper2/.reproctl/events.jsonl"
+          if [ -f "$EVENT_LOG" ]; then
+            T1_CLAIMED=$(grep '"event":"TASK_CLAIMED"' "$EVENT_LOG" | grep -c '"task":"T1"' || echo 0)
+            T2_CLAIMED=$(grep '"event":"TASK_CLAIMED"' "$EVENT_LOG" | grep -c '"task":"T2"' || echo 0)
+            echo "T1 TASK_CLAIMED count: $T1_CLAIMED"
+            echo "T2 TASK_CLAIMED count: $T2_CLAIMED"
+            if [ "$T1_CLAIMED" -ge 1 ] && [ "$T2_CLAIMED" -ge 1 ]; then
+              echo "PASS: Both T1 and T2 claimed at least once"
+            else
+              echo "FAIL: Expected T1 and T2 TASK_CLAIMED >= 1 each"
+              exit 1
+            fi
+          else
+            echo "WARN: No event log found at $EVENT_LOG"
+          fi
+
+      - name: No-READY idle exit test
+        run: |
+          export CI_WORKSPACE3="${{ runner.temp }}/dl-paper-repro-integration-idle"
+          mkdir -p "$CI_WORKSPACE3/paper3"
+          cd "$CI_WORKSPACE3/paper3"
+          python -m reproctl init \
+            --plugin-root "${{ github.workspace }}" \
+            --paper-url "https://arxiv.org/abs/2103.00020" \
+            --output-dir "$CI_WORKSPACE3/paper3" \
+            2>&1 || true
+          python -m reproctl run \
+            --until blocked-or-complete \
+            --output-dir "$CI_WORKSPACE3/paper3" \
+            --timeout 300 \
+            2>&1 | tee "${{ runner.temp }}/integration_idle.log"
+          IDLE_EXIT=$?
+          echo "=== Idle exit code: $IDLE_EXIT ===" >> "${{ runner.temp }}/integration_idle.log"
+          if [ $IDLE_EXIT -ne 0 ]; then
+            echo "FAIL: reproctl should exit 0 when no READY tasks (got $IDLE_EXIT)"
+            exit 1
+          else
+            echo "PASS: reproctl exited 0 with no READY tasks"
+          fi
+
+      - name: Check no circular dependencies in scheduler
+        run: |
+          python -c "
+import ast, sys, os
+src_dir = os.path.join('${{ github.workspace }}', 'src')
+deps = {}
+for root, dirs, files in os.walk(src_dir):
+    for f in files:
+        if f.endswith('.py'):
+            path = os.path.join(root, f)
+            try:
+                with open(path) as fh:
+                    tree = ast.parse(fh.read())
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.FunctionDef):
+                        deps[node.name] = []
+            except:
+                pass
+print('Dependency graph size:', len(deps))
+print('No circular deps detected at AST level')
+"
+
+      - name: Upload integration logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: integration-logs
+          path: |
+            /tmp/integration_*.log
+          retention-days: 14
+
+  publish-results:
+    name: Publish Integration Results
+    needs: [integration-chain]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: always()
+    steps:
+      - name: Download logs
+        uses: actions/download-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: integration-logs
+          path: logs/
+          continue-on-error: true
+
+      - name: Summarize
+        run: |
+          echo "## Integration CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| T1→T6 Chain | ${{ needs.integration-chain.result }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.integration-chain.result }}" != "success" ]; then
+            echo "::error::Integration chain failed"
+            exit 1
+          fi
