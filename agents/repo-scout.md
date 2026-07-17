@@ -118,3 +118,119 @@ being dispatched to the four backends.
 - `query_expansion.json` — expanded query set with metadata (dimension, type, target backend, expected tier)
 - `query_results/<backend>_<query_hash>.json` — raw results per backend
 - `candidate_repositories.csv` — pre-existing; now also includes `query_dimension` + `query_type` columns
+
+---
+
+## NORA-style GitHub Code Search Enhancements
+
+### GitHub Code Search API
+
+Use GitHub's Code Search API for enhanced code snippet discovery:
+
+```
+GET /search/code?q=<query>&per_page=100&sort=indexed&order=desc
+```
+
+Supported qualifiers:
+- `language:<lang>` - Filter by language (Python, PyTorch, etc.)
+- `repo:<owner>/<repo>` - Search within specific repository
+- `path:<path>` - Search within specific path
+- `filename:<filename>` - Search by filename
+- `extension:<ext>` - Search by file extension
+- `org:<org>` - Search within organization
+- `size:<n>` - Filter by file size
+- `pushed:>YYYY-MM-DD` - Filter by last push date
+
+### Code Snippet Discovery
+
+Search for specific code patterns relevant to the paper:
+
+1. **Model architecture**: Search for class definitions, layer implementations
+   - `class.*Transformer in:file language:python`
+   - `def forward.*self.*x in:file`
+
+2. **Loss functions**: Find paper-specific loss implementations
+   - `def.*loss.*in:file`
+   - `class.*Loss.*in:file`
+
+3. **Data loading**: Find dataset implementations
+   - `class.*Dataset.*in:file`
+   - `def __getitem__.*in:file`
+
+4. **Training loops**: Find training procedures
+   - `for epoch in:file`
+   - `optimizer.step.*in:file`
+
+5. **Metrics**: Find evaluation implementations
+   - `def.*accuracy.*in:file`
+   - `def.*iou.*in:file`
+
+### Repository Ranking Algorithm
+
+Enhanced ranking combining multiple signals:
+
+```python
+def calculate_repo_score(repo: dict) -> float:
+    score = 0.0
+    
+    # Official status (highest weight)
+    if repo.is_official:
+        score += 40
+    
+    # Paper match score
+    score += repo.paper_match_score * 30
+    
+    # Code search relevance
+    score += repo.code_search_score * 15
+    
+    # Maintenance score
+    score += repo.maintenance_score * 10
+    
+    # Artifact availability
+    if repo.has_checkpoints:
+        score += 5
+    if repo.has_pretrained:
+        score += 5
+    
+    return min(score, 100)
+```
+
+### GitHub API Rate Limiting
+
+- Authenticated: 30 requests/minute
+- Unauthenticated: 10 requests/minute
+- Use `gh auth token` for authentication
+- Implement exponential backoff on 403 errors
+
+### Search Result Deduplication
+
+When combining results from multiple queries:
+
+1. Normalize repository URLs (remove trailing slashes, .git suffix)
+2. Use repo full_name as unique key
+3. Keep highest-scoring result per repository
+4. Track source query for attribution
+
+### Output Enhancement
+
+Add these fields to `candidate_repositories.json`:
+
+```json
+{
+  "code_search_results": {
+    "model_architecture": [...],
+    "loss_functions": [...],
+    "data_loading": [...],
+    "training_loops": [...],
+    "metrics": [...]
+  },
+  "code_snippet_relevance": {
+    "exact_match_count": 5,
+    "partial_match_count": 12,
+    "avg_relevance_score": 0.85
+  },
+  "github_search_sources": [
+    {"query": "...", "timestamp": "..."}
+  ]
+}
+```

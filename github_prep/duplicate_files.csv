@@ -1,0 +1,8 @@
+file1,file2,similarity,reason
+docs/html/zh-CN/assets/styles.css,docs/html/assets/styles.css,100%,Identical CSS files for EN and zh-CN locales
+docs/html/zh-CN/assets/logo.svg,docs/html/assets/logo.svg,100%,Identical SVG logo files for EN and zh-CN locales
+docs/html/zh-CN/assets/icons.svg,docs/html/assets/icons.svg,100%,Identical SVG icons for EN and zh-CN locales
+templates/performance/strict_performance.yaml,performance/strict_performance.yaml,100%,Template duplicated to runtime directory
+fixtures/golden_pointcloud_B/requirements.txt,fixtures/golden_torch_A/requirements.txt,100%,Identical minimal requirements files
+.cache/crawler/_index.json,.pytest_cache/v/cache/lastfailed,100%,Both are empty/minimal JSON cache files (MD5 collision)
+.repro/audit/logs/VAL-010.log,**Audit,100%,Both are empty files (0 bytes)

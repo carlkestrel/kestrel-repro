@@ -1,0 +1,142 @@
+# CITATION.cff - Citation metadata for kestrel-repro
+# =====================================================
+# This file follows the Citation File Format 1.2.0 spec.
+# https://citation-file-format.github.io/
+#
+# Fields marked with # BLOCKED_BY_METADATA require user confirmation
+# before this file can be activated as the real CITATION.cff.
+#
+# To activate: remove the .template extension and fill in BLOCKED fields.
+
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+
+# ---------------------------------------------------------------------------
+# IDENTIFIERS
+# ---------------------------------------------------------------------------
+# BLOCKED_BY_METADATA: Real author names are needed.
+#   The plugin manifest lists "Research Automation" as a placeholder.
+#   Provide a list of authors in the format:
+#     - family-names: LastName
+#       given-names: FirstName
+#       orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX  # optional
+#
+authors:
+  - family-names: "[BLOCKED: REPLACE WITH REAL FAMILY NAME]"
+    given-names: "[BLOCKED: REPLACE WITH REAL GIVEN NAME]"
+    # orcid: "[BLOCKED: OPTIONAL - your ORCID]"
+  # Add more authors as needed
+
+# BLOCKED_BY_METADATA: DOI will be assigned when the software is published
+# on Zenodo or similar. Leave empty until then.
+doi: "[BLOCKED_BY_METADATA: ASSIGN DOI ON ZENODO ARCHIVAL]"
+
+# ---------------------------------------------------------------------------
+# TITLE & VERSION
+# ---------------------------------------------------------------------------
+title: "kestrel-repro: Evidence-Driven Deep Learning Paper Reproduction Plugin for Cursor"
+
+# Version matches plugin.json version 0.2.0
+version: "0.2.0"
+
+# ---------------------------------------------------------------------------
+# REPOSITORY
+# ---------------------------------------------------------------------------
+# BLOCKED_BY_METADATA: Confirm the canonical GitHub URL.
+#   Two candidates exist in the repository:
+#     - https://github.com/kestrel/dl-paper-repro     (README clone URL)
+#     - https://github.com/research-automation/dl-paper-repro (plugin.json homepage)
+#   Choose one and remove the BLOCKED_BY_METADATA comment.
+#
+repository-code: "[BLOCKED_BY_METADATA: CONFIRM REPO URL - options:
+  - https://github.com/kestrel/dl-paper-repro
+  - https://github.com/research-automation/dl-paper-repro]"
+
+# URL for issues / feedback page (use the same host as repository-code)
+url: "[BLOCKED_BY_METADATA: SAME AS repository-code ABOVE]"
+
+# ---------------------------------------------------------------------------
+# DESCRIPTION & KEYWORDS
+# ---------------------------------------------------------------------------
+abstract: >-
+  kestrel-repro is a Cursor IDE plugin that provides a structured, evidence-first
+  workflow for reproducing deep learning papers from their official GitHub
+  repositories. It enforces six staged gates (paper audit, preflight, short-loop,
+  parity testing, full training, and evidence verification) and produces machine-readable
+  evidence chains for every claimed result. Designed for any PyTorch-based paper,
+  with specialized support for point cloud processing papers (KPConv, PointNet++,
+  DGCNN, etc.) and datasets (S3DIS, ScanNet, SemanticKITTI).
+
+keywords:
+  - deep-learning
+  - paper-reproduction
+  - reproducibility
+  - pytorch
+  - point-cloud
+  - evidence-chain
+  - cursor-ide
+  - research-automation
+  - benchmark
+  - auditing
+
+# ---------------------------------------------------------------------------
+# LICENSE & TYPE
+# ---------------------------------------------------------------------------
+license: MIT
+license-url: https://opensource.org/licenses/MIT
+
+type: software
+
+# ---------------------------------------------------------------------------
+# PLATFORM & LANGUAGE
+# ---------------------------------------------------------------------------
+# Cursor IDE plugin — runs inside the Cursor desktop application
+platform:
+  - macOS
+  - Linux
+  - Windows
+
+# Primary implementation language of the plugin scripts
+programming-language:
+  - Python
+  - Markdown  # agent/skill definitions are Markdown
+
+# ---------------------------------------------------------------------------
+# RELATED RESOURCES
+# ---------------------------------------------------------------------------
+# BLOCKED_BY_METADATA: See repository-code above. If you have related
+# documentation pages or a project website, add them here.
+# url: "https://github.com/..."
+
+# ---------------------------------------------------------------------------
+# REFERENCES / CITATIONS
+# ---------------------------------------------------------------------------
+# If this plugin was itself built on or influenced by specific papers,
+# list them here. Example:
+#
+# references:
+#   - type: article
+#     title: "KPConv: Flexible and Deformable Convolution for Point Clouds"
+#     authors:
+#       - family-names: Thomas
+#         given-names: Hugues
+#     year: 2019
+#     doi: "10.1007/978-3-030-32752-9_5"
+#     repository-code: "https://github.com/HuguesTHOMAS/KPConv"
+#
+# BLOCKED_BY_METADATA: Add any foundational paper citations here if applicable.
+references: []
+
+# ---------------------------------------------------------------------------
+# NOTES
+# ---------------------------------------------------------------------------
+# BLOCKED_BY_METADATA: Confirm maintainer contact / institution / funding.
+#
+# notes: >-
+#   This work was supported by [FUNDING BODY / GRANT NUMBER].
+#   Contact: email@example.com
+#
+notes: >-
+  This is an early-release plugin. The DOI will be assigned upon first
+  archival release (e.g. via Zenodo). Fill in real author names and DOI
+  before promoting this citation file beyond draft use.

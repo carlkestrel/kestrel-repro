@@ -1,0 +1,84 @@
+# GitHub Preparation - Baseline Inventory
+Generated: 2026-07-17
+
+## Project Information
+- **Project Root**: /home/carlkestrel/.cursor/plugins/local/kestrel-repro
+- **Git Commit**: dd35c4c90cfd77d1bf3bd43a00493656c7d16e07
+- **Git Branch**: main
+- **Inventory Date**: 2026-07-17
+
+## File Statistics
+| Metric | Count |
+|--------|-------|
+| Total Files | 496 |
+| Python Files | 112 |
+| Markdown Files | 153 |
+| JSON Files | 79 |
+| YAML Files | 15 |
+| Total Size | 8.9 MB |
+
+## Directory Sizes (Top 10)
+- scripts/: 1.7 MB
+- docs/: 1.3 MB
+- tests/: 280 KB
+- commands/: 208 KB
+- fixtures/: varies
+- agents/: varies
+- templates/: varies
+- .git/: varies
+
+## Git Status
+See `git_status_raw.txt` for full details.
+
+### Modified Files (8)
+- README.md
+- agents/repo-scout.md
+- automation_policy.yaml
+- scripts/orchestrator/approval_gate.py
+- scripts/orchestrator/controller.py
+- scripts/orchestrator/policy_engine.py
+- scripts/orchestrator/watchdog.py
+- scripts/reproctl.py
+- scripts/research_crawler.py
+
+### Deleted Files (7)
+- .repro/execution/state.sqlite3
+- .repro/reports/go_pivot_nogo.json
+- .repro/reports/summary_report.csv
+- .repro/reports/summary_report.json
+- .repro/repro_audit/DECISION_LOG.md
+- .repro/repro_audit/STATE.json
+- .repro/state.json
+
+### Untracked Files (22+)
+New files from NORA enhancements and recent work:
+- Audit/
+- .repro/audit/ (directory)
+- commands/repro-*.md (8 new command files)
+- docs/ostar_manual.md
+- github_prep/
+- schemas/soak_config.schema.json
+- scripts/cvo/ (directory)
+- scripts/orchestrator/agents/ (directory)
+- scripts/orchestrator/review_loop.py
+- scripts/orchestrator/stop_hook.py
+- scripts/ostar/ (directory)
+- tests/test_ostar.py
+
+## Warning
+**Working directory has uncommitted changes.** 
+- 8 modified files
+- 7 deleted files (experimental output)
+- 22+ untracked files
+
+Do NOT auto-commit or stash. These changes must be reviewed by the user.
+
+## Current CLI Entrypoints
+- `scripts/autopilot.py` - Main autopilot entry
+- `scripts/reproctl.py` - Repro control CLI
+- `scripts/startup/cli.py` - Startup CLI
+- `scripts/ostar/cli.py` - OSTAR CLI
+- `scripts/cvo/audit_cli.py` - CVO CLI
+
+## Current Cursor Commands
+See `commands/` directory for command definitions.

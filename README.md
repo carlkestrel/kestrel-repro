@@ -1,4 +1,4 @@
-# dl-paper-repro
+# kestrel-repro
 
 Evidence-driven deep learning paper reproduction plugin for Cursor.
 
@@ -31,8 +31,8 @@ Clone to your Cursor plugins directory:
 
 ```bash
 mkdir -p ~/.cursor/plugins/local
-git clone https://github.com/YOUR_NAME/dl-paper-repro.git \
-  ~/.cursor/plugins/local/dl-paper-repro
+git clone https://github.com/kestrel/dl-paper-repro.git \
+  ~/.cursor/plugins/local/kestrel-repro
 ```
 
 Then reload Cursor (`Cmd/Ctrl+Shift+P` → "Reload Window").

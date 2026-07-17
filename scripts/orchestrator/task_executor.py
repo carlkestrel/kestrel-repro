@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 from .process_manager import ProcessManager
@@ -27,7 +28,7 @@ class TaskExecutor:
             "REPRO_HEARTBEAT_PATH": str(heartbeat_path),
             "PYTHONUNBUFFERED": "1",
             # Inject t4 conda env so `python` resolves to the right interpreter.
-            "PATH": f"/home/carlkestrel/miniconda3/envs/t4/bin:{os.environ.get('PATH', '')}",
+            "PATH": f"{os.path.dirname(sys.executable)}:{os.environ.get('PATH', '')}",
         }
         proc = self.process_manager.start(
             task["command"], cwd=self.project_root, log_path=log_path, env=env

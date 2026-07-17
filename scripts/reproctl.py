@@ -86,6 +86,49 @@ _ORCHESTRATOR_SUBCOMMANDS = {
     "migrate", "backup", "restore", "integrity-check", "rollback-version",
 }
 
+_AUDIT_SUBCOMMANDS = {
+    "init", "plan", "status", "run-next", "run-node",
+    "run-stage", "retry", "report", "validate",
+}
+
+_SOAK_SUBCOMMANDS = {
+    "plan", "start", "status", "pause", "resume", "stop", "report",
+}
+
+_REPROCTL_SUBCOMMANDS = {
+    "init", "can-launch", "launch", "run-short-loop",
+    "verify", "report", "update-gate", "record-experiment",
+    "update-experiment", "get-experiments", "human-checkpoint",
+    "check-principles", "integrity-check", "help",
+}
+
+# Legacy subcommands that also exist as new unified commands
+_LEGACY_MAPPED_TO_NEW = {
+    "status": "startup",   # reproctl status → startup/cli.py
+    "verify": "startup",   # reproctl verify → startup/cli.py
+}
+
+
+def _dispatch_to_audit() -> Optional[int]:
+    """Route `reproctl audit ...` commands to scripts/cvo/audit_cli.py."""
+    if len(sys.argv) < 2 or sys.argv[1] != "audit":
+        return None
+    # Real script path (absolute, from scripts/ dir)
+    _AUDIT_SCRIPT = Path(__file__).resolve().parent / "cvo" / "audit_cli.py"
+    # Rewrite argv: python reproctl.py audit init → [audit_cli.py, init]
+    sys.argv = [str(_AUDIT_SCRIPT)] + sys.argv[2:]
+    # Inherit cwd from parent (reproctl.py) which is the plugin root.
+    # Do NOT override cwd.
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS_DIR))
+    try:
+        from cvo.audit_cli import main as audit_main
+    except Exception as e:
+        print(f"[reproctl] could not import CVO audit subsystem: {e}",
+              file=sys.stderr)
+        return 10
+    return audit_main()
+
 
 def _dispatch_to_orchestrator() -> Optional[int]:
     """Route orchestrator subcommands to ``scripts/orchestrator/cli.py``.
@@ -161,6 +204,31 @@ def _dispatch_to_startup() -> Optional[int]:
               file=sys.stderr)
         return 10  # EXIT_INTERNAL
     return startup_main(sys.argv[1:])
+
+
+def _dispatch_to_soak() -> Optional[int]:
+    """Route `reproctl soak ...` commands to scripts/ostar/cli.py."""
+    if len(sys.argv) < 2 or sys.argv[1] != "soak":
+        return None
+    _SOAK_SCRIPT = SCRIPTS_DIR / "ostar" / "cli.py"
+    sys.argv = [str(_SOAK_SCRIPT)] + sys.argv[2:]
+    parent = str(SCRIPTS_DIR)
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
+    # Also make the parent package importable
+    _PKG = SCRIPTS_DIR.parent
+    if str(_PKG) not in sys.path:
+        sys.path.insert(0, str(_PKG))
+    for cached in list(sys.modules.keys()):
+        if cached.startswith("scripts.ostar") or cached == "scripts.ostar":
+            del sys.modules[cached]
+    try:
+        from scripts.ostar.cli import main as soak_main
+    except Exception as e:
+        print(f"[reproctl] could not import OSTAR subsystem: {e}",
+              file=sys.stderr)
+        return 10
+    return soak_main()
 
 
 def _dispatch_storage() -> int:
@@ -1758,6 +1826,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    # Dispatch `reproctl audit ...` and `reproctl soak ...` before argparse
+    # (avoids building the legacy parser when a subsystem handles the argv).
+    if len(sys.argv) >= 2 and sys.argv[1] == "audit":
+        rc = _dispatch_to_audit()
+        sys.exit(int(rc) if rc is not None else 0)
+    if len(sys.argv) >= 2 and sys.argv[1] == "soak":
+        rc = _dispatch_to_soak()
+        sys.exit(int(rc) if rc is not None else 0)
+
     parser = build_parser()
     args = parser.parse_args()
 

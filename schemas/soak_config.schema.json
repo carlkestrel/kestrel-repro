@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "soak_config.schema.json",
+  "title": "OSTAR Soak Config Schema",
+  "version": "0.1.0",
+  "type": "object",
+  "properties": {
+    "timezone": {
+      "type": "string",
+      "default": "Asia/Singapore",
+      "description": "Timezone for start/end time computation"
+    },
+    "start_time": {
+      "type": ["string", "null"],
+      "description": "HH:MM local or ISO datetime. Default: immediate."
+    },
+    "end_time": {
+      "type": ["string", "null"],
+      "description": "HH:MM local or ISO datetime"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 86400,
+      "default": 28800,
+      "description": "Soak duration in seconds. Default: 8 hours."
+    },
+    "auto_repair_level": {
+      "type": "string",
+      "enum": ["none", "safe", "full"],
+      "default": "safe",
+      "description": "Auto-repair authorization level"
+    },
+    "max_repairs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 10,
+      "description": "Maximum total repair attempts per soak run"
+    },
+    "max_retries_per_bug": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 3,
+      "description": "Maximum auto-repair attempts per unique bug"
+    },
+    "gpu_temperature_limit": {
+      "type": ["integer", "null"],
+      "minimum": 30,
+      "maximum": 110,
+      "description": "GPU critical temperature in °C. Default: 87°C."
+    },
+    "disk_reserve_gb": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 10,
+      "description": "Minimum free disk space in GB"
+    },
+    "gpu_memory_reserve_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 50,
+      "default": 15,
+      "description": "GPU memory headroom percentage to maintain"
+    },
+    "run_ci_stress": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run CI repeat stress suite"
+    },
+    "run_scheduler_stress": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run scheduler stress suite"
+    },
+    "run_gpu_stress": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run GPU short-loop stress suite"
+    },
+    "run_batch_boundary": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run batch boundary stress suite"
+    },
+    "run_dataloader_stress": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run DataLoader stress suite"
+    },
+    "run_metric_consistency": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run metric consistency stress suite"
+    },
+    "run_resource_leak": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run resource leak stress suite"
+    },
+    "ci_level_1_fast": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run Level-1 fast CI in CI stress suite"
+    },
+    "ci_level_2_full": {
+      "type": "boolean",
+      "default": false,
+      "description": "Run Level-2 full CI in CI stress suite"
+    },
+    "verbose": {
+      "type": "boolean",
+      "default": false
+    },
+    "dry_run": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, run one cycle only and exit"
+    },
+    "project_root": {
+      "type": ["string", "null"],
+      "description": "Project root path (set automatically)"
+    },
+    "soak_root": {
+      "type": ["string", "null"],
+      "description": "Soak state root (default: <project>/soak/)"
+    }
+  }
+}

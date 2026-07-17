@@ -1,0 +1,34 @@
+=== PROJECT SIZE STATISTICS ===
+
+=== 1. Total File Count ===
+496
+
+=== 2. Total Project Size ===
+8.9M	.
+
+=== 3. Directory Sizes (Top 20) ===
+1.7M	scripts/
+1.3M	docs/
+280K	tests/
+208K	commands/
+200K	templates/
+92K	audits/
+80K	fixtures/
+68K	artifacts/
+64K	skills/
+56K	performance/
+52K	agents/
+40K	schemas/
+24K	ci_reports/
+16K	rules/
+16K	github_prep/
+4.0K	tooling/
+4.0K	reports/
+4.0K	references/
+4.0K	primary/
+
+=== 4. Source File Count by Type ===
+Python files: 112
+YAML files: 15
+JSON files: 79
+Markdown files: 153

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 
@@ -77,7 +78,7 @@ class Verifier:
                 _verifier_env = {
                     "REPRO_TASK_ID": task["id"],
                     "REPRO_VERIFY": "1",
-                    "PATH": f"/home/carlkestrel/miniconda3/envs/t4/bin:{os.environ.get('PATH', '')}",
+                    "PATH": f"{os.path.dirname(sys.executable)}:{os.environ.get('PATH', '')}",
                 }
                 code = self.process_manager.run(
                     command, cwd=self.project_root, log_path=log_path, timeout=timeout,

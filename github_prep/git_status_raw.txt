@@ -1,0 +1,61 @@
+=== git rev-parse HEAD ===
+dd35c4c90cfd77d1bf3bd43a00493656c7d16e07
+
+=== git branch --show-current ===
+main
+
+=== git status --porcelain ===
+ D .repro/execution/state.sqlite3
+ D .repro/reports/go_pivot_nogo.json
+ D .repro/reports/summary_report.csv
+ D .repro/reports/summary_report.json
+ D .repro/repro_audit/DECISION_LOG.md
+ D .repro/repro_audit/STATE.json
+ D .repro/state.json
+ M README.md
+ M agents/repo-scout.md
+ M automation_policy.yaml
+ M scripts/orchestrator/approval_gate.py
+ M scripts/orchestrator/controller.py
+ M scripts/orchestrator/policy_engine.py
+ M scripts/orchestrator/watchdog.py
+ M scripts/reproctl.py
+ M scripts/research_crawler.py
+?? Audit
+?? .repro/audit/
+?? commands/repro-open-morning-report.md
+?? commands/repro-pause-soak.md
+?? commands/repro-plan-soak.md
+?? commands/repro-resume-soak.md
+?? commands/repro-soak-rehearsal.md
+?? commands/repro-start-soak.md
+?? commands/repro-stop-soak.md
+?? commands/repro-view-soak-status.md
+?? docs/ostar_manual.md
+?? github_prep/
+?? schemas/soak_config.schema.json
+?? scripts/cvo/
+?? scripts/orchestrator/agents/
+?? scripts/orchestrator/review_loop.py
+?? scripts/orchestrator/stop_hook.py
+?? scripts/ostar/
+?? tests/test_ostar.py
+
+=== git diff --stat ===
+ .repro/execution/state.sqlite3        | Bin 53248 -> 0 bytes
+ .repro/reports/go_pivot_nogo.json     |  16 --
+ .repro/reports/summary_report.csv     |   4 -
+ .repro/reports/summary_report.json    |  31 ---
+ .repro/repro_audit/DECISION_LOG.md    |  55 -----
+ .repro/repro_audit/STATE.json         |  14 --
+ .repro/state.json                     |  84 -------
+ README.md                             |   6 +-
+ agents/repo-scout.md                  | 116 ++++++++++
+ automation_policy.yaml                |  31 +++
+ scripts/orchestrator/approval_gate.py |  53 ++++-
+ scripts/orchestrator/controller.py    |   3 +
+ scripts/orchestrator/policy_engine.py |  82 ++++++-
+ scripts/orchestrator/watchdog.py      | 115 ++++++---
+ scripts/reproctl.py                   |  77 +++++++
+ scripts/research_crawler.py           | 422 +++++++++++++++++++++++++++++++++-
+ 16 files changed, 868 insertions(+), 241 deletions(-)

@@ -1,0 +1,42 @@
+# Funding configuration for dl-paper-repro / kestrel-repro
+#
+# This file is picked up automatically by GitHub to show a "Sponsor" button
+# on the repository. Replace the placeholder values below with your actual
+# funding handles once the project has a presence on those platforms.
+#
+# Supported fields:
+#   github:  GitHub Sponsors handle (e.g. "your-username")
+#   patreon: Patreon username
+#   open_collective: Open Collective slug
+#   ko_fi: Ko-fi username
+#   tidelift: NPM-style "npm/<package>" or "pypi/<package>" for Tidelift
+#   community_bridge: Community Bridge project slug
+#   liberapay: Liberapay username
+#   custom:  List of custom sponsorship URLs
+
+# Replace "your-github-sponsors-handle" with your GitHub Sponsors username.
+github: []
+
+# Ko-fi (one-time support)
+ko_fi: []
+
+# Patreon
+patreon: []
+
+# Open Collective
+open_collective: []
+
+# Liberapay
+liberapay: []
+
+# Tidelift (for package maintainers who have set up a Tidelift subscription)
+# tidelift: "pypi/kestrel-repro"
+
+# Custom funding URLs (useful for buymeacoffee, GitHub Sponsors profile links, etc.)
+custom:
+  # - name: GitHub Sponsors
+  #   url: https://github.com/sponsors/your-username
+  # - name: Buy Me a Coffee
+  #   url: https://buymeacoffee.com/your-username
+  # - name: Ko-fi
+  #   url: https://ko-fi.com/your-username

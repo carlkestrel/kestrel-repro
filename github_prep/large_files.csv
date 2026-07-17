@@ -1,0 +1,39 @@
+path,size,reason
+docs/html/complete_manual.html,202220 bytes (197 KB),Generated HTML documentation - large single file documentation
+.execution/plan_snapshot.md,73007 bytes (71 KB),Plan snapshot - may exceed 1MB in other snapshots
+scripts/reproctl.py,68333 bytes (67 KB),Main control script
+scripts/repro_perf_tuner.py,41585 bytes (41 KB),Performance tuning script
+tests/test_startup.py,41499 bytes (41 KB),Startup test file
+.execution/task_graph.yaml,40466 bytes (39 KB),Task graph configuration
+scripts/autopilot.py,40315 bytes (39 KB),Autopilot orchestration script
+.repro/audit/repository_inventory.json,37420 bytes (37 KB),Repository inventory data
+tests/test_orchestrator.py,34731 bytes (34 KB),Orchestrator test file
+audits/orchestrator_v0.1.0/e2e_report.md,33716 bytes (33 KB),E2E audit report
+scripts/ostar/soak_engine.py,29793 bytes (29 KB),Soak test engine
+scripts/cvo/nodes.py,29415 bytes (29 KB),CVO nodes module
+scripts/research_crawler.py,27843 bytes (27 KB),Research crawler script
+scripts/repro_agent/metrics/models.py,27110 bytes (26 KB),Metrics models
+scripts/ostar/test_suites.py,26022 bytes (25 KB),Test suites module
+scripts/startup/cli.py,26013 bytes (25 KB),Startup CLI module
+docs/REHEARSAL_REPORT.md,25780 bytes (25 KB),Rehearsal report
+scripts/ostar/reporter.py,25650 bytes (25 KB),Reporter module
+scripts/ostar/soak_state.py,24370 bytes (24 KB),Soak state module
+scripts/ostar/cli.py,22164 bytes (22 KB),OSTAR CLI
+scripts/orchestrator/state_store.py,22076 bytes (22 KB),State store module
+scripts/cvo/audit_cli.py,16930 bytes (17 KB),CVO audit CLI
+tests/test_ostar.py,16958 bytes (17 KB),OSTAR test file
+docs/html/assets/styles.css,18519 bytes (18 KB),Generated CSS (locale duplicate)
+docs/html/zh-CN/assets/styles.css,18519 bytes (18 KB),Generated CSS (locale duplicate)
+docs/html/assets/app.js,16382 bytes (16 KB),Generated JavaScript
+docs/html/zh-CN/assets/app.js,16381 bytes (16 KB),Generated JavaScript (nearly identical)
+scripts/cvo/runner.py,12690 bytes (12 KB),CVO runner module
+scripts/startup/generate_artifacts.py,12649 bytes (12 KB),Artifact generator
+scripts/orchestrator/review_loop.py,15420 bytes (15 KB),Review loop module
+scripts/orchestrator/controller.py,12848 bytes (13 KB),Controller module
+scripts/orchestrator/recovery.py,13730 bytes (13 KB),Recovery module
+scripts/training_monitor.py,13760 bytes (13 KB),Training monitor
+scripts/startup/state_machine.py,13234 bytes (13 KB),State machine
+scripts/benchmark_runtime.py,10549 bytes (10 KB),Benchmark script
+scripts/l0_l3_loop.py,10489 bytes (10 KB),L0-L3 loop script
+scripts/environment_check.py,10219 bytes (10 KB),Environment check
+FINAL_REPORT.md,10085 bytes (10 KB),Final report document

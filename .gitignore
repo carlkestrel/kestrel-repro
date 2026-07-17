@@ -56,3 +56,35 @@ artifacts/
 *.tmp
 *.bak
 *~
+
+# ============================================
+# Project-specific runtime and output
+# ============================================
+
+# Reproduction state (DO NOT COMMIT)
+.repro/
+.execution/
+.repair/
+.stabilization/
+
+# Audit and reports
+audits/
+reports/
+ci_reports/
+coverage/
+
+# Experiment outputs
+runs/
+checkpoints/
+predictions/
+datasets/
+soak/
+
+# Performance
+performance/
+
+# Malformed filename (created by erroneous shell expansion)
+**Audit
+
+# Node (if using any JS tooling)
+node_modules/

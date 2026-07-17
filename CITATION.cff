@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+
+authors:
+  - family-names: Zhu
+    given-names: Boyan
+
+doi: ""
+
+title: "kestrel-repro: Evidence-Driven Deep Learning Paper Reproduction Plugin for Cursor"
+
+version: "0.2.0"
+
+repository-code: "https://github.com/carlkestrel/kestrel-repro"
+url: "https://github.com/carlkestrel/kestrel-repro"
+
+abstract: >-
+  kestrel-repro is a Cursor IDE plugin that provides a structured, evidence-first
+  workflow for reproducing deep learning papers from their official GitHub
+  repositories. It enforces six staged gates (paper audit, preflight, short-loop,
+  parity testing, full training, and evidence verification) and produces machine-readable
+  evidence chains for every claimed result. Designed for any PyTorch-based paper,
+  with specialized support for point cloud processing papers (KPConv, PointNet++,
+  DGCNN, etc.) and datasets (S3DIS, ScanNet, SemanticKITTI).
+
+keywords:
+  - deep-learning
+  - paper-reproduction
+  - reproducibility
+  - pytorch
+  - point-cloud
+  - evidence-chain
+  - cursor-ide
+  - research-automation
+  - benchmark
+  - auditing
+
+license: MIT
+license-url: https://opensource.org/licenses/MIT
+
+type: software
+
+platform:
+  - macOS
+  - Linux
+  - Windows
+
+programming-language:
+  - Python
+  - Markdown
+
+references: []
+
+notes: >-
+  This is an early-release plugin. The DOI will be assigned upon first
+  archival release (e.g. via Zenodo).

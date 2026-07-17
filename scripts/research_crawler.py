@@ -15,10 +15,22 @@ Constraints implemented (per P10_T03 acceptance):
  10. Per-host page count cap
  11. Retry counter (max_retries)
 
+NORA-style enhancements:
+  - PaperSearch class for ArXiv and Semantic Scholar API
+  - Enhanced PDF downloading
+  - Keyword-based paper discovery
+
 Usage:
-    from research_crawler import ResearchCrawler
+    from research_crawler import ResearchCrawler, PaperSearch
     c = ResearchCrawler(search_plan_path="templates/search_plan.yaml")
     pages = c.fetch(["https://arxiv.org/abs/2401.12345", ...])
+    
+    # ArXiv search
+    search = PaperSearch()
+    papers = search.search_arxiv("transformer architecture", max_results=10)
+    
+    # Semantic Scholar search
+    papers = search.search_semantic_scholar("deep learning", max_results=10)
 """
 from __future__ import annotations
 
@@ -294,3 +306,409 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# ── NORA-style Paper Search ────────────────────────────────────────────────────
+
+class PaperSearch:
+    """
+    NORA-style paper search for ArXiv and Semantic Scholar.
+    
+    Supports:
+    - ArXiv API search
+    - Semantic Scholar API search
+    - PDF downloading
+    - Citation graph traversal
+    """
+
+    ARXIV_API = "http://export.arxiv.org/api/query"
+    SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1"
+    
+    def __init__(self, cache_dir: Path | None = None):
+        self.cache_dir = cache_dir or Path(".cache/papers")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.rate_limit_delay = 3.0
+        self._last_request = 0.0
+
+    def _rate_limit(self) -> None:
+        """Enforce rate limiting between requests."""
+        import time
+        elapsed = time.time() - self._last_request
+        if elapsed < self.rate_limit_delay:
+            time.sleep(self.rate_limit_delay - elapsed)
+        self._last_request = time.time()
+
+    def search_arxiv(self, query: str, max_results: int = 10,
+                    categories: list[str] | None = None) -> list[dict]:
+        """
+        Search ArXiv for papers.
+        
+        Args:
+            query: Search query
+            max_results: Maximum number of results (1-100)
+            categories: Optional list of ArXiv categories to filter
+        
+        Returns:
+            List of paper dictionaries with metadata
+        """
+        import urllib.parse
+        import xml.etree.ElementTree as ET
+        
+        self._rate_limit()
+        
+        max_results = min(max(1, max_results), 100)
+        
+        search_query = query
+        if categories:
+            cat_query = " OR ".join(f"cat:{cat}" for cat in categories)
+            search_query = f"({query}) AND ({cat_query})"
+        
+        params = {
+            "search_query": f"all:{urllib.parse.quote(search_query)}",
+            "start": 0,
+            "max_results": max_results,
+            "sortBy": "relevance",
+            "sortOrder": "descending",
+        }
+        
+        url = f"{self.ARXIV_API}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={"User-Agent": "dl-paper-repro/1.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                xml_data = resp.read().decode("utf-8")
+        except Exception as e:
+            return [{"error": str(e), "query": query}]
+        
+        papers = self._parse_arxiv_xml(xml_data)
+        return papers
+
+    def _parse_arxiv_xml(self, xml_data: str) -> list[dict]:
+        """Parse ArXiv API XML response."""
+        import xml.etree.ElementTree as ET
+        
+        papers = []
+        try:
+            root = ET.fromstring(xml_data)
+            ns = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
+            
+            for entry in root.findall("atom:entry", ns):
+                paper = {
+                    "id": entry.find("atom:id", ns).text if entry.find("atom:id", ns) is not None else "",
+                    "title": entry.find("atom:title", ns).text.strip() if entry.find("atom:title", ns) is not None else "",
+                    "summary": entry.find("atom:summary", ns).text.strip() if entry.find("atom:summary", ns) is not None else "",
+                    "authors": [],
+                    "published": entry.find("atom:published", ns).text if entry.find("atom:published", ns) is not None else "",
+                    "categories": [],
+                    "pdf_url": "",
+                    "arxiv_url": "",
+                }
+                
+                for author in entry.findall("atom:author", ns):
+                    name = author.find("atom:name", ns)
+                    if name is not None:
+                        paper["authors"].append(name.text)
+                
+                for cat in entry.findall("atom:category", ns):
+                    term = cat.get("term")
+                    if term:
+                        paper["categories"].append(term)
+                
+                for link in entry.findall("atom:link", ns):
+                    if link.get("title") == "pdf":
+                        paper["pdf_url"] = link.get("href", "")
+                    elif link.get("type") == "text/html":
+                        paper["arxiv_url"] = link.get("href", "")
+                
+                paper["arxiv_id"] = paper["id"].split("/")[-1] if paper["id"] else ""
+                
+                papers.append(paper)
+                
+        except Exception as e:
+            papers.append({"error": f"Parse error: {e}"})
+        
+        return papers
+
+    def search_semantic_scholar(self, query: str, max_results: int = 10,
+                                year: int | None = None) -> list[dict]:
+        """
+        Search Semantic Scholar for papers.
+        
+        Args:
+            query: Search query
+            max_results: Maximum number of results (1-100)
+            year: Optional year filter
+        
+        Returns:
+            List of paper dictionaries with metadata
+        """
+        import urllib.parse
+        import json
+        
+        self._rate_limit()
+        
+        max_results = min(max(1, max_results), 100)
+        
+        fields = "paperId,title,abstract,authors,year,citationCount,influentialCitationCount,url,openAccessPdf"
+        params = {
+            "query": query,
+            "limit": max_results,
+            "fields": fields,
+        }
+        if year:
+            params["year"] = str(year)
+        
+        url = f"{self.SEMANTIC_SCHOLAR_API}/paper/search?{'&'.join(f'{k}={urllib.parse.quote(str(v))}' for k, v in params.items())}"
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "dl-paper-repro/1.0",
+                "Accept": "application/json",
+            })
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            return [{"error": str(e), "query": query}]
+        
+        papers = []
+        for item in data.get("data", []):
+            paper = {
+                "paperId": item.get("paperId", ""),
+                "title": item.get("title", ""),
+                "abstract": item.get("abstract", ""),
+                "authors": [a.get("name", "") for a in item.get("authors", [])],
+                "year": item.get("year"),
+                "citationCount": item.get("citationCount", 0),
+                "influentialCitationCount": item.get("influentialCitationCount", 0),
+                "url": item.get("url", ""),
+                "pdf_url": item.get("openAccessPdf", {}).get("url") if item.get("openAccessPdf") else "",
+            }
+            papers.append(paper)
+        
+        return papers
+
+    def get_paper_by_id(self, paper_id: str, source: str = "semantic_scholar") -> dict | None:
+        """
+        Get paper details by ID.
+        
+        Args:
+            paper_id: Paper ID (ArXiv ID or Semantic Scholar PaperId)
+            source: "arxiv" or "semantic_scholar"
+        
+        Returns:
+            Paper dictionary or None if not found
+        """
+        import json
+        
+        if source == "arxiv":
+            return self._get_arxiv_paper(paper_id)
+        elif source == "semantic_scholar":
+            return self._get_semantic_scholar_paper(paper_id)
+        return None
+
+    def _get_arxiv_paper(self, arxiv_id: str) -> dict | None:
+        """Get ArXiv paper by ID."""
+        self._rate_limit()
+        
+        arxiv_id = arxiv_id.replace(".", "_").split("/")[-1]
+        url = f"{self.ARXIV_API}?id_list={arxiv_id}"
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={"User-Agent": "dl-paper-repro/1.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                xml_data = resp.read().decode("utf-8")
+            
+            papers = self._parse_arxiv_xml(xml_data)
+            return papers[0] if papers else None
+        except Exception:
+            return None
+
+    def _get_semantic_scholar_paper(self, paper_id: str) -> dict | None:
+        """Get Semantic Scholar paper by ID."""
+        import json
+        
+        self._rate_limit()
+        
+        fields = "paperId,title,abstract,authors,year,citationCount,influentialCitationCount,url,openAccessPdf,references,citations"
+        url = f"{self.SEMANTIC_SCHOLAR_API}/paper/{paper_id}?fields={fields}"
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "dl-paper-repro/1.0",
+                "Accept": "application/json",
+            })
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception:
+            return None
+
+    def get_citations(self, paper_id: str, max_results: int = 50) -> list[dict]:
+        """
+        Get citations for a paper.
+        
+        Args:
+            paper_id: Semantic Scholar PaperId
+            max_results: Maximum number of citations
+        
+        Returns:
+            List of citing papers
+        """
+        import json
+        
+        self._rate_limit()
+        
+        fields = "paperId,title,authors,year,citationCount"
+        url = f"{self.SEMANTIC_SCHOLAR_API}/paper/{paper_id}/citations?fields={fields}&limit={max_results}"
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "dl-paper-repro/1.0",
+                "Accept": "application/json",
+            })
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            
+            return [item.get("citingPaper", {}) for item in data.get("data", [])]
+        except Exception:
+            return []
+
+    def get_references(self, paper_id: str, max_results: int = 50) -> list[dict]:
+        """
+        Get references for a paper.
+        
+        Args:
+            paper_id: Semantic Scholar PaperId
+            max_results: Maximum number of references
+        
+        Returns:
+            List of referenced papers
+        """
+        import json
+        
+        self._rate_limit()
+        
+        fields = "paperId,title,authors,year,citationCount"
+        url = f"{self.SEMANTIC_SCHOLAR_API}/paper/{paper_id}/references?fields={fields}&limit={max_results}"
+        
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "dl-paper-repro/1.0",
+                "Accept": "application/json",
+            })
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            
+            return [item.get("citedPaper", {}) for item in data.get("data", [])]
+        except Exception:
+            return []
+
+    def download_pdf(self, pdf_url: str, output_dir: Path | None = None) -> Path | None:
+        """
+        Download PDF from URL.
+        
+        Args:
+            pdf_url: PDF URL
+            output_dir: Output directory
+        
+        Returns:
+            Path to downloaded PDF or None
+        """
+        import hashlib
+        import urllib.request
+        
+        output_dir = output_dir or self.cache_dir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        filename = hashlib.sha256(pdf_url.encode()).hexdigest()[:16] + ".pdf"
+        output_path = output_dir / filename
+        
+        if output_path.exists():
+            return output_path
+        
+        self._rate_limit()
+        
+        try:
+            req = urllib.request.Request(pdf_url, headers={"User-Agent": "dl-paper-repro/1.0"})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = resp.read()
+            
+            output_path.write_bytes(data)
+            return output_path
+        except Exception:
+            return None
+
+    def search_both(self, query: str, max_results: int = 10) -> dict[str, list[dict]]:
+        """
+        Search both ArXiv and Semantic Scholar.
+        
+        Args:
+            query: Search query
+            max_results: Max results per source
+        
+        Returns:
+            Dict with "arxiv" and "semantic_scholar" keys
+        """
+        import concurrent.futures
+        
+        results = {}
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            arxiv_future = executor.submit(self.search_arxiv, query, max_results)
+            ss_future = executor.submit(self.search_semantic_scholar, query, max_results)
+            
+            results["arxiv"] = arxiv_future.result()
+            results["semantic_scholar"] = ss_future.result()
+        
+        return results
+
+
+# ── CLI extensions ─────────────────────────────────────────────────────────────
+
+def paper_search_cli():
+    """CLI for paper search."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Paper search for dl-paper-repro")
+    parser.add_argument("--query", "-q", required=True, help="Search query")
+    parser.add_argument("--source", "-s", choices=["arxiv", "semantic_scholar", "both"], default="both")
+    parser.add_argument("--max-results", "-n", type=int, default=10)
+    parser.add_argument("--output", "-o", type=Path, help="Output file (JSON)")
+    parser.add_argument("--download-pdf", action="store_true", help="Download PDFs")
+    
+    args = parser.parse_args()
+    
+    search = PaperSearch()
+    
+    if args.source == "arxiv":
+        results = {"arxiv": search.search_arxiv(args.query, args.max_results)}
+    elif args.source == "semantic_scholar":
+        results = {"semantic_scholar": search.search_semantic_scholar(args.query, args.max_results)}
+    else:
+        results = search.search_both(args.query, args.max_results)
+    
+    if args.download_pdf:
+        for source, papers in results.items():
+            for paper in papers:
+                pdf_url = paper.get("pdf_url")
+                if pdf_url:
+                    path = search.download_pdf(pdf_url)
+                    if path:
+                        print(f"Downloaded: {path}")
+    
+    output = json.dumps(results, indent=2, default=str)
+    
+    if args.output:
+        args.output.write_text(output)
+        print(f"Results saved to {args.output}")
+    else:
+        print(output)
+
+
+if __name__ == "paper_search":
+    paper_search_cli()

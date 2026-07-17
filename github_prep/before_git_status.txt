@@ -1,0 +1,67 @@
+# Git Status - Before Cleanup
+Generated: 2026-07-17
+
+## Current Branch
+main
+
+## Current Commit
+dd35c4c90cfd77d1bf3bd43a00493656c7d16e07
+
+## Modified Files (8)
+ M README.md                             - Project name changed to kestrel-repro
+ M agents/repo-scout.md                 - Added GitHub code search enhancements
+ M automation_policy.yaml                 - Added NORA config section
+ M scripts/orchestrator/approval_gate.py - Added auto-approve + checkpoints
+ M scripts/orchestrator/controller.py    - Integrated StopHook
+ M scripts/orchestrator/policy_engine.py - Added AUTO_PROCEED + HUMAN_CHECKPOINT
+ M scripts/orchestrator/watchdog.py      - Added MPS GPU detection
+ M scripts/reproctl.py                  - New CLI commands
+ M scripts/research_crawler.py           - Added PaperSearch (ArXiv/Semantic Scholar)
+
+## Deleted Files (7)
+These are runtime artifacts that were tracked by mistake:
+ D .repro/execution/state.sqlite3       - SQLite WAL database
+ D .repro/reports/go_pivot_nogo.json   - Generated report
+ D .repro/reports/summary_report.csv   - Generated report
+ D .repro/reports/summary_report.json  - Generated report
+ D .repro/repro_audit/DECISION_LOG.md  - Generated audit log
+ D .repro/repro_audit/STATE.json       - Generated state
+ D .repro/state.json                   - Generated state
+
+## Untracked Files (22+)
+New files from NORA architecture enhancements:
+
+Directories:
+?? Audit/
+?? .repro/audit/
+?? commands/repro-soak-*.md (8 files)
+?? docs/ostar_manual.md
+?? github_prep/
+?? schemas/soak_config.schema.json
+?? scripts/cvo/
+?? scripts/orchestrator/agents/
+?? scripts/ostar/
+?? tests/test_ostar.py
+
+Individual Files:
+?? commands/repro-open-morning-report.md
+?? commands/repro-pause-soak.md
+?? commands/repro-plan-soak.md
+?? commands/repro-resume-soak.md
+?? commands/repro-start-soak.md
+?? commands/repro-stop-soak.md
+?? commands/repro-view-soak-status.md
+?? docs/ostar_manual.md
+?? github_prep/
+?? scripts/orchestrator/review_loop.py
+?? scripts/orchestrator/stop_hook.py
+
+## IMPORTANT
+This git status shows working directory modifications. Do NOT auto-commit or stash.
+These changes include:
+1. NORA architecture enhancements (new features)
+2. Directory rename (dl-paper-repro -> kestrel-repro)
+3. Deleted runtime artifacts (should be in .gitignore)
+
+The deleted files (.repro/*) are runtime output and should NOT be tracked.
+They need to be removed from git index.

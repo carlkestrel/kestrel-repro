@@ -1,0 +1,216 @@
+name: CI-L1 Quality Gates
+
+# Level 1: Fast quality gates — runs on every push to any branch.
+# Required before merging. No GPU, no network access, no real data.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-l1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.10"
+  # Force CPU-only, no network in pytest
+  FORCE_CPU: "1"
+  REPRO_FAKE_GPU: "0"
+  REPRO_FAKE_DISK_FREE: ""
+
+jobs:
+  # ── Job 1: Python syntax & import check ─────────────────────────────────────
+  syntax:
+    name: Syntax & Import
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Syntax check — compile all .py files
+        run: |
+          echo "=== Python syntax check ==="
+          ERRORS=0
+          for f in $(find . -name "*.py" -not -path "./.git/*" -not -path "./.pytest_cache/*"); do
+            python3 -m py_compile "$f" 2>&1 && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
+          done
+          echo "=== Total errors: $ERRORS ==="
+          if [ "$ERRORS" -gt 0 ]; then exit 1; fi
+
+      - name: Import smoke — ensure every package root is importable
+        run: |
+          echo "=== Package import check ==="
+          export PYTHONPATH="${PWD}/scripts:${PYTHONPATH}"
+          python3 -c "
+import sys
+errors = []
+for pkg in ['startup', 'orchestrator', 'cvo', 'ostar']:
+    try:
+        __import__(pkg)
+        print(f'  OK  import {pkg}')
+    except Exception as e:
+        print(f'  FAIL import {pkg}: {e}')
+        errors.append(pkg)
+if errors:
+    print('Import failures:', errors)
+    sys.exit(1)
+"
+
+  # ── Job 2: YAML / JSON / schema validation ───────────────────────────────────
+  validate-configs:
+    name: Config Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install validators
+        run: pip install pyyaml jsonschema --quiet
+
+      - name: Validate YAML files
+        run: |
+          echo "=== YAML validation ==="
+          ERRORS=0
+          for f in $(find . -name "*.yaml" -o -name "*.yml" \
+               -not -path "./.git/*" \
+               -not -path "./.pytest_cache/*" \
+               -not -path "./fixtures/*" \
+               -not -path "./.repro/*"); do
+            python3 -c "import yaml; list(yaml.safe_load_all(open('$f')))" 2>&1 \
+              && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
+          done
+          echo "Total YAML errors: $ERRORS"
+          if [ "$ERRORS" -gt 0 ]; then exit 1; fi
+
+      - name: Validate JSON files
+        run: |
+          echo "=== JSON validation ==="
+          ERRORS=0
+          for f in $(find . -name "*.json" \
+               -not -path "./.git/*" \
+               -not -path "./.pytest_cache/*" \
+               -not -path "./fixtures/*" \
+               -not -path "./.repro/*"); do
+            python3 -c "import json; json.load(open('$f'))" 2>&1 \
+              && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
+          done
+          echo "Total JSON errors: $ERRORS"
+          if [ "$ERRORS" -gt 0 ]; then exit 1; fi
+
+      - name: Validate schemas
+        run: |
+          echo "=== JSON Schema validation ==="
+          python3 -c "
+import json, glob, sys
+schema_dir = glob.glob('schemas/*.schema.json')
+print(f'Found {len(schema_dir)} schema files')
+for schema_path in schema_dir:
+    with open(schema_path) as f:
+        json.load(f)  # just syntax-check the schema itself
+    print(f'  OK  {schema_path}')
+if not schema_dir:
+    print('  (no schemas to validate)')
+"
+
+  # ── Job 3: Ruff lint ────────────────────────────────────────────────────────
+  ruff-lint:
+    name: Ruff Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff --quiet
+
+      - name: Run ruff check
+        run: |
+          echo "=== Ruff lint (scripts/) ==="
+          ruff check scripts/ --output-format=github \
+            || { echo "Linting errors found — see annotations above"; exit 1; }
+
+          echo "=== Ruff lint (tests/) ==="
+          ruff check tests/ --output-format=github \
+            || { echo "Linting errors found in tests — see annotations above"; exit 1; }
+
+      - name: Ruff format check
+        run: |
+          echo "=== Ruff format check (scripts/ tests/) ==="
+          ruff format --check scripts/ tests/ \
+            || { echo "Format violations found — run 'ruff format' to fix"; exit 1; }
+
+  # ── Job 4: Pytest unit tests (no GPU, no network) ───────────────────────────
+  pytest-unit:
+    name: Pytest Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # These test files are confirmed CPU-only and network-free
+    env:
+      REPRO_FAKE_GPU: "0"
+      REPRO_FAKE_DISK_FREE: ""
+      PYTHONPATH: "${{ github.workspace }}/scripts"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pyyaml jsonschema \
+            --quiet --disable-pip-version-check 2>&1 | tail -3
+          # torch is optional for CI-L1; many unit tests mock it anyway.
+          # Install it but do not fail if it is unavailable.
+          pip install torch --index-url https://download.pytorch.org/whl/cpu \
+            --quiet --disable-pip-version-check 2>&1 | tail -3 || \
+            echo "WARN: torch install skipped (continuing without GPU support)"
+
+      - name: Plugin discovery tests (no GPU required)
+        run: pytest tests/test_plugin_discovery.py -v --tb=short
+
+      - name: Startup unit tests
+        run: pytest tests/test_startup.py -v --tb=short \
+          -k "not integ and not test_integ"
+
+      - name: State machine tests
+        run: pytest tests/test_state_machine.py -v --tb=short
+
+      - name: Orchestrator import tests
+        run: |
+          echo "=== Testing orchestrator package imports ==="
+          python3 -c "
+import sys; sys.path.insert(0, 'scripts')
+from orchestrator import (
+    ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
+    StateStore, TaskExecutor, Verifier, Watchdog, EventJournal,
+    RecoveryManager, BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL,
+)
+print('All orchestrator imports OK')
+"

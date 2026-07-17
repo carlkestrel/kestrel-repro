@@ -1,0 +1,207 @@
+name: CI-L2 Integration
+
+# Level 2: Integration tests — runs on every pull request.
+# Covers CLI smoke tests, startup tests, config parsing, and orchestrator imports.
+# No GPU required. Uses pre-installed PyTorch CPU build.
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-l2-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.10"
+  REPRO_FAKE_GPU: "0"
+
+jobs:
+  # ── Job 1: CLI smoke tests ──────────────────────────────────────────────────
+  cli-smoke:
+    name: CLI Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: "${{ github.workspace }}/scripts"
+      REPRO_FAKE_GPU: "0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install deps
+        run: pip install pytest pyyaml jsonschema torch --index-url https://download.pytorch.org/whl/cpu --quiet
+
+      - name: Version command
+        run: |
+          echo "=== reproctl version ==="
+          python scripts/reproctl.py version
+
+      - name: Help command
+        run: |
+          echo "=== reproctl help ==="
+          python scripts/reproctl.py help
+          # Verify all expected subcommands are documented
+          python scripts/reproctl.py help | grep -E "start|doctor|status|resume|stop|verify|version|init|run|run-short-loop|report|audit"
+
+      - name: Audit validate (CVO infrastructure)
+        run: |
+          echo "=== reproctl audit validate ==="
+          python scripts/reproctl.py audit validate
+
+      - name: Audit plan
+        run: |
+          echo "=== reproctl audit plan ==="
+          python scripts/reproctl.py audit plan
+
+  # ── Job 2: Startup integration tests ─────────────────────────────────────────
+  startup-integration:
+    name: Startup Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: "${{ github.workspace }}/scripts"
+      REPRO_FAKE_GPU: "0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install deps
+        run: pip install pytest pyyaml jsonschema torch --index-url https://download.pytorch.org/whl/cpu --quiet
+
+      - name: Full startup integration suite (test_startup.py integ_* tests)
+        run: pytest tests/test_startup.py -v --tb=short -k "test_integ"
+
+      - name: Startup summary format test
+        run: pytest tests/test_startup.py::test_start_summary_format -v --tb=short
+
+      - name: New subcommands dispatched
+        run: pytest tests/test_startup.py::test_new_subcommands_dispatched -v --tb=short
+
+  # ── Job 3: Config parsing & validation ──────────────────────────────────────
+  config-parsing:
+    name: Config Parsing & Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: "${{ github.workspace }}/scripts"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install deps
+        run: pip install pytest pyyaml jsonschema --quiet
+
+      - name: Config priority tests
+        run: pytest tests/test_startup.py -v --tb=short -k "test_config"
+
+      - name: Plan validation tests
+        run: pytest tests/test_startup.py -v --tb=short -k "test_plan"
+
+      - name: Doctor check tests
+        run: pytest tests/test_startup.py -v --tb=short -k "test_doctor"
+
+      - name: State machine tests
+        run: pytest tests/test_startup.py -v --tb=short -k "test_state_machine"
+
+      - name: Lock manager tests
+        run: pytest tests/test_startup.py -v --tb=short -k "test_lock"
+
+  # ── Job 4: Orchestrator import & structural tests ────────────────────────────
+  orchestrator-import:
+    name: Orchestrator Import & Structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: "${{ github.workspace }}/scripts"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install deps
+        run: pip install pytest pyyaml jsonschema --quiet
+
+      - name: Orchestrator package import
+        run: |
+          echo "=== Orchestrator import smoke ==="
+          python3 -c "
+import sys; sys.path.insert(0, 'scripts')
+from orchestrator import (
+    ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
+    StateStore, TaskExecutor, Verifier, Watchdog, EventJournal,
+    RecoveryManager, BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL,
+    REQUIRE_APPROVAL, REJECT, AUTO_EXECUTE, CycleDependencyError,
+)
+print('Orchestrator imports: OK')
+"
+
+      - name: Orchestrator CLI parser tests
+        run: pytest tests/test_orchestrator.py -v --tb=short \
+          -k "test_17_daemon_child_arg_recognized"
+
+      - name: CVO import tests
+        run: |
+          echo "=== CVO import smoke ==="
+          python3 -c "
+import sys; sys.path.insert(0, 'scripts')
+from cvo import (
+    ALL_NODES, CVORunner, CVOStateStore, NODE_MAP, STAGE_LABELS,
+    STAGE_NODES, get_node, get_next_ready, get_stage, ValidationNode,
+    val_000_run, val_010_run, __version__ as cvo_version,
+)
+print(f'CVO version: {cvo_version}')
+print(f'CVO nodes registered: {len(ALL_NODES)}')
+print(f'Stages: {sorted(STAGE_NODES.keys())}')
+print('CVO imports: OK')
+"
+
+      - name: Orchestrator structural tests
+        run: pytest tests/test_orchestrator.py -v --tb=short \
+          -k "test_1_five_serial_tasks_complete or test_11_cycle_dependency_blocked or test_12_no_ready_exits_blocked"
+
+      - name: Audit CLI import smoke
+        run: |
+          echo "=== Audit CLI import ==="
+          python3 -c "
+import sys; sys.path.insert(0, 'scripts')
+from cvo.audit_cli import main as audit_main, build_parser
+p = build_parser()
+print('audit_cli parser built OK')
+# Verify the validate subcommand exists
+subparsers = {a.title: None for a in p._actions[-1].choices}
+print(f'audit subcommands: {sorted(subparsers.keys())}')
+assert 'validate' in subparsers, 'validate subcommand missing'
+assert 'init' in subparsers, 'init subcommand missing'
+print('Audit CLI: OK')
+"
+
+      - name: No hardcoded paths
+        run: pytest tests/test_startup.py::test_no_hardcoded_paths_in_new_code -v --tb=short

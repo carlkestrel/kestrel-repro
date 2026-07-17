@@ -51,7 +51,7 @@ class L0L3Loop:
 
     def python(self) -> str:
         """Get Python executable path."""
-        return f"/home/carlkestrel/miniconda3/envs/{self.conda_env}/bin/python"
+        return sys.executable
 
     def run_script(self, script: Path, args: list[str] | None = None) -> dict:
         """Run a test script and capture results."""

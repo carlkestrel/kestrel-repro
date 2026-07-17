@@ -1,0 +1,71 @@
+# Directory Tree - Before Cleanup
+Generated: 2026-07-17
+
+```
+kestrel-repro/
+├── agents/                          # Agent definitions (Markdown)
+├── Audit/                           # [NEW] Audit reports
+├── .cursor-plugin/                  # Cursor plugin config
+├── .execution/                     # Execution state
+├── .git/                           # Git repository
+├── .repro/                         # Reproduction state (LOCAL_RUNTIME)
+│   ├── audit/                      # Audit reports and nodes
+│   ├── execution/                  # Execution artifacts
+│   ├── reports/                    # Generated reports
+│   └── repro_audit/               # Audit state
+├── .repair/                        # Repair artifacts
+├── agents/                         # Agent definitions
+├── audits/                         # Audit reports
+├── automation_policy.yaml           # [MODIFIED] NORA policy
+├── CHANGELOG.md
+├── CI_REPORTS/                     # CI reports
+├── commands/                       # Cursor command definitions
+│   ├── repro-*.md                  # Repro commands
+│   ├── geoai-*.md                 # GeoAI commands
+│   └── [NEW] repro-soak-*.md      # Soak commands
+├── docs/                           # Documentation
+│   ├── html/                       # Generated HTML docs
+│   ├── [NEW] ostar_manual.md
+│   ├── *.md                        # Various docs
+├── fixtures/                       # Test fixtures
+│   ├── golden_torch_A/
+│   ├── golden_pointcloud_B/
+│   └── minimal_pytorch_repo/
+├── github_prep/                    # [NEW] GitHub prep workdir
+├── performance/                    # Performance configs
+├── schemas/                        # JSON schemas
+│   └── [NEW] soak_config.schema.json
+├── scripts/                        # Source code
+│   ├── autopilot.py                # Main autopilot
+│   ├── reproctl.py                 # [MODIFIED] CLI
+│   ├── research_crawler.py         # [MODIFIED] Paper search
+│   ├── orchestrator/               # Orchestrator modules
+│   │   ├── controller.py           # [MODIFIED]
+│   │   ├── policy_engine.py        # [MODIFIED] AUTO_PROCEED
+│   │   ├── approval_gate.py        # [MODIFIED]
+│   │   ├── watchdog.py             # [MODIFIED] MPS support
+│   │   ├── [NEW] stop_hook.py      # NORA Stop Hook
+│   │   ├── [NEW] review_loop.py   # NORA Review Loop
+│   │   ├── [NEW] agents/          # Specialist Agents
+│   │   │   ├── base.py
+│   │   │   ├── repo_scout.py
+│   │   │   ├── paper_auditor.py
+│   │   │   ├── metric_auditor.py
+│   │   │   ├── hardware_fit.py
+│   │   │   ├── evidence_verifier.py
+│   │   │   ├── review_auditor.py
+│   │   │   └── github_code_search.py
+│   │   └── [NEW] cvo/             # CVO modules
+│   ├── ostar/                      # [NEW] OSTAR modules
+│   └── startup/                    # Startup modules
+├── skills/                         # Cursor skills
+├── templates/                      # Configuration templates
+├── tests/                          # Test files
+│   └── test_ostar.py               # [NEW]
+└── README.md                       # [MODIFIED] Project name changed
+```
+
+Legend:
+- [NEW] = New untracked files
+- [MODIFIED] = Modified files with uncommitted changes
+- (LOCAL_RUNTIME) = Should not be committed to Git

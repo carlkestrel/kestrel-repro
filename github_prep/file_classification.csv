@@ -1,0 +1,354 @@
+path,category,reason
+agents/data-metric-auditor.md,KEEP_DOCS,Agent definition file for data metrics
+agents/evidence-verifier.md,KEEP_DOCS,Agent definition file for evidence verification
+agents/hardware-fit-auditor.md,KEEP_DOCS,Agent definition file for hardware fit
+agents/repo-scout.md,KEEP_DOCS,Agent definition file for repository scouting
+agents/repro-lead.md,KEEP_DOCS,Agent definition file for reproduction lead
+agents/review-auditor.md,KEEP_DOCS,Agent definition file for review audit
+agents/runtime-optimizer.md,KEEP_DOCS,Agent definition file for runtime optimization
+artifacts/evidence_index.json,KEEP_CONFIG,Artifact index for evidence tracking
+artifacts/l0_l3_results.json,KEEP_CONFIG,Experiment results artifact
+artifacts/runs/run_20260716_085646/command.txt,EXPERIMENT_OUTPUT,Run command output
+artifacts/runs/run_20260716_085646/metrics.csv,EXPERIMENT_OUTPUT,Run metrics data
+artifacts/runs/run_20260716_085646/run_manifest.json,EXPERIMENT_OUTPUT,Run manifest
+artifacts/runs/run_20260716_085646/verification.json,EXPERIMENT_OUTPUT,Run verification results
+artifacts/runs/run_20260716_085646/checkpoints,EXPERIMENT_OUTPUT,Run checkpoint outputs
+artifacts/runs/run_20260716_085646/confmat,EXPERIMENT_OUTPUT,Run confusion matrices
+artifacts/runs/run_20260716_085646/figures,EXPERIMENT_OUTPUT,Run generated figures
+artifacts/runs/run_20260716_085646/predictions,EXPERIMENT_OUTPUT,Run predictions
+artifacts/fast_exploration,LOCAL_RUNTIME,Fast exploration runtime data
+artifacts/smoke_check,LOCAL_RUNTIME,Smoke check runtime data
+artifacts/statistical_reproduction,LOCAL_RUNTIME,Statistical reproduction data
+artifacts/strict_confirmation,LOCAL_RUNTIME,Strict confirmation data
+audits/orchestrator_v0.1.0/command_matrix.csv,KEEP_DOCS,Audit command matrix
+audits/orchestrator_v0.1.0/e2e_report.md,KEEP_DOCS,End-to-end audit report
+audits/orchestrator_v0.1.0/fix_D2_D3.md,KEEP_DOCS,Audit fix documentation
+audits/orchestrator_v0.1.0/fix_orphan_workers.md,KEEP_DOCS,Audit fix for orphan workers
+audits/orchestrator_v0.1.0/test_report.md,KEEP_DOCS,Audit test report
+audits/startup_v0.2.0/command_matrix.csv,KEEP_DOCS,Startup audit command matrix
+audits/startup_v0.2.0/installation_checklist.md,KEEP_DOCS,Installation audit checklist
+audits/startup_v0.2.0/recovery_test_report.md,KEEP_DOCS,Recovery test report
+audits/startup_v0.2.0/startup_test_report.md,KEEP_DOCS,Startup test report
+AUTOMATION_ARCHITECTURE.md,KEEP_DOCS,Architecture documentation
+AUTOPILOT_IMPLEMENTATION_PLAN.md,KEEP_DOCS,Autopilot implementation plan
+AUTOPILOT_IMPLEMENTATION_REPORT.md,KEEP_DOCS,Autopilot implementation report
+automation_policy.yaml,KEEP_CONFIG,Automation policy configuration
+.cache/crawler/_index.json,CACHE,Crawler cache index
+CHANGELOG.md,KEEP_DOCS,Project changelog
+ci_reports/ci_summary.md,KEEP_DOCS,CI summary report
+ci_reports/fault_detection.csv,KEEP_DOCS,CI fault detection data
+ci_reports/flaky_tests.csv,KEEP_DOCS,CI flaky tests data
+ci_reports/mandatory_checks.md,KEEP_DOCS,CI mandatory checks
+ci_reports/pass_rate.json,KEEP_DOCS,CI pass rate data
+commands/geoai-audit.md,KEEP_DOCS,Command documentation for geoai audit
+commands/geoai-discover.md,KEEP_DOCS,Command documentation for geoai discover
+commands/repro-acquire.md,KEEP_DOCS,Command documentation for acquire
+commands/repro-audit.md,KEEP_DOCS,Command documentation for audit
+commands/repro-autopilot.md,KEEP_DOCS,Command documentation for autopilot
+commands/repro-benchmark.md,KEEP_DOCS,Command documentation for benchmark
+commands/repro-card.md,KEEP_DOCS,Command documentation for card
+commands/repro-contract.md,KEEP_DOCS,Command documentation for contract
+commands/repro-crawl.md,KEEP_DOCS,Command documentation for crawl
+commands/repro-decision.md,KEEP_DOCS,Command documentation for decision
+commands/repro-discover.md,KEEP_DOCS,Command documentation for discover
+commands/repro-doctor.md,KEEP_DOCS,Command documentation for doctor
+commands/repro-evidence-chain.md,KEEP_DOCS,Command documentation for evidence chain
+commands/repro-evolution.md,KEEP_DOCS,Command documentation for evolution
+commands/repro-failure.md,KEEP_DOCS,Command documentation for failure
+commands/repro-fit-hardware.md,KEEP_DOCS,Command documentation for hardware fit
+commands/repro-handoff.md,KEEP_DOCS,Command documentation for handoff
+commands/repro-init.md,KEEP_DOCS,Command documentation for init
+commands/repro-launch.md,KEEP_DOCS,Command documentation for launch
+commands/repro-monitor.md,KEEP_DOCS,Command documentation for monitor
+commands/repro-open-morning-report.md,KEEP_DOCS,Command documentation for morning report
+commands/repro-pause-soak.md,KEEP_DOCS,Command documentation for pause soak
+commands/repro-perf.md,KEEP_DOCS,Command documentation for performance
+commands/repro-plan.md,KEEP_DOCS,Command documentation for plan
+commands/repro-plan-soak.md,KEEP_DOCS,Command documentation for plan soak
+commands/repro-preflight.md,KEEP_DOCS,Command documentation for preflight
+commands/repro-report.md,KEEP_DOCS,Command documentation for report
+commands/repro-resume.md,KEEP_DOCS,Command documentation for resume
+commands/repro-resume-soak.md,KEEP_DOCS,Command documentation for resume soak
+commands/repro-review.md,KEEP_DOCS,Command documentation for review
+commands/repro-short-loop.md,KEEP_DOCS,Command documentation for short loop
+commands/repro-soak-rehearsal.md,KEEP_DOCS,Command documentation for soak rehearsal
+commands/repro-start.md,KEEP_DOCS,Command documentation for start
+commands/repro-start-soak.md,KEEP_DOCS,Command documentation for start soak
+commands/repro-status.md,KEEP_DOCS,Command documentation for status
+commands/repro-stop.md,KEEP_DOCS,Command documentation for stop
+commands/repro-stop-soak.md,KEEP_DOCS,Command documentation for stop soak
+commands/repro-verify.md,KEEP_DOCS,Command documentation for verify
+commands/repro-view-soak-status.md,KEEP_DOCS,Command documentation for view soak status
+commands/research-extend.md,KEEP_DOCS,Command documentation for research extend
+.cursor-plugin/plugin.json,KEEP_CONFIG,Cursor plugin configuration
+docs/architecture.md,KEEP_DOCS,Architecture documentation
+docs/automation_workflow.md,KEEP_DOCS,Automation workflow documentation
+docs/backup_migration_recovery.md,KEEP_DOCS,Backup and recovery documentation
+docs/bug_repair.md,KEEP_DOCS,Bug repair documentation
+docs/command_reference.md,KEEP_DOCS,Command reference documentation
+docs/complete_manual.md,KEEP_DOCS,Complete manual
+docs/configuration_reference.md,KEEP_DOCS,Configuration reference
+docs/faq.md,KEEP_DOCS,FAQ documentation
+docs/generated/cli_help.txt,GENERATED,Generated CLI help text
+docs/generated/config_fields.csv,GENERATED,Generated config fields
+docs/generated/cursor_commands.csv,GENERATED,Generated cursor commands
+docs/generated/documentation_validation.md,GENERATED,Generated validation doc
+docs/generated/feature_status.csv,GENERATED,Generated feature status
+docs/glossary.md,KEEP_DOCS,Glossary
+docs/hardware_and_performance.md,KEEP_DOCS,Hardware and performance docs
+docs/new_project_workflow.md,KEEP_DOCS,New project workflow
+docs/orchestrator/PLAN_SCHEMA.md,KEEP_DOCS,Orchestrator plan schema
+docs/orchestrator/RUN_LOOP.md,KEEP_DOCS,Orchestrator run loop docs
+docs/ostar_manual.md,KEEP_DOCS,OSTAR manual
+docs/project_structure.md,KEEP_DOCS,Project structure documentation
+docs/quickstart.md,KEEP_DOCS,Quickstart guide
+docs/README.md,KEEP_DOCS,Documentation index
+docs/REHEARSAL_REPORT.md,KEEP_DOCS,Rehearsal report
+docs/reproduction_protocol.md,KEEP_DOCS,Reproduction protocol
+docs/roadmap.md,KEEP_DOCS,Roadmap documentation
+docs/search_and_github.md,KEEP_DOCS,Search and GitHub documentation
+docs/security.md,KEEP_DOCS,Security documentation
+docs/STARTUP.md,KEEP_DOCS,Startup documentation
+docs/STARTUP_COMPLETION_CHECKLIST.md,KEEP_DOCS,Startup checklist
+docs/takeover_workflow.md,KEEP_DOCS,Takeover workflow documentation
+docs/testing_and_ci.md,KEEP_DOCS,Testing and CI documentation
+docs/troubleshooting.md,KEEP_DOCS,Troubleshooting documentation
+docs/VERDICT.md,KEEP_DOCS,Verdict documentation
+docs/html,GENERATED,Generated HTML documentation
+docs/html/assets/app.js,GENERATED,Generated JavaScript asset
+docs/html/assets/icons.svg,GENERATED,Generated icons asset
+docs/html/assets/logo.svg,GENERATED,Generated logo asset
+docs/html/assets/search-index.json,GENERATED,Generated search index
+docs/html/assets/styles.css,GENERATED,Generated stylesheet
+docs/html/build.py,GENERATED,HTML build script
+docs/html/complete_manual.html,GENERATED,Generated HTML manual
+docs/html/index.html,GENERATED,Generated index page
+docs/html/pages,GENERATED,Generated HTML pages
+docs/html/validate.py,GENERATED,HTML validation script
+docs/html/zh-CN,GENERATED,Generated Chinese HTML docs
+.execution/commands/execute-next.md,LOCAL_RUNTIME,Execution command
+.execution/commands/final-audit.md,LOCAL_RUNTIME,Final audit command
+.execution/commands/plan-init.md,LOCAL_RUNTIME,Plan init command
+.execution/commands/resume.md,LOCAL_RUNTIME,Resume command
+.execution/commands/verify-phase.md,LOCAL_RUNTIME,Verify phase command
+.execution/evidence,EXPERIMENT_OUTPUT,Execution evidence logs
+.execution/execution_state.json,LOCAL_RUNTIME,Execution state
+.execution/PLAN_HASH,LOCAL_RUNTIME,Plan hash
+.execution/plan_snapshot.md,LOCAL_RUNTIME,Plan snapshot
+.execution/requirement_traceability.csv,LOCAL_RUNTIME,Requirement traceability
+.execution/task_graph.yaml,LOCAL_RUNTIME,Task graph
+.execution/task_journal.jsonl,LOCAL_RUNTIME,Task journal
+.execution/task_reports,LOCAL_RUNTIME,Task reports
+fixtures/golden_pointcloud_B/generate_test_data.py,KEEP_SOURCE,Test data generator for point cloud
+fixtures/golden_pointcloud_B/plan.yaml,KEEP_CONFIG,Test plan configuration
+fixtures/golden_pointcloud_B/requirements.txt,KEEP_CONFIG,Test requirements
+fixtures/golden_pointcloud_B/test_golden_pointcloud_B.py,KEEP_TEST,Test file for point cloud B
+fixtures/golden_pointcloud_B/train.py,KEEP_SOURCE,Training script for point cloud
+fixtures/golden_torch_A/expected_events.json,KEEP_CONFIG,Expected events for torch test
+fixtures/golden_torch_A/expected_state_sequence.json,KEEP_CONFIG,Expected state sequence
+fixtures/golden_torch_A/plan.yaml,KEEP_CONFIG,Test plan configuration
+fixtures/golden_torch_A/requirements.txt,KEEP_CONFIG,Test requirements
+fixtures/golden_torch_A/test_golden_torch_A.py,KEEP_TEST,Test file for torch A
+fixtures/golden_torch_A/train.py,KEEP_SOURCE,Training script for torch
+fixtures/minimal_pytorch_repo/README.md,KEEP_DOCS,Minimal PyTorch repo documentation
+fixtures/minimal_pytorch_repo/train.py,KEEP_SOURCE,Minimal training script
+.github_prep/README.md,KEEP_DOCS,GitHub prep documentation
+.github_prep/before_functionality.md,KEEP_DOCS,Before functionality notes
+.github_prep/before_git_status.txt,KEEP_DOCS,Git status snapshot
+.github_prep/before_inventory.json,KEEP_DOCS,Inventory snapshot
+.github_prep/before_tree.txt,KEEP_DOCS,Directory tree snapshot
+.github_prep/git_status_raw.txt,KEEP_DOCS,Raw git status
+.github_prep/size_info.txt,KEEP_DOCS,Size information
+.gitignore,KEEP_CONFIG,Git ignore rules
+LICENSE,KEEP_DOCS,License file
+METRIC_COMPONENT_ARCHITECTURE.md,KEEP_DOCS,Metric component architecture
+NORA_ADAPTATION_NOTES.md,KEEP_DOCS,NORA adaptation notes
+performance/baseline_metrics.csv,LOCAL_RUNTIME,Baseline metrics
+performance/baseline_profile.json,LOCAL_RUNTIME,Baseline profile
+performance/capacity_trials.csv,LOCAL_RUNTIME,Capacity trial data
+performance/hardware_inventory.json,LOCAL_RUNTIME,Hardware inventory
+performance/health_report.md,LOCAL_RUNTIME,Health report
+performance/numerical_parity_report.md,LOCAL_RUNTIME,Numerical parity report
+performance/recommendation.md,LOCAL_RUNTIME,Performance recommendation
+performance/rollback.yaml,LOCAL_RUNTIME,Performance rollback config
+performance/safe_capacity.yaml,LOCAL_RUNTIME,Safe capacity config
+performance/soak_test_report.md,LOCAL_RUNTIME,Soak test report
+performance/strict_performance.yaml,LOCAL_RUNTIME,Strict performance config
+.pytest_cache,CACHE,Pytest cache directory
+README.md,KEEP_DOCS,Project readme
+.repair/bug_registry.csv,LOCAL_RUNTIME,Bug registry
+.repair/patches/BUG-001.patch,LOCAL_RUNTIME,Bug patch 1
+.repair/patches/BUG-002.patch,LOCAL_RUNTIME,Bug patch 2
+.repair/repair_state.json,LOCAL_RUNTIME,Repair state
+.repair/rollback/rollbacks.md,LOCAL_RUNTIME,Rollback records
+.repair/root_causes/BUG-001_root_cause.md,LOCAL_RUNTIME,Bug 1 root cause
+.repair/root_causes/BUG-002_root_cause.md,LOCAL_RUNTIME,Bug 2 root cause
+.repro/audit/audit_manifest.json,LOCAL_RUNTIME,Audit manifest
+.repro/audit/logs/VAL-010.log,LOCAL_RUNTIME,Audit log
+.repro/audit/nodes,LOCAL_RUNTIME,Audit nodes
+.repro/audit/reports/stage_A_discovery.md,LOCAL_RUNTIME,Discovery report
+.repro/audit/repository_inventory.json,LOCAL_RUNTIME,Repository inventory
+rules/crawler-input-safety.mdc,KEEP_CONFIG,Safety rules for crawler
+rules/reproduction-gates.mdc,KEEP_CONFIG,Reproduction gate rules
+schemas/adapter.schema.json,KEEP_CONFIG,Adapter schema
+schemas/automation_policy.schema.json,KEEP_CONFIG,Automation policy schema
+schemas/config.schema.json,KEEP_CONFIG,Config schema
+schemas/evidence.schema.json,KEEP_CONFIG,Evidence schema
+schemas/plan.schema.json,KEEP_CONFIG,Plan schema
+schemas/run_manifest.schema.json,KEEP_CONFIG,Run manifest schema
+schemas/soak_config.schema.json,KEEP_CONFIG,Soak config schema
+schemas/state.schema.json,KEEP_CONFIG,State schema
+schemas/task.schema.json,KEEP_CONFIG,Task schema
+scripts/artifact_verify.py,KEEP_SOURCE,Artifact verification script
+scripts/autopilot.py,KEEP_SOURCE,Autopilot script
+scripts/benchmark_runtime.py,KEEP_SOURCE,Benchmark runtime script
+scripts/checkpoint_resume_test.py,KEEP_SOURCE,Checkpoint resume test
+scripts/compare_runs.py,KEEP_SOURCE,Compare runs script
+scripts/environment_check.py,KEEP_SOURCE,Environment check script
+scripts/hardware_profile.py,KEEP_SOURCE,Hardware profiling script
+scripts/l0_l3_loop.py,KEEP_SOURCE,L0-L3 loop script
+scripts/mini_loop_test.py,KEEP_SOURCE,Mini loop test
+scripts/overfit_test.py,KEEP_SOURCE,Overfit test script
+scripts/research_crawler.py,KEEP_SOURCE,Research crawler script
+scripts/reproctl,KEEP_SOURCE,Reproduction control script
+scripts/reproctl.py,KEEP_SOURCE,Reproduction control Python
+scripts/repro_perf_tuner.py,KEEP_SOURCE,Performance tuner script
+scripts/smoke_test.py,KEEP_SOURCE,Smoke test script
+scripts/training_monitor.py,KEEP_SOURCE,Training monitor script
+scripts/cvo/audit_cli.py,KEEP_SOURCE,CVO audit CLI
+scripts/cvo/__init__.py,KEEP_SOURCE,CVO package init
+scripts/cvo/nodes.py,KEEP_SOURCE,CVO nodes module
+scripts/cvo/runner.py,KEEP_SOURCE,CVO runner
+scripts/cvo/state.py,KEEP_SOURCE,CVO state
+scripts/cvo/val_000.py,KEEP_SOURCE,CVO validation 000
+scripts/cvo/val_010.py,KEEP_SOURCE,CVO validation 010
+scripts/cvo/__pycache__,CACHE,Python bytecode cache
+scripts/orchestrator/agents/base.py,KEEP_SOURCE,Orchestrator base agent
+scripts/orchestrator/agents/evidence_verifier.py,KEEP_SOURCE,Evidence verifier agent
+scripts/orchestrator/agents/github_code_search.py,KEEP_SOURCE,GitHub code search agent
+scripts/orchestrator/agents/hardware_fit.py,KEEP_SOURCE,Hardware fit agent
+scripts/orchestrator/agents/__init__.py,KEEP_SOURCE,Orchestrator agents init
+scripts/orchestrator/agents/metric_auditor.py,KEEP_SOURCE,Metric auditor agent
+scripts/orchestrator/agents/paper_auditor.py,KEEP_SOURCE,Paper auditor agent
+scripts/orchestrator/agents/repo_scout.py,KEEP_SOURCE,Repository scout agent
+scripts/orchestrator/agents/review_auditor.py,KEEP_SOURCE,Review auditor agent
+scripts/orchestrator/approval_gate.py,KEEP_SOURCE,Approval gate module
+scripts/orchestrator/backup.py,KEEP_SOURCE,Backup module
+scripts/orchestrator/cli.py,KEEP_SOURCE,Orchestrator CLI
+scripts/orchestrator/controller.py,KEEP_SOURCE,Orchestrator controller
+scripts/orchestrator/event_journal.py,KEEP_SOURCE,Event journal
+scripts/orchestrator/evidence_manager.py,KEEP_SOURCE,Evidence manager
+scripts/orchestrator/__init__.py,KEEP_SOURCE,Orchestrator init
+scripts/orchestrator/migrate.py,KEEP_SOURCE,Migration module
+scripts/orchestrator/policy_engine.py,KEEP_SOURCE,Policy engine
+scripts/orchestrator/process_manager.py,KEEP_SOURCE,Process manager
+scripts/orchestrator/recovery.py,KEEP_SOURCE,Recovery module
+scripts/orchestrator/report_generator.py,KEEP_SOURCE,Report generator
+scripts/orchestrator/review_loop.py,KEEP_SOURCE,Review loop
+scripts/orchestrator/scheduler.py,KEEP_SOURCE,Scheduler
+scripts/orchestrator/state_store.py,KEEP_SOURCE,State store
+scripts/orchestrator/stop_hook.py,KEEP_SOURCE,Stop hook
+scripts/orchestrator/task_executor.py,KEEP_SOURCE,Task executor
+scripts/orchestrator/verifier.py,KEEP_SOURCE,Verifier module
+scripts/orchestrator/watchdog.py,KEEP_SOURCE,Watchdog module
+scripts/ostar/cli.py,KEEP_SOURCE,OSTAR CLI
+scripts/ostar/config.py,KEEP_SOURCE,OSTAR config
+scripts/ostar/constants.py,KEEP_SOURCE,OSTAR constants
+scripts/ostar/exit_validator.py,KEEP_SOURCE,Exit validator
+scripts/ostar/guard.py,KEEP_SOURCE,OSTAR guard
+scripts/ostar/hardware_monitor.py,KEEP_SOURCE,Hardware monitor
+scripts/ostar/__init__.py,KEEP_SOURCE,OSTAR init
+scripts/ostar/repair_node.py,KEEP_SOURCE,Repair node
+scripts/ostar/reporter.py,KEEP_SOURCE,Reporter module
+scripts/ostar/soak_engine.py,KEEP_SOURCE,Soak engine
+scripts/ostar/soak_state.py,KEEP_SOURCE,Soak state
+scripts/ostar/test_suites.py,KEEP_SOURCE,Test suites
+scripts/ostar/__pycache__,CACHE,Python bytecode cache
+scripts/ostar/soak/logs,LOCAL_RUNTIME,Soak logs
+scripts/ostar/soak/metrics,LOCAL_RUNTIME,Soak metrics
+scripts/ostar/soak/nodes,LOCAL_RUNTIME,Soak nodes
+scripts/ostar/soak/repairs,LOCAL_RUNTIME,Soak repairs
+scripts/ostar/soak/reports,LOCAL_RUNTIME,Soak reports
+scripts/repro_agent/__init__.py,KEEP_SOURCE,Repro agent init
+scripts/repro_agent/metrics/cli.py,KEEP_SOURCE,Metrics CLI
+scripts/repro_agent/metrics/conflict_detector.py,KEEP_SOURCE,Conflict detector
+scripts/repro_agent/metrics/golden_test.py,KEEP_SOURCE,Golden test metrics
+scripts/repro_agent/metrics/hardcode_detector.py,KEEP_SOURCE,Hardcode detector
+scripts/repro_agent/metrics/__init__.py,KEEP_SOURCE,Metrics init
+scripts/repro_agent/metrics/models.py,KEEP_SOURCE,Metrics models
+scripts/repro_agent/metrics/recompute.py,KEEP_SOURCE,Metrics recompute
+scripts/repro_agent/metrics/registry.py,KEEP_SOURCE,Metrics registry
+scripts/repro_agent/metrics/schemas.py,KEEP_SOURCE,Metrics schemas
+scripts/repro_agent/metrics/takeover.py,KEEP_SOURCE,Metrics takeover
+scripts/startup/cli.py,KEEP_SOURCE,Startup CLI
+scripts/startup/config.py,KEEP_SOURCE,Startup config
+scripts/startup/doctor.py,KEEP_SOURCE,Startup doctor
+scripts/startup/generate_artifacts.py,KEEP_SOURCE,Artifact generator
+scripts/startup/__init__.py,KEEP_SOURCE,Startup init
+scripts/startup/lock.py,KEEP_SOURCE,Lock module
+scripts/startup/log_setup.py,KEEP_SOURCE,Log setup
+scripts/startup/plan_validate.py,KEEP_SOURCE,Plan validator
+scripts/startup/recovery.py,KEEP_SOURCE,Startup recovery
+scripts/startup/secrets_redactor.py,KEEP_SOURCE,Secrets redactor
+scripts/startup/state_machine.py,KEEP_SOURCE,State machine
+scripts/startup/stop.py,KEEP_SOURCE,Stop module
+scripts/startup/storage_governance.py,KEEP_SOURCE,Storage governance
+skills/deep-learning-runtime/SKILL.md,KEEP_DOCS,Deep learning runtime skill
+skills/paper-reproduction/SKILL.md,KEEP_DOCS,Paper reproduction skill
+skills/point-cloud-reproduction/SKILL.md,KEEP_DOCS,Point cloud reproduction skill
+skills/repository-selection/SKILL.md,KEEP_DOCS,Repository selection skill
+.stabilization/gap_analysis.md,LOCAL_RUNTIME,Stabilization gap analysis
+.stabilization/requirement_matrix.csv,LOCAL_RUNTIME,Requirement matrix
+.stabilization/schema_inventory.csv,LOCAL_RUNTIME,Schema inventory
+.stabilization/stabilization_state.json,LOCAL_RUNTIME,Stabilization state
+templates/candidate_repositories.csv,KEEP_CONFIG,Candidate repositories template
+templates/claim_evidence_matrix.md,KEEP_CONFIG,Claim evidence matrix template
+templates/control_flags.md,KEEP_CONFIG,Control flags template
+templates/data_card.md,KEEP_CONFIG,Data card template
+templates/data_contract.md,KEEP_CONFIG,Data contract template
+templates/dataset_registry.md,KEEP_CONFIG,Dataset registry template
+templates/decision_log.md,KEEP_CONFIG,Decision log template
+templates/environment_card.md,KEEP_CONFIG,Environment card template
+templates/experiment_plan.md,KEEP_CONFIG,Experiment plan template
+templates/experiment_tracker.csv,KEEP_CONFIG,Experiment tracker template
+templates/failure_case_report.md,KEEP_CONFIG,Failure case template
+templates/handoff.json,KEEP_CONFIG,Handoff template
+templates/hardware_fit_report.md,KEEP_CONFIG,Hardware fit report template
+templates/human_checkpoints.md,KEEP_CONFIG,Human checkpoints template
+templates/metric_protocol_audit.md,KEEP_CONFIG,Metric protocol audit template
+templates/narrative_report.md,KEEP_CONFIG,Narrative report template
+templates/parameter_table.md,KEEP_CONFIG,Parameter table template
+templates/performance,KEEP_CONFIG,Performance templates
+templates/project_memory.md,KEEP_CONFIG,Project memory template
+templates/project_structure.md,KEEP_CONFIG,Project structure template
+templates/repo_adapter.yaml,KEEP_CONFIG,Repository adapter template
+templates/repository_security_audit.md,KEEP_CONFIG,Security audit template
+templates/repro_report_skeleton.md,KEEP_CONFIG,Reproduction report skeleton
+templates/repro_spec.yaml,KEEP_CONFIG,Reproduction spec template
+templates/research_contract.md,KEEP_CONFIG,Research contract template
+templates/runs_manifest.csv,KEEP_CONFIG,Runs manifest template
+templates/search_lessons.jsonl,KEEP_CONFIG,Search lessons template
+templates/search_plan.json,KEEP_CONFIG,Search plan JSON template
+templates/search_plan.yaml,KEEP_CONFIG,Search plan YAML template
+templates/sources.lock.yaml,KEEP_CONFIG,Sources lock template
+templates/topic_graph.json,KEEP_CONFIG,Topic graph template
+tests/conftest.py,KEEP_TEST,Test configuration
+tests/test_chaos.py,KEEP_TEST,Chaos testing
+tests/test_checkpoint_recovery.py,KEEP_TEST,Checkpoint recovery tests
+tests/test_handoff.py,KEEP_TEST,Handoff tests
+tests/test_human_checkpoint.py,KEEP_TEST,Human checkpoint tests
+tests/test_l0_l3.py,KEEP_TEST,L0-L3 loop tests
+tests/test_metrics_recompute.py,KEEP_TEST,Metrics recompute tests
+tests/test_minimal_e2e.py,KEEP_TEST,Minimal end-to-end tests
+tests/test_mode_switch.py,KEEP_TEST,Mode switch tests
+tests/test_orchestrator.py,KEEP_TEST,Orchestrator tests
+tests/test_ostar.py,KEEP_TEST,OSTAR tests
+tests/test_parity.py,KEEP_TEST,Parity tests
+tests/test_plugin_discovery.py,KEEP_TEST,Plugin discovery tests
+tests/test_regression.py,KEEP_TEST,Regression tests
+tests/test_repro_perf.py,KEEP_TEST,Reproduction performance tests
+tests/test_stabilization.py,KEEP_TEST,Stabilization tests
+tests/test_startup.py,KEEP_TEST,Startup tests
+tests/test_state_machine.py,KEEP_TEST,State machine tests
+tests/__pycache__,CACHE,Python bytecode cache
+**Audit,OBSOLETE,Malformed filename (artifact from error)

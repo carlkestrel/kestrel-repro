@@ -96,50 +96,113 @@ class Watchdog:
         return diagnosis
 
     def get_gpu_info(self, force_refresh: bool = False) -> dict:
-        """Get GPU information with caching."""
+        """Get GPU information with caching. Supports CUDA and MPS."""
         now = time.time()
         if not force_refresh and (now - self._cache_time) < self._cache_ttl:
             return self._gpu_cache.get(0, {})
         
-        info = {"available": False, "devices": []}
+        info = {"available": False, "devices": [], "type": None}
         
         if not TORCH_AVAILABLE:
             return info
         
+        # Check MPS first (Apple Silicon)
+        mps_info = self._get_mps_info()
+        if mps_info.get("available"):
+            info.update(mps_info)
+            self._cache_time = now
+            self._gpu_cache[0] = info
+            return info
+        
+        # Check CUDA (NVIDIA)
         try:
-            if not torch.cuda.is_available():
-                return info
-            
-            info["available"] = True
-            info["device_count"] = torch.cuda.device_count()
-            
-            for i in range(torch.cuda.device_count()):
-                dev_info = {
-                    "id": i,
-                    "name": torch.cuda.get_device_name(i),
-                }
+            if torch.cuda.is_available():
+                info["available"] = True
+                info["type"] = "cuda"
+                info["device_count"] = torch.cuda.device_count()
                 
-                # Memory info
-                mem_allocated = torch.cuda.memory_allocated(i) / 1024**3  # GB
-                mem_reserved = torch.cuda.memory_reserved(i) / 1024**3
-                mem_total = torch.cuda.get_device_properties(i).total_memory / 1024**3
-                dev_info["memory_allocated_gb"] = round(mem_allocated, 2)
-                dev_info["memory_reserved_gb"] = round(mem_reserved, 2)
-                dev_info["memory_total_gb"] = round(mem_total, 2)
-                dev_info["memory_used_pct"] = round(mem_reserved / mem_total * 100, 1)
+                for i in range(torch.cuda.device_count()):
+                    dev_info = {
+                        "id": i,
+                        "name": torch.cuda.get_device_name(i),
+                    }
+                    
+                    # Memory info
+                    mem_allocated = torch.cuda.memory_allocated(i) / 1024**3  # GB
+                    mem_reserved = torch.cuda.memory_reserved(i) / 1024**3
+                    mem_total = torch.cuda.get_device_properties(i).total_memory / 1024**3
+                    dev_info["memory_allocated_gb"] = round(mem_allocated, 2)
+                    dev_info["memory_reserved_gb"] = round(mem_reserved, 2)
+                    dev_info["memory_total_gb"] = round(mem_total, 2)
+                    dev_info["memory_used_pct"] = round(mem_reserved / mem_total * 100, 1)
+                    
+                    self._gpu_cache[i] = dev_info
                 
-                self._gpu_cache[i] = dev_info
-            
-            # Get temperature via nvidia-smi
-            temp_info = self._get_nvidia_smi_temp()
-            if temp_info and 0 in self._gpu_cache:
-                self._gpu_cache[0].update(temp_info)
-            
+                # Get temperature via nvidia-smi
+                temp_info = self._get_nvidia_smi_temp()
+                if temp_info and 0 in self._gpu_cache:
+                    self._gpu_cache[0].update(temp_info)
+                
+                info["devices"] = [self._gpu_cache.get(i, {}) for i in range(info["device_count"])]
+            else:
+                info["type"] = "none"
         except Exception as e:
             info["error"] = str(e)
         
         self._cache_time = now
         self._gpu_cache[0] = info
+        return info
+
+    def _get_mps_info(self) -> dict:
+        """Get MPS (Metal Performance Shaders) GPU info for Apple Silicon."""
+        info = {"available": False, "type": "mps", "devices": []}
+        
+        try:
+            if not hasattr(torch.backends, "mps"):
+                return info
+            
+            if not torch.backends.mps.is_available():
+                return info
+            
+            info["available"] = True
+            info["device_count"] = 1
+            
+            # MPS device info
+            dev_info = {
+                "id": 0,
+                "name": "Apple Silicon GPU (MPS)",
+                "type": "mps",
+                "architecture": "Apple GPU",
+            }
+            
+            # Try to get memory info (MPS has limited memory reporting)
+            try:
+                if hasattr(torch.mps, "current_allocated_memory"):
+                    mem_allocated = torch.mps.current_allocated_memory() / 1024**3
+                    dev_info["memory_allocated_gb"] = round(mem_allocated, 2)
+            except Exception:
+                pass
+            
+            try:
+                if hasattr(torch.mps, "set_per_process_memory_fraction"):
+                    # Get system memory for GPU context
+                    import subprocess
+                    result = subprocess.run(
+                        ["sysctl", "-n", "hw.memsize"],
+                        capture_output=True, text=True, timeout=5
+                    )
+                    if result.returncode == 0:
+                        total_mem_bytes = int(result.stdout.strip())
+                        dev_info["memory_total_gb"] = round(total_mem_bytes / 1024**3, 2)
+            except Exception:
+                pass
+            
+            info["devices"].append(dev_info)
+            self._gpu_cache[0] = info
+            
+        except Exception as e:
+            info["error"] = str(e)
+        
         return info
 
     def _get_nvidia_smi_temp(self) -> dict | None:

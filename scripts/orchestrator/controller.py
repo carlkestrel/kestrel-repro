@@ -19,6 +19,7 @@ from .process_manager import ProcessManager
 from .recovery import RecoveryManager
 from .scheduler import CycleDependencyError, Scheduler
 from .state_store import StateStore, utc_now
+from .stop_hook import StopHook
 from .task_executor import TaskExecutor
 from .verifier import Verifier
 from .watchdog import Watchdog
@@ -77,6 +78,7 @@ class Controller:
         self.recovery = RecoveryManager(
             self.project_root, self.store, self.journal, self.process_manager
         )
+        self.stop_hook = StopHook(self.project_root, self.store, self.journal)
         self.owner = f"controller-{os.getpid()}-{uuid.uuid4().hex[:8]}"
         self.poll_interval = max(0.01, poll_interval)
         self.max_parallel = max(1, int(self.plan.get("budgets", {}).get(
@@ -89,6 +91,7 @@ class Controller:
         self._waiting_since: float | None = None
 
     def run(self) -> dict:
+        self.stop_hook.register()
         recovery = self.recovery.recover()
         try:
             self.scheduler.detect_cycles()
