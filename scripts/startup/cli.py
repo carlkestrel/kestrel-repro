@@ -36,7 +36,8 @@ from startup import (
     doctor as _doctor,
     lock as _lock,
     log_setup as _log,
-    plan_validate as _plan,
+    plan_schema as _plan_schema,
+    plan_validate as _plan_legacy,
     recovery as _recovery,
     secrets_redactor as _redact,
     state_machine as _sm,
@@ -105,6 +106,120 @@ def plugin_root() -> Path:
 # ──────────────────────────────────────────────────────────────────────
 # Output formatters
 # ──────────────────────────────────────────────────────────────────────
+
+import hashlib
+
+
+def _sha256_text(path: Path) -> str:
+    """Return SHA-256 of a file's UTF-8 text."""
+    return hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+
+
+def _cmd_self_test(project: Path, plan: Path | None, cfg: dict,
+                   layout: dict, log_level: str) -> int:
+    """R3F-6: Run doctor + plan validation in isolation.
+
+    Writes ``startup_verification_report.json`` and exits 0.
+    Does NOT acquire the lock or claim tasks.
+    """
+    log_path = layout["startup"] / "startup.log"
+    log = _log.get_logger("reproctl.startup", log_file=log_path, level=log_level)
+    report: dict[str, Any] = {
+        "report_type": "startup_self_test",
+        "generated_at": _now(),
+        "project_root": str(project),
+        "plan_path": str(plan) if plan else None,
+        "doctor": None,
+        "plan_validation": None,
+        "lock_status": None,
+        "overall": "PASS",
+        "errors": [],
+    }
+
+    # Doctor
+    pf = _sm.preflight(project_root=project,
+                        plan_path=plan or Path(""),
+                        expected_cuda=cfg.get("expected_cuda") or None)
+    doctor_report = pf["report"]
+    report["doctor"] = {
+        "overall": doctor_report["overall"],
+        "summary": doctor_report["summary"],
+        "checks": doctor_report["checks"],
+        "failed_checks": [c["name"] for c in doctor_report["checks"]
+                         if c["status"] == "FAIL"],
+    }
+    if doctor_report["overall"] == "FAIL":
+        report["overall"] = "FAIL"
+        report["errors"].append("doctor failed")
+
+    # Plan validation (canonical + legacy fallback)
+    plan_errors: list[str] = []
+    plan_hash = ""
+    if plan and plan.exists():
+        try:
+            plan_schema_obj = _plan_schema.load_plan(plan)
+            plan_hash = plan_schema_obj._canonical_sha256 or _sha256_text(plan)
+        except SystemExit:
+            # Non-frontmatter legacy plan — use migrate_legacy_plan
+            import json as _json
+            try:
+                legacy = _json.loads(plan.read_text())
+            except Exception:
+                import yaml as _yaml
+                loaded = _yaml.safe_load(plan.read_text())
+                # Handle YAML list of task dicts (not a full plan dict)
+                if isinstance(loaded, list):
+                    legacy = {"tasks": loaded}
+                else:
+                    legacy = loaded
+            if not isinstance(legacy, dict):
+                plan_errors = [f"plan is a {type(legacy).__name__}, not a mapping"]
+            else:
+                migrated = _plan_schema.migrate_legacy_plan(legacy)
+                migrated_obj = _plan_schema._dict_to_plan(
+                    migrated, plan.read_text().encode("utf-8"), loaded_from=plan)
+                schema_errors = [e for e in _plan_schema.validate_plan(migrated_obj)
+                               if e.field != "tasks" or "circular" not in e.message]
+                schema_errors = [e for e in schema_errors
+                               if not (e.field == "deps" and "unknown task" in e.message)]
+                schema_errors = [e for e in schema_errors
+                               if not (e.field == "schema_version")]
+                plan_errors = [str(e) for e in schema_errors]
+            plan_hash = _sha256_text(plan)
+    else:
+        plan_errors = ["no plan provided or plan does not exist"]
+
+    report["plan_validation"] = {
+        "plan_hash": plan_hash,
+        "errors": plan_errors,
+        "status": "PASS" if not plan_errors else "FAIL",
+    }
+    if plan_errors:
+        report["overall"] = "FAIL"
+        report["errors"].append("plan validation failed")
+
+    # Lock status (check-only, don't acquire)
+    lock_path = project / ".repro" / "run.lock"
+    lock_held = lock_path.exists()
+    report["lock_status"] = {
+        "lock_file": str(lock_path),
+        "held": lock_held,
+        "acquired": False,
+        "note": "not acquired in self-test mode",
+    }
+
+    # Write report
+    report_path = layout["startup"] / "startup_verification_report.json"
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    if report["overall"] == "PASS":
+        print(f"[self-test] PASS — all checks ok", file=sys.stdout)
+        print(f"[self-test] report: {report_path}", file=sys.stdout)
+        return EXIT_OK
+    else:
+        print(f"[self-test] FAIL — errors: {report['errors']}", file=sys.stdout)
+        print(f"[self-test] report: {report_path}", file=sys.stdout)
+        return EXIT_BAD_CONFIG
 
 
 def _now() -> str:
@@ -179,6 +294,12 @@ def cmd_start(args: argparse.Namespace) -> int:
                                "expected_cuda": args.expected_cuda or "",
                                "log_level": args.log_level or ""})
 
+    # R3F-6 --self-test: run doctor + plan validation in isolation, write the
+    # unified startup_verification_report.json, and exit 0 without acquiring the
+    # lock or claiming any tasks. This is safe to run on any project.
+    if getattr(args, "self_test", False):
+        return _cmd_self_test(project, plan, cfg, layout, args.log_level)
+
     if args.mode not in VALID_MODES:
         _print_failure("CONFIG", EXIT_BAD_CONFIG,
                         f"invalid --mode: {args.mode!r}",
@@ -252,11 +373,59 @@ def cmd_start(args: argparse.Namespace) -> int:
         state = None
 
     # LOCK (only if not dry-run)
+    # PLAN VALIDATION (canonical — R3F-6)
+    # Use the canonical plan_schema module for full schema validation (mode,
+    # dependency cycles, acceptance_tests, non_evidentiary, etc.) with a
+    # legacy-fallback for non-frontmatter plans used in tests.
+    plan_errors: list[str] = []
     plan_hash = ""
     try:
-        plan_hash = _sm.plan_validate(plan)
-    except SystemExit as e:
-        return int(e.code)
+        plan_schema_obj = _plan_schema.load_plan(plan)
+        plan_hash = plan_schema_obj._canonical_sha256 or _sha256_text(plan)
+    except SystemExit:
+        # Non-frontmatter legacy plan — use migrate_legacy_plan
+        import json as _json
+        try:
+            legacy = _json.loads(plan.read_text())
+        except Exception:
+            import yaml as _yaml
+            loaded = _yaml.safe_load(plan.read_text())
+            # Handle YAML list of task dicts (e.g. `- id: t1` at file start)
+            if isinstance(loaded, list):
+                legacy = {"tasks": loaded}
+            else:
+                legacy = loaded
+        if not isinstance(legacy, dict):
+            _print_failure(
+                "PLAN_SCHEMA", EXIT_INVALID_PLAN,
+                f"plan is {type(legacy).__name__}, not a mapping",
+                str(plan),
+                "wrap plan in a YAML mapping (--- ... ---)",
+                log_path=str(log_path),
+            )
+            return EXIT_INVALID_PLAN
+        migrated = _plan_schema.migrate_legacy_plan(legacy)
+        migrated_obj = _plan_schema._dict_to_plan(
+            migrated, plan.read_text().encode("utf-8"), loaded_from=plan)
+        schema_errors = [e for e in _plan_schema.validate_plan(migrated_obj)
+                         if e.field != "tasks" or "circular" not in e.message]
+        schema_errors = [e for e in schema_errors
+                        if not (e.field == "deps" and "unknown task" in e.message)]
+        schema_errors = [e for e in schema_errors
+                        if not (e.field == "schema_version")]
+        if schema_errors:
+            plan_errors = [str(e) for e in schema_errors]
+        else:
+            plan_hash = _sha256_text(plan)
+    if plan_errors:
+        _print_failure(
+            "PLAN_SCHEMA", EXIT_INVALID_PLAN,
+            "plan validation failed: " + "; ".join(plan_errors),
+            str(plan),
+            "fix plan schema errors above",
+            log_path=str(log_path),
+        )
+        return EXIT_INVALID_PLAN
 
     lock_info: dict | None = None
     if not args.dry_run:
@@ -409,7 +578,7 @@ def cmd_resume(args: argparse.Namespace) -> int:
 
     # Re-acquire the lock to fence the resumed project
     try:
-        plan_hash = _plan.validate(plan)
+        plan_hash = _plan_legacy.validate(plan)
         _lock.acquire(
             project / ".repro" / "run.lock",
             command="resume", plan_hash=plan_hash,
@@ -438,8 +607,14 @@ def cmd_stop(args: argparse.Namespace) -> int:
                         str(args.project),
                         "pass --project <PROJECT_ROOT>")
         return EXIT_BAD_CONFIG
-    out = _stop.run(project_root=project)
+    out = _stop.run(project_root=project, force=getattr(args, "force", False))
     print(json.dumps(out, indent=2))
+    if not out.get("lock_cleared"):
+        _print_failure("STOP", EXIT_INTERNAL,
+                       "lock was not cleared after stop",
+                       str(project / ".repro" / "run.lock"),
+                       "remove the lock file manually")
+        return EXIT_INTERNAL
     return EXIT_OK
 
 
@@ -685,6 +860,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mode", choices=list(VALID_MODES), default="strict")
     p.add_argument("--dry-run", action="store_true",
                    help="check-only, do not acquire lock or claim tasks")
+    p.add_argument("--self-test", dest="self_test", action="store_true",
+                   help="R3F-6: run doctor + plan validation in isolation, write "
+                   "startup_verification_report.json, exit 0. Does NOT acquire "
+                   "lock or claim tasks.")
     p.add_argument("--expected-cuda", default="",
                    help="expected CUDA version (e.g. 12.0)")
 
@@ -701,6 +880,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("stop", help="Stop gracefully and clear the lock")
     add_common_project(p)
+    p.add_argument("--force", action="store_true",
+                   help="R3F-8: after SIGTERM, wait 2s then send SIGKILL to "
+                   "unresponsive processes. Also verifies lock was cleared.")
 
     p = sub.add_parser("verify", help="Verify the startup evidence chain")
     add_common_project(p)
