@@ -74,4 +74,32 @@ This file tracks every R3F phase: commit, head SHA, test results, evidence, push
 ---
 
 ## R3F-2 — Single SQLite authority end-to-end verification
+
+| Field | Value |
+|---|---|
+| Phase | R3F-2 |
+| Status | **PASS** |
+| Local head SHA (start) | `453a58b83294011ba47a0402f09bf5db2f3deaeb` |
+| Local head SHA (after commit) | `4444c94cf8167cf6dc06568c29cf3880d7574b6e` |
+| Remote head SHA | `4444c94cf8167cf6dc06568c29cf3880d7574b6e` |
+| base SHA | `a828023f537dfbfed4d7798066f3ca084d8072c9` (untouched ✅) |
+| PR | https://github.com/carlkestrel/kestrel-repro/pull/1 (Draft ✅) |
+| Test commands | `pytest tests/test_r1_acceptance.py tests/test_r2_acceptance.py tests/test_r3_0_acceptance.py tests/test_r3f2_single_authority.py` |
+| Tests collected | 67 |
+| Tests passed | 67 |
+| Tests failed | 0 |
+| Raw evidence | `ci_reports/r3_repair/R3F_2_BASELINE.md`, `R3F_2_JUNIT.xml` |
+| Issues fixed | (a) doc/impl path mismatch (`.repro/state/` vs `.repro/execution/`); (b) `find_active_state_dbs` now raises `BLOCKED_STATE_CONFLICT` on legacy JSON + active SQLite |
+| New tests | `tests/test_r3f2_single_authority.py` — 7 tests |
+| New module | `scripts/startup/errors.py` (StartupError + error code constants) |
+| Rollback commit | `4444c94cf8167cf6dc06568c29cf3880d7574b6e` (single-commit phase; reset to `453a58b` to roll back) |
+| Pushed to `review/r3-20260718-a828023`? | ✅ yes (verified 2026-07-18 13:50; remote head = local head) |
+| GitHub Actions URL | https://github.com/carlkestrel/kestrel-repro/pull/1 (still Draft) |
+| `LATEST_REVIEW_REQUEST.json` updated | ✅ |
+| Allow next phase? | yes |
+| External review status | NOT_REQUESTED |
+
+---
+
+## R3F-3 — Fix orchestrator execution chain
 _tbd_

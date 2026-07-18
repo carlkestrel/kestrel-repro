@@ -2,45 +2,39 @@
   "repository": "carlkestrel/kestrel-repro",
   "pull_request": 1,
   "branch": "review/r3-20260718-a828023",
-  "phase": "R3F-1",
+  "phase": "R3F-2",
   "phase_status": "PASS",
   "base_sha": "a828023f537dfbfed4d7798066f3ca084d8072c9",
-  "previous_head_sha": "f28f0eb6832450355a5f5077b36bcfa394152cbb",
-  "new_head_sha": "25147075326ba96ece68344f599373624353467a",
-  "commit_sha": "25147075326ba96ece68344f599373624353467a",
+  "previous_head_sha": "453a58b83294011ba47a0402f09bf5db2f3deaeb",
+  "new_head_sha": "4444c94cf8167cf6dc06568c29cf3880d7574b6e",
+  "commit_sha": "4444c94cf8167cf6dc06568c29cf3880d7574b6e",
   "main_sha_verified": "a828023f537dfbfed4d7798066f3ca084d8072c9",
   "test_commands": [
-    "/tmp/actionlint -no-color .github/workflows/ci-l1.yml .github/workflows/ci-l2.yml .github/workflows/ci-l3.yml",
-    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -c \"import yaml; [yaml.safe_load(open(f)) for f in ['.github/workflows/ci-l1.yml','.github/workflows/ci-l2.yml','.github/workflows/ci-l3.yml']]\""
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_r1_acceptance.py tests/test_r2_acceptance.py tests/test_r3_0_acceptance.py tests/test_r3f2_single_authority.py --tb=short --junitxml=ci_reports/r3_repair/R3F_2_JUNIT.xml --timeout=120"
   ],
-  "collected": 0,
-  "passed": 0,
+  "collected": 67,
+  "passed": 67,
   "failed": 0,
   "skipped": 0,
-  "junit_files": [],
-  "raw_log_files": [
-    "ci_reports/r3_repair/R3F_1_BASELINE.md",
-    "ci_reports/r3_repair/R3F_1_actionlint.txt",
-    "ci_reports/r3_repair/R3F_1_jobs.json"
+  "junit_files": [
+    "ci_reports/r3_repair/R3F_2_JUNIT.xml"
   ],
-  "ci_yaml_summary": {
-    "ci-l1.yml": {"jobs_declared": 5, "jobs_list": ["manifest","syntax","validate-configs","ruff-lint","pytest-unit"]},
-    "ci-l2.yml": {"jobs_declared": 4, "jobs_list": ["cli-smoke","startup-integration","config-parsing","orchestrator-import"]},
-    "ci-l3.yml": {"jobs_declared": 7, "jobs_list": ["l0-l3-verification","orchestrator-full","startup-full","golden-fixtures","gpu-tests","cvo-full","remaining-tests"]},
-    "total_jobs": 16,
-    "actionlint_errors": 0,
-    "yaml_parse_errors": 0,
-    "exit_code_swallow_remaining": 0,
-    "gpu_job_run_strategy": "if: ${{ inputs.gpu_enabled == true }}; explicit NO_GPU/NO_TORCH reporting"
+  "raw_log_files": [
+    "ci_reports/r3_repair/R3F_2_BASELINE.md"
+  ],
+  "r3f2_summary": {
+    "doc_path_fix": "scripts/core/state_store.py line 9: '.repro/state/state.sqlite3' -> '.repro/execution/state.sqlite3'",
+    "new_module": "scripts/startup/errors.py (StartupError + BLOCKED_STATE_CONFLICT etc.)",
+    "find_active_state_dbs_enhancement": "Now detects legacy authoritative execution_state.json alongside active SQLite and raises BLOCKED_STATE_CONFLICT",
+    "new_test_suite": "tests/test_r3f2_single_authority.py — 7 tests, all pass"
   },
-  "changed_files_manifest": ".github/workflows/ci-l1.yml, .github/workflows/ci-l2.yml, .github/workflows/ci-l3.yml, ci_reports/r3_repair/R3F_1_BASELINE.md, ci_reports/r3_repair/R3F_1_actionlint.txt, ci_reports/r3_repair/R3F_1_jobs.json",
+  "changed_files_manifest": "scripts/core/state_store.py, scripts/startup/errors.py, tests/test_r3f2_single_authority.py, ci_reports/r3_repair/R3F_2_BASELINE.md, ci_reports/r3_repair/R3F_2_JUNIT.xml",
   "known_failures": [],
   "unresolved_risks": [
-    "R3F-3: orchestrator execution chain unverified end-to-end (14 deterministic failures from R3F-0 baseline)",
-    "R3F-7: 21 existing tests must NOT be weakened"
+    "R3F-3: orchestrator execution chain unverified end-to-end (14 deterministic failures from R3F-0 baseline remain)"
   ],
   "ready_for_external_review": true,
   "ready_for_external_review_caveat": "Materials uploaded for review. ready_for_external_review=true does NOT mean external review has been completed, PR may be merged, release may be tagged, or real paper reproduction is finished.",
   "external_review_status": "NOT_REQUESTED",
-  "generated_at": "2026-07-18T13:40:00+08:00"
+  "generated_at": "2026-07-18T13:50:00+08:00"
 }
