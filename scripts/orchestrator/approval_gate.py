@@ -76,9 +76,12 @@ class ApprovalGate:
         for approval in self.store.pending_approvals():
             expires_at = approval.get("expires_at")
             if expires_at is not None and expires_at <= now:
-                # R3F-5 task 5: expired approvals are waived (not rejected),
-                # since rejecting implies the task was reviewed and denied.
-                self.waive(approval["approval_id"], "approval expired")
+                # R3R-4: expired approvals transition to REJECTED (not WAIVED).
+                # REJECTED is terminal: the human never approved it in time,
+                # so the task is rejected rather than silently waived.
+                self.store.decide_approval(
+                    approval["approval_id"], "REJECTED", "approval expired"
+                )
                 expired.append(approval["approval_id"])
         return expired
 

@@ -216,14 +216,26 @@ class Controller:
         progressed = False
         for task in self.store.list_tasks({"VERIFYING"}):
             passed, detail = self.verifier.verify(task)
-            if passed:
+            if detail == "_NEEDS_WAIVER_":
+                # R3R-4: non_evidentiary tasks must not be auto-PASSED.
+                # Request human approval BEFORE transitioning to WAITING_APPROVAL
+                # (transition() needs a valid current state, not WAITING_APPROVAL).
+                self.approvals.request(task, "non-evidentiary result needs human waiver")
+                self.store.transition(
+                    task["id"], "WAITING_APPROVAL", expected="VERIFYING",
+                    fields={"finished_at": utc_now()},
+                    event_type="WAIVER_REQUIRED",
+                )
+                progressed = True
+            elif passed:
                 self.store.transition(
                     task["id"], "PASSED", expected="VERIFYING",
                     fields={"finished_at": utc_now(), "failure_reason": None},
                 )
+                progressed = True
             else:
                 self._fail(task, detail)
-            progressed = True
+                progressed = True
         return progressed
 
     def _fail(self, task: dict, reason: str) -> None:
@@ -267,11 +279,12 @@ class Controller:
                     refreshed = self.store.get_task(task["id"])
                     if refreshed:
                         task.update(refreshed)
-                    # If auto-approve worked, task is now APPROVED; fall through.
+                    # If auto-approve worked, task is now APPROVED.  Fall through
+                    # to the claim/launch path below.
                     if task["status"] == "APPROVED":
                         decision = AUTO_EXECUTE
                         reason = f"{reason} (auto-approved low-risk)"
-                if decision == REQUIRE_APPROVAL:
+                else:
                     # Still needs human approval — stay in WAITING_APPROVAL state.
                     self.approvals.request(task, reason)
                     progressed = True

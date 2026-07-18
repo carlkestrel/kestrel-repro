@@ -124,8 +124,11 @@ def migrate_legacy_plan(plan: dict) -> dict:
         # R3F-5 task 5: legacy plans without acceptance_tests on every task
         # are marked non_evidentiary so validation passes; the orchestrator
         # still records WAIVED instead of PASSED for them.
-        if not t.get("acceptance_tests"):
+        # R3R-4 fix: normalize None and [] both → non_evidentiary = True,
+        # and always normalize acceptance_tests to [] for safe DB insertion.
+        if not t.get("acceptance_tests"):  # None or []
             t["non_evidentiary"] = True
+            t["acceptance_tests"] = []  # normalize for DB column (NOT NULL)
         else:
             t.setdefault("non_evidentiary", False)
         t.setdefault("writes", [])

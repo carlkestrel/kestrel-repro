@@ -46,7 +46,7 @@ PROJECT_STATES = frozenset({
 TASK_STATES = frozenset({
     "PENDING", "READY", "WAITING_APPROVAL", "APPROVED",
     "RUNNING", "VERIFYING", "PASSED", "FAILED",
-    "RETRY_WAIT", "BLOCKED", "REJECTED", "WAIVED",
+    "RETRY_WAIT", "BLOCKED", "REJECTED", "WAIVED", "EXPIRED",
     "LEGACY_UNVERIFIED",
 })
 
@@ -58,24 +58,26 @@ LEGACY_TASK_STATE_ALIASES = {
 }
 
 HUMAN_TRANSITIONS: dict[str, set[str]] = {
-    "WAITING_APPROVAL": {"APPROVED", "REJECTED", "WAIVED"},
+    "WAITING_APPROVAL": {"APPROVED", "REJECTED", "WAIVED", "EXPIRED"},
     "REJECTED": set(),
     "WAIVED": set(),
+    "EXPIRED": set(),
     "BLOCKED": {"READY"},
 }
 
 TASK_TRANSITIONS: dict[str, set[str]] = {
     "PENDING":           {"READY", "FAILED", "BLOCKED"},
     "READY":             {"RUNNING", "WAITING_APPROVAL", "REJECTED", "FAILED", "BLOCKED"},
-    "WAITING_APPROVAL":  {"APPROVED", "REJECTED", "WAIVED"},
+    "WAITING_APPROVAL":  {"APPROVED", "REJECTED", "WAIVED", "EXPIRED"},
     "APPROVED":          {"RUNNING"},
     "RUNNING":           {"VERIFYING", "FAILED", "READY"},
-    "VERIFYING":         {"PASSED", "FAILED"},
+    "VERIFYING":         {"PASSED", "FAILED", "WAITING_APPROVAL"},
     "FAILED":            {"RETRY_WAIT", "BLOCKED"},
     "RETRY_WAIT":        {"READY"},
     "PASSED":            set(),
     "REJECTED":          set(),
     "WAIVED":            set(),
+    "EXPIRED":           set(),
     "BLOCKED":           {"READY"},
     "LEGACY_UNVERIFIED": {"PASSED", "FAILED", "BLOCKED"},
 }
@@ -172,12 +174,12 @@ class StateStore:
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self.db_path), timeout=30)
+        conn = sqlite3.connect(str(self.db_path), timeout=5)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys=ON")
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA synchronous=FULL")
-        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
     @contextmanager
@@ -946,8 +948,8 @@ class StateStore:
     def decide_approval(self, approval_id: str, decision: str,
                         reason: str = "") -> None:
         decision = decision.upper()
-        if decision not in {"APPROVED", "REJECTED", "WAIVED"}:
-            raise ValueError("decision must be APPROVED/REJECTED/WAIVED")
+        if decision not in {"APPROVED", "REJECTED", "WAIVED", "EXPIRED"}:
+            raise ValueError("decision must be APPROVED/REJECTED/WAIVED/EXPIRED")
         with self.transaction() as conn:
             row = conn.execute(
                 "SELECT * FROM approvals WHERE approval_id=?", (approval_id,)
