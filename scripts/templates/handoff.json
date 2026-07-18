@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Run Handoff",
+  "description": "Snapshot of project state at the moment of a context boundary. Updated for R2 completion.",
+  "type": "object",
+  "required": [
+    "project_mode",
+    "current_phase",
+    "completed_phases",
+    "current_run_id",
+    "run_command",
+    "process_id",
+    "log_path",
+    "checkpoint_path",
+    "next_step",
+    "recovery_required_files",
+    "blockers",
+    "timestamp"
+  ],
+  "properties": {
+    "project_mode":           { "type": "string", "enum": ["plan", "reproduce", "evolve", "extend"] },
+    "current_phase":          { "type": "string", "description": "R0 ... R2 (completed), R3 (next)" },
+    "completed_phases":       { "type": "array",  "items": { "type": "string" } },
+    "current_run_id":         { "type": "string" },
+    "run_command":            { "type": "string" },
+    "process_id":             { "type": ["integer", "string", "null"] },
+    "log_path":               { "type": "string" },
+    "checkpoint_path":        { "type": "string" },
+    "next_step":              { "type": "string" },
+    "recovery_required_files": { "type": "array",  "items": { "type": "string" } },
+    "blockers":              { "type": "array",  "items": { "type": "string" } },
+    "timestamp":              { "type": "string" }
+  },
+  "r2_completion": {
+    "phase": "R2",
+    "status": "COMPLETE",
+    "date": "2026-07-18",
+    "tests": {
+      "r2_acceptance": "31/31 PASSED",
+      "r1_regression": "43/43 PASSED",
+      "r3_open_failures": "13 (expected, R3 scope)"
+    },
+    "new_modules": [
+      "scripts/startup/plan_schema.py",
+      "scripts/startup/mode.py",
+      "scripts/startup/authorization.py",
+      "scripts/startup/state_store.py",
+      "scripts/startup/migration.py"
+    ],
+    "deliverables": [
+      "ci_reports/R2_PLAN_SCHEMA.md",
+      "ci_reports/R2_MODE_MIGRATION_MATRIX.csv",
+      "ci_reports/R2_STATE_MODEL.md",
+      "ci_reports/R2_STATE_TRANSITION_MATRIX.csv",
+      "ci_reports/R2_AUTHORIZATION_SCHEMA.md",
+      "ci_reports/R2_MIGRATION_REPORT.md",
+      "ci_reports/R2_TEST_REPORT.md",
+      "ci_reports/R2_JUNIT.xml",
+      "ci_reports/R2_DIFF_SUMMARY.md",
+      "ci_reports/R2_ROLLBACK.md"
+    ],
+    "next_phase": "R3"
+  }
+}

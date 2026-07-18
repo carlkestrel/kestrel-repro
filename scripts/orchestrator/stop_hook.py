@@ -66,11 +66,21 @@ class StopHook:
 
             atexit.register(self._save_state)
 
-            if hasattr(signal, "SIGINT"):
-                signal.signal(signal.SIGINT, self._signal_handler)
+            # R3-3: signal.signal() can only be called from the main thread.
+            # If we're running in a worker thread (e.g., tests launch the
+            # controller in a thread), skip signal registration — tests
+            # should drive signals via direct method calls or simply use
+            # set_control_state().
+            if threading.current_thread() is threading.main_thread():
+                if hasattr(signal, "SIGINT"):
+                    signal.signal(signal.SIGINT, self._signal_handler)
 
-            if hasattr(signal, "SIGTERM"):
-                signal.signal(signal.SIGTERM, self._signal_handler)
+                if hasattr(signal, "SIGTERM"):
+                    signal.signal(signal.SIGTERM, self._signal_handler)
+            else:
+                # Best-effort: register atexit-only; controller will be
+                # stopped by its thread when it polls control_state.
+                pass
 
             self._registered = True
 
@@ -181,7 +191,7 @@ class StopHook:
                 pending = [t for t in tasks if t["status"] in {
                     "PENDING", "READY", "RUNNING", "VERIFYING", "WAITING_APPROVAL", "RETRY_WAIT"
                 }]
-                completed = [t for t in tasks if t["status"] in {"PASS", "FAIL", "REJECTED"}]
+                completed = [t for t in tasks if t["status"] in {"PASSED", "FAILED", "REJECTED"}]
 
                 handoff["execution_state"] = {
                     "control_state": self.state_store.control_state(),

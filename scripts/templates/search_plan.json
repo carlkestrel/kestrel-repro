@@ -1,0 +1,65 @@
+{
+  "paper": {
+    "title": "",
+    "url": "",
+    "arxiv_id": "",
+    "doi": "",
+    "semantic_scholar_id": ""
+  },
+  "task_name": "",
+  "model_name": "",
+  "dataset_name": "",
+  "metrics": [
+    { "name": "", "paper_value": null, "tolerance_pp": 0.5 }
+  ],
+  "framework": "pytorch",
+  "target_hardware": {
+    "gpu_model": "",
+    "vram_gb": 24,
+    "num_gpus": 1,
+    "wall_clock_hours": 72
+  },
+  "search": {
+    "max_results_per_query": 50,
+    "year_min": 2020,
+    "year_max": 2026,
+    "backends": ["arxiv", "semantic_scholar", "github", "papers_with_code"],
+    "max_total_queries": 500,
+    "max_pages_per_domain": 100,
+    "max_total_pages": 1000,
+    "max_response_bytes": 5242880,
+    "max_total_runtime_seconds": 1800,
+    "rate_limit_per_second": 2.0,
+    "retry_max": 3,
+    "retry_initial_backoff_seconds": 1.0,
+    "retry_max_backoff_seconds": 30.0,
+    "cache_etag": true
+  },
+  "crawler": {
+    "user_agent": "dl-paper-repro-crawler/1.0 (+research-only)",
+    "robots_respect": true,
+    "domain_whitelist": [
+      "arxiv.org",
+      "semanticscholar.org",
+      "github.com",
+      "raw.githubusercontent.com",
+      "paperswithcode.com",
+      "openaccess.thecvf.com",
+      "openreview.net",
+      "neurips.cc",
+      "icml.cc",
+      "cvf.io"
+    ],
+    "forbid_patterns": ["*/admin/*", "*/login*", "*/api/private*"]
+  },
+  "output_paths": {
+    "candidate_sources_csv": "candidate_sources.csv",
+    "ranked_repositories_csv": "ranked_repositories.csv",
+    "paper_code_links_json": "paper_code_links.json",
+    "dataset_checkpoint_links_json": "dataset_checkpoint_links.json",
+    "evidence_graph_json": "evidence_graph.json",
+    "search_gaps_md": "search_gaps.md",
+    "search_lessons_jsonl": "search_lessons.jsonl",
+    "raw_crawl_dir": "raw_crawl_data/"
+  }
+}

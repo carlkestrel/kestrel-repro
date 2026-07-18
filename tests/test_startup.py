@@ -37,7 +37,7 @@ import sys
 import textwrap
 import time
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -285,8 +285,13 @@ def test_lock_stale_is_cleared():
     lock_path = proj / ".repro" / "run.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     info = lk.acquire(lock_path, command="start", plan_hash="h1")
-    # Spoof staleness: backdate start_time by 1 day
-    info["start_time"] = (datetime.now(timezone.utc).replace(hour=0, minute=0)).isoformat()
+    # Spoof staleness: backdate start_time by >6 hours so _is_stale fires.
+    # Use a fake PID that does NOT exist (very high number) AND backdate.
+    info["process_id"] = 999_999_999
+    info["start_time"] = (
+        datetime.now(timezone.utc) - timedelta(hours=24)
+    ).isoformat()
+    info["heartbeat"] = info["start_time"]
     lock_path.write_text(json.dumps(info))
     # Next acquire should succeed (stale treated as free)
     info2 = lk.acquire(lock_path, command="start", plan_hash="h2")

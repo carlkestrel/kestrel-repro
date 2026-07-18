@@ -349,7 +349,7 @@ class EvidenceManager:
             "run_id": run_id,
             "verified_at": utc_now(),
             "checks": [],
-            "status": "PASS",
+            "status": "PASSED",
         }
         
         # Check required files exist
@@ -360,15 +360,15 @@ class EvidenceManager:
                 verification["checks"].append({
                     "type": "file_exists",
                     "path": fname,
-                    "status": "PASS",
+                    "status": "PASSED",
                 })
             else:
                 verification["checks"].append({
                     "type": "file_exists",
                     "path": fname,
-                    "status": "FAIL",
+                    "status": "FAILED",
                 })
-                verification["status"] = "FAIL"
+                verification["status"] = "FAILED"
         
         # Check manifest integrity
         if manifest:
@@ -378,15 +378,15 @@ class EvidenceManager:
                     verification["checks"].append({
                         "type": "manifest_key",
                         "key": key,
-                        "status": "PASS",
+                        "status": "PASSED",
                     })
                 else:
                     verification["checks"].append({
                         "type": "manifest_key",
                         "key": key,
-                        "status": "FAIL",
+                        "status": "FAILED",
                     })
-                    verification["status"] = "FAIL"
+                    verification["status"] = "FAILED"
         
         # Write verification
         write_verification(run_dir, verification)

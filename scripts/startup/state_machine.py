@@ -15,6 +15,18 @@ from . import plan_validate as _plan
 from . import doctor as _doctor
 from . import config as _config
 
+# R3-0: import from canonical core
+try:
+    from scripts.core.state_store import (
+        StateStore as _CanonicalStateStore,
+        compute_authorization_bound_hash as _compute_auth_hash,
+        CURRENT_CANONICALIZATION_VERSION,
+    )
+except ImportError:
+    _CanonicalStateStore = None  # type: ignore
+    _compute_auth_hash = None  # type: ignore
+    CURRENT_CANONICALIZATION_VERSION = "1"
+
 EXIT_TASK_FAILED = 6
 EXIT_TASK_BLOCKED = 7
 EXIT_RESUME_FAILED = 8

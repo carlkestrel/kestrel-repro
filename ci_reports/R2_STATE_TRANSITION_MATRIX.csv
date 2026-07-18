@@ -1,0 +1,28 @@
+from_state,to_state,who,notes
+PENDING,READY,system,dependency check
+PENDING,FAILED,system,immediate fail
+PENDING,BLOCKED,system,gate check
+READY,RUNNING,system,orchestrator claim
+READY,WAITING_APPROVAL,system,requires human check
+READY,REJECTED,human,human override
+READY,FAILED,system,immediate fail
+READY,BLOCKED,system,gate constraint
+WAITING_APPROVAL,APPROVED,human,human approves
+WAITING_APPROVAL,REJECTED,human,human rejects
+WAITING_APPROVAL,WAIVED,human,human waives
+APPROVED,RUNNING,system,orchestrator proceeds
+RUNNING,VERIFYING,system,task done
+RUNNING,FAILED,system,crash
+RUNNING,READY,system,requeue
+VERIFYING,PASSED,evidence_verifier/acceptance,acceptance tests pass
+VERIFYING,FAILED,system,acceptance tests fail
+FAILED,RETRY_WAIT,system,retry policy active
+RETRY_WAIT,READY,system,backoff elapsed
+FAILED,BLOCKED,system,no retry left
+PASSED,(none),terminal,terminal state
+REJECTED,(none),terminal,terminal state
+WAIVED,(none),terminal,terminal state
+BLOCKED,READY,human/system,gate cleared
+LEGACY_UNVERIFIED,PASSED,evidence_verifier,re-verified
+LEGACY_UNVERIFIED,FAILED,system
+LEGACY_UNVERIFIED,BLOCKED,system

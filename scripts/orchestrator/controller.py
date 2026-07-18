@@ -159,7 +159,7 @@ class Controller:
             passed, detail = self.verifier.verify(task)
             if passed:
                 self.store.transition(
-                    task["id"], "PASS", expected="VERIFYING",
+                    task["id"], "PASSED", expected="VERIFYING",
                     fields={"finished_at": utc_now(), "failure_reason": None},
                 )
             else:
@@ -172,7 +172,7 @@ class Controller:
         if current is None or current["status"] not in {"RUNNING", "VERIFYING"}:
             return
         failed = self.store.transition(
-            task["id"], "FAIL", expected=current["status"],
+            task["id"], "FAILED", expected=current["status"],
             fields={"pid": None, "finished_at": utc_now(), "failure_reason": reason},
         )
         retry = failed.get("retry_policy") or {}
@@ -180,7 +180,7 @@ class Controller:
         if int(failed["attempts"]) <= max_retries:
             delay = float(retry.get("delay_seconds", retry.get("backoff_seconds", 0)))
             self.store.transition(
-                task["id"], "RETRY_WAIT", expected="FAIL",
+                task["id"], "RETRY_WAIT", expected="FAILED",
                 fields={"retry_at": time.time() + max(0.0, delay)},
                 event_type="TASK_RETRY_SCHEDULED",
             )
@@ -246,7 +246,7 @@ class Controller:
         by_id = {task["id"]: task for task in tasks}
         missing = sorted(task_id for task_id in mandatory if task_id not in by_id)
         failed_mandatory = sorted(task_id for task_id in mandatory
-                                  if task_id in by_id and by_id[task_id]["status"] != "PASS")
+                                  if task_id in by_id and by_id[task_id]["status"] != "PASSED")
         final_failures = [task for task in tasks if task["status"] == "FAIL"]
         if missing or failed_mandatory or final_failures:
             reasons = []
@@ -260,7 +260,7 @@ class Controller:
         deadlock = self.scheduler.deadlock_reason()
         if deadlock:
             return self._exit(BLOCKED, deadlock, recovery)
-        if all(task["status"] in {"PASS", "REJECTED"} for task in tasks):
+        if all(task["status"] in {"PASSED", "REJECTED"} for task in tasks):
             return self._exit(COMPLETE, "all mandatory tasks passed", recovery)
         return self._exit(BLOCKED, "no executable tasks remain", recovery)
 

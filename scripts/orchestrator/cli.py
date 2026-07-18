@@ -299,7 +299,7 @@ def _daemon_stop(project: Path) -> int:
                 # last-resort fallback: force the row to FAIL so it can't linger.
                 try:
                     _store(project).transition(
-                        task_id=task["id"], new_status="FAIL",
+                        task_id=task["id"], new_status="FAILED",
                         expected="RUNNING",
                         fields={"pid": None, "failure_reason": "daemon stop",
                                 "finished_at": utc_now_iso()},
@@ -392,7 +392,7 @@ def cmd_integrity_check(args: argparse.Namespace) -> int:
         print(f"Issues: {len(result['issues'])}")
         for issue in result["issues"]:
             print(f"  - {issue}")
-    return EXIT_OK if result["summary"] == "PASS" else 1
+    return EXIT_OK if result["summary"] == "PASSED" else 1
 
 
 def cmd_rollback_version(args: argparse.Namespace) -> int:

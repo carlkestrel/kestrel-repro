@@ -53,7 +53,7 @@ class Scheduler:
             if task["status"] != "PENDING":
                 continue
             deps = [tasks[dep]["status"] for dep in task.get("deps", [])]
-            if all(status == "PASS" for status in deps):
+            if all(status in {"PASSED", "PASSED"} for status in deps):
                 self.store.transition(task["id"], "READY", expected="PENDING")
                 changed = True
         return changed
@@ -87,6 +87,6 @@ class Scheduler:
         by_id = {task["id"]: task for task in tasks}
         for task in unfinished:
             blocked = [f"{dep}:{by_id[dep]['status']}" for dep in task.get("deps", [])
-                       if by_id[dep]["status"] != "PASS"]
+                       if by_id[dep]["status"] not in {"PASSED", "PASSED"}]
             details.append(f"{task['id']} waits on {','.join(blocked)}")
         return "dependency deadlock: " + "; ".join(details)

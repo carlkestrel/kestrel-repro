@@ -1,0 +1,56 @@
+# Prohibited Files Inventory
+
+**Generated**: 2026-07-18
+
+## Categories scanned
+
+| Pattern | Description | Found |
+|---|---|---|
+| `.env` | Environment file | 0 |
+| `.env.*` | Env file variants | 0 |
+| `*.sqlite3` | SQLite databases | 0 |
+| `*.db` | Database files | 0 |
+| `*.pth` | PyTorch model | 0 |
+| `*.pt` | PyTorch checkpoint | 0 |
+| `*.ckpt` | Generic checkpoint | 0 |
+| `*.bin` | Binary blobs | 0 |
+| `*.tar.gz`, `*.zip` | Archives | 0 |
+| `.repro/` | Runtime state | 0 (already gitignored) |
+| `checkpoints/`, `datasets/`, `runs/`, `predictions/` | Experiment outputs | 0 (already gitignored) |
+| Lock files (`*.lock`, `*.pid`) | Process locks | 0 |
+
+## Result
+
+**No prohibited files found.**
+
+The `.repro/` directory exists in the working tree but is **gitignored**
+(line 65 of `.gitignore`:
+```
+# Reproduction state (DO NOT COMMIT)
+.repro/
+```
+). It will NOT be staged.
+
+## Detailed listing
+
+```
+$ git ls-files --others --exclude-standard | grep -E '\.(env|sqlite3|db|pth|pt|ckpt|bin)$'
+(no output — clean)
+
+$ find . -name ".repro" -type d
+./.repro   (268K, gitignored, contains audit/state files)
+```
+
+## What IS allowed (and tracked)
+
+- Source code (`scripts/`, `tests/`, `docs/`)
+- Configuration (`pyproject.toml`, `automation_policy.yaml`)
+- Documentation (`README*`, `LICENSE`, `SECURITY.md`, `CHANGELOG.md`)
+- Tracked performance reports (`performance/`)
+- Tracked CI reports (`ci_reports/` baseline files)
+- New R1/R2/R3 deliverables (`ci_reports/R1_*`, `R2_*`, `R3_*`)
+- GitHub workflows (`.github/workflows/`)
+
+## Conclusion
+
+**No prohibited files will be staged or pushed.**

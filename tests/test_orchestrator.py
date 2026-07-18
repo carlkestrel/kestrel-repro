@@ -132,7 +132,7 @@ def test_1_five_serial_tasks_complete(tmp_path: Path) -> None:
     for index in range(1, 6):
         assert (project / "output" / f"step-{index}.txt").exists()
     counts = StateStore(project).status_summary()["counts"]
-    assert counts.get("PASS", 0) == 5
+    assert counts.get("PASSED", 0) == 5
 
 
 def test_2_independent_readonly_tasks_parallel(tmp_path: Path) -> None:
@@ -544,7 +544,7 @@ def test_14_final_acceptance_failure_blocks(tmp_path: Path) -> None:
     result = _run_controller(project, plan_path)
     assert result["status"] == BLOCKED, result
     task = StateStore(project).get_task("lying")
-    assert task["status"] == "FAIL"
+    assert task["status"] == "FAILED"
 
 
 def test_15_policy_change_takes_effect(tmp_path: Path) -> None:

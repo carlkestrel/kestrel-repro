@@ -12,6 +12,14 @@ from typing import Any
 SCHEMA_VERSION = "1.0.0"
 MIN_SUPPORTED_VERSION = "0.1.0"
 
+# R1 INVARIANT: this single literal MUST match scripts/_version.py and
+# pyproject.toml's [project].version. Tests/test_version_sync.py
+# cross-checks them at run time.
+try:
+    from _version import __version__ as _DEFAULT_PLUGIN_VERSION
+except Exception:  # pragma: no cover
+    _DEFAULT_PLUGIN_VERSION = "0.2.0"
+
 
 def get_current_versions(store: Any) -> dict:
     """Read schema_version, plugin_version, plan_hash from state store."""
@@ -33,7 +41,7 @@ def upgrade_to_1_0_0(store: Any, backup_dir: Path) -> dict:
     with store.transaction() as conn:
         for key, value in {
             "schema_version": SCHEMA_VERSION,
-            "plugin_version": store.get_metadata("plugin_version", "0.2.0"),
+            "plugin_version": store.get_metadata("plugin_version", _DEFAULT_PLUGIN_VERSION),
             "project_id": store.get_metadata("project_id", str(
                 hashlib.sha256(str(store.project_root).encode()).hexdigest()[:16])),
         }.items():

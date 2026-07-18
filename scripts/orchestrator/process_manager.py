@@ -115,6 +115,44 @@ class ProcessManager:
         finally:
             self._cleanup(proc.pid)
 
+    def explain_exit_code(self, exit_code: int | None) -> str:
+        """R3-4: explain unknown exit codes (e.g. negative = signal).
+
+        Returns a human-readable explanation:
+        - 0..125: explicit exit code
+        - 124: timeout (matches timeout(1))
+        - 125: GNU timeout; command not found
+        - 126: found but not executable
+        - 127: command not found
+        - negative: killed by signal N (e.g. -15 → SIGTERM)
+        - 137: killed by SIGKILL (128+9)
+        - 143: killed by SIGTERM (128+15)
+        - 139: SIGSEGV (128+11)
+        """
+        if exit_code is None:
+            return "still running"
+        if exit_code == 0:
+            return "success"
+        if exit_code == 124:
+            return "timeout (subprocess killed)"
+        if exit_code == 137:
+            return "killed by SIGKILL"
+        if exit_code == 143:
+            return "killed by SIGTERM"
+        if exit_code == 139:
+            return "SIGSEGV (segmentation fault)"
+        if exit_code == 134:
+            return "SIGABRT"
+        if exit_code == -15:
+            return "killed by SIGTERM (negative)"
+        if exit_code == -9:
+            return "killed by SIGKILL (negative)"
+        if exit_code == -11:
+            return "SIGSEGV (negative)"
+        if 0 < exit_code < 128:
+            return f"non-zero exit ({exit_code})"
+        return f"exit code {exit_code}"
+
     def start_daemon(self, argv: Sequence[str], *, cwd: str | Path,
                      log_path: str | Path, pid_path: str | Path,
                      env: dict[str, str] | None = None) -> int:

@@ -2,7 +2,7 @@
 """Acceptance tests for ReproPerf AutoTuner."""
 import json, pathlib, subprocess, sys, re, ast
 
-REPO = pathlib.Path(__file__).resolve().parents[2]
+REPO = pathlib.Path(__file__).resolve().parents[1]
 OUT_DIR = REPO / "performance"
 
 
@@ -26,7 +26,7 @@ def rec(name, ok, detail=""):
 def test_parse():
     src = (REPO / "scripts" / "repro_perf_tuner.py").read_text()
     ast.parse(src)
-    return rec("T01 repro_perf_tuner.py parses", True)
+    rec("T01 repro_perf_tuner.py parses", True)
 
 
 # ── T02: All 10 template files exist ─────────────────────────────────────────
@@ -48,7 +48,7 @@ def test_templates():
             all_ok = False
     if all_ok:
         rec(f"T02 all 14 templates exist", True, f"{len(expected)} files")
-    return all_ok
+    assert all_ok, "some templates missing"
 
 
 # ── T03: Template schemas are valid JSON/YAML ──────────────────────────────────

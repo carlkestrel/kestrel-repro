@@ -70,7 +70,16 @@ artifacts/
 # Audit and reports
 audits/
 reports/
-ci_reports/
+
+# Performance baseline outputs (runtime; baseline_metrics etc. are tracked separately)
+performance/baselines/
+performance/measurements/
+performance/raw/
+
+# Generated review/PR artefacts live alongside ci_reports/github_review/ and are committed
+!ci_reports/
+!ci_reports/github_review/
+!ci_reports/review_state/
 coverage/
 
 # Experiment outputs

@@ -40,8 +40,8 @@ class ReportGenerator:
             "generated_at": utc_now(),
             "project_root": str(self.project_root),
             "total_tasks": len(task_results),
-            "passed": sum(1 for t in task_results if t.get("status") == "PASS"),
-            "failed": sum(1 for t in task_results if t.get("status") == "FAIL"),
+            "passed": sum(1 for t in task_results if t.get("status") == "PASSED"),
+            "failed": sum(1 for t in task_results if t.get("status") == "FAILED"),
             "blocked": sum(1 for t in task_results if t.get("status") == "BLOCKED"),
             "tasks": [],
         }
@@ -213,8 +213,8 @@ artifacts/runs/<run_id>/
 
     def _determine_verdict(self, task_results: list[dict]) -> str:
         """Determine Go/Pivot/No-Go verdict."""
-        passed = sum(1 for t in task_results if t.get("status") == "PASS")
-        failed = sum(1 for t in task_results if t.get("status") == "FAIL")
+        passed = sum(1 for t in task_results if t.get("status") == "PASSED")
+        failed = sum(1 for t in task_results if t.get("status") == "FAILED")
         total = len(task_results)
         
         if total == 0:
@@ -234,8 +234,8 @@ artifacts/runs/<run_id>/
     def generate_go_pivot_nogo(self, task_results: list[dict]) -> dict:
         """Generate Go/Pivot/No-Go report."""
         
-        passed = sum(1 for t in task_results if t.get("status") == "PASS")
-        failed = sum(1 for t in task_results if t.get("status") == "FAIL")
+        passed = sum(1 for t in task_results if t.get("status") == "PASSED")
+        failed = sum(1 for t in task_results if t.get("status") == "FAILED")
         total = len(task_results)
         pass_rate = passed / total if total > 0 else 0
         
@@ -262,7 +262,7 @@ artifacts/runs/<run_id>/
             "total_tasks": total,
             "failed_task_details": [
                 {"id": t.get("id"), "reason": t.get("failure_reason")}
-                for t in task_results if t.get("status") == "FAIL"
+                for t in task_results if t.get("status") == "FAILED"
             ],
             "recommendations": self._get_recommendations(verdict, task_results),
             "generated_at": utc_now(),

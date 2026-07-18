@@ -217,9 +217,15 @@ def integrity_check(project_root: Path) -> dict:
         try:
             conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
             conn.row_factory = sqlite3.Row
-            running = conn.execute(
-                "SELECT id, name, pid, started_at FROM tasks WHERE status='RUNNING'"
-            ).fetchall()
+            # R3-1: schema renamed status → state. Try state first, fallback status.
+            try:
+                running = conn.execute(
+                    "SELECT id, name, pid, started_at FROM tasks WHERE state='RUNNING'"
+                ).fetchall()
+            except sqlite3.OperationalError:
+                running = conn.execute(
+                    "SELECT id, name, pid, started_at FROM tasks WHERE status='RUNNING'"
+                ).fetchall()
             for row in running:
                 pid = row["pid"]
                 if pid:
@@ -239,9 +245,15 @@ def integrity_check(project_root: Path) -> dict:
         try:
             conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
             conn.row_factory = sqlite3.Row
-            passed = conn.execute(
-                "SELECT id, name, finished_at FROM tasks WHERE status='PASS'"
-            ).fetchall()
+            # R3-1: schema renamed status → state. Try state first, fallback status.
+            try:
+                passed = conn.execute(
+                    "SELECT id, name, finished_at FROM tasks WHERE state='PASSED'"
+                ).fetchall()
+            except sqlite3.OperationalError:
+                passed = conn.execute(
+                    "SELECT id, name, finished_at FROM tasks WHERE status='PASS'"
+                ).fetchall()
             for row in passed:
                 if not row["finished_at"]:
                     issues.append(f"Task '{row['name']}' is PASS but finished_at is null")
@@ -293,9 +305,18 @@ def integrity_check(project_root: Path) -> dict:
         try:
             conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
             conn.row_factory = sqlite3.Row
-            no_acceptance = conn.execute(
-                "SELECT id, name, acceptance_json FROM tasks WHERE acceptance_json='[]'"
-            ).fetchall()
+            # R3-1: canonical schema column is acceptance_tests_json.
+            # Fallback to legacy acceptance_json for older databases.
+            try:
+                no_acceptance = conn.execute(
+                    "SELECT id, name, acceptance_tests_json FROM tasks "
+                    "WHERE acceptance_tests_json='[]'"
+                ).fetchall()
+            except sqlite3.OperationalError:
+                no_acceptance = conn.execute(
+                    "SELECT id, name, acceptance_json FROM tasks "
+                    "WHERE acceptance_json='[]'"
+                ).fetchall()
             for row in no_acceptance:
                 issues.append(
                     f"Task '{row['name']}' has empty acceptance_tests — "
@@ -312,5 +333,5 @@ def integrity_check(project_root: Path) -> dict:
         "checks_passed": checks_passed,
         "warnings": warnings,
         "issues": issues,
-        "summary": "PASS" if not issues else "FAIL",
+        "summary": "PASSED" if not issues else "FAILED",
     }

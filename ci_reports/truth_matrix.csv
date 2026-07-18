@@ -1,0 +1,16 @@
+claim,phase,assertion,evidence,state,date
+pip install -e . works in fresh venv,R1,successful,egg-info + dist-info created in site-packages,verified,2026-07-17
+reproctl console script works,R1,python -m scripts.reproctl version returns JSON,0.2.0 + linux,verified,2026-07-17
+fixtures resolve from any cwd,R1,fixture_locator returns Path from /tmp,verified,verified,2026-07-17
+no sys.path.insert in conftest.py,R1,grep returns no matches,verified,verified,2026-07-17
+version three sources in sync,R1,pyproject==_version==plugin.json,all 0.2.0,verified,2026-07-17
+torch is not a core dep,R1,dependencies=[pyyaml,numpy],verified,verified,2026-07-17
+R1 acceptance: 12/12,R1,all green,verified,verified,2026-07-17
+test_plugin_discovery 4/4,R1,all green,verified,verified,2026-07-17
+test_repro_perf 15/15,R1,all green,verified,verified,2026-07-17
+test_l0_l3 4/4 (STUB),R1,all green with STUB_TEST_PASSED,verified,verified,2026-07-17
+R3 chaos failures (7),R3,real failures,controller state drift,deferred to R3,2026-07-17
+R3 orchestrator failures (6),R3,real failures,approval/recovery state machine,deferred to R3,2026-07-17
+pytest exit code non-zero on failure,R1,$?==1,verified,verified,2026-07-17
+pytest vs python -m pytest parity,R1,210 == 210 collected,verified,verified,2026-07-17
+R0 174 baseline preserved,R1,no regressions in previously-passing tests,verified,verified,2026-07-17

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GeoAI Topic Graph",
+  "description": "Dynamic, agent-maintained JSON document indexing the 3 primary GeoAI research directions, their sub-topics, key papers, datasets, and reference repositories. Updated by /geoai-discover after each search round.",
+  "type": "object",
+  "required": ["primary_directions", "last_updated", "schema_version"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "primary_directions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "sub_topics"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "point_cloud_change_detection",
+              "weakly_supervised_pointcloud",
+              "environmental_spatial_intelligence"
+            ]
+          },
+          "tier_counts": { "type": "object", "description": "Counts of A/B/C/D/E items" },
+          "sub_topics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "papers", "datasets", "repos"],
+              "properties": {
+                "name": { "type": "string" },
+                "papers":  { "type": "array", "items": { "type": "object" } },
+                "datasets":{ "type": "array", "items": { "type": "object" } },
+                "repos":   { "type": "array", "items": { "type": "object" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "example": {
+    "schema_version": "1.0",
+    "last_updated": "2026-07-15T22:30:00Z",
+    "primary_directions": [
+      {
+        "name": "point_cloud_change_detection",
+        "tier_counts": { "A": 0, "B": 0, "C": 0, "D": 0, "E": 0 },
+        "sub_topics": [
+          {
+            "name": "bi-temporal urban change",
+            "papers":  [],
+            "datasets": [],
+            "repos": []
+          }
+        ]
+      },
+      {
+        "name": "weakly_supervised_pointcloud",
+        "tier_counts": { "A": 0, "B": 0, "C": 0, "D": 0, "E": 0 },
+        "sub_topics": [
+          {
+            "name": "scene-level weak labels",
+            "papers": [],
+            "datasets": [],
+            "repos": []
+          }
+        ]
+      },
+      {
+        "name": "environmental_spatial_intelligence",
+        "tier_counts": { "A": 0, "B": 0, "C": 0, "D": 0, "E": 0 },
+        "sub_topics": [
+          {
+            "name": "habitat mapping",
+            "papers": [],
+            "datasets": [],
+            "repos": []
+          }
+        ]
+      }
+    ]
+  }
+}
