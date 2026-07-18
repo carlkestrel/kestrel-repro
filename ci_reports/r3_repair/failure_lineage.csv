@@ -1,0 +1,130 @@
+test_node_id,R1_status,R3_status,current_status,first_known_bad_phase,classification,root_cause,evidence
+tests.test_chaos.TestAutoRetryHitsLimit::test_max_retries_then_fail,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,legacy_status_column: schema migrated but chaos still uses old status column,sqlite3.OperationalError: no such column: status
+tests.test_chaos.TestCheckpointCorruption::test_corrupted_checkpoint_detected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestCheckpointWriteInterrupted::test_partial_checkpoint_not_used,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestDataFileMissing::test_missing_data_clear_error,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,"is_a_directory: missing_data test creates ""golden"" path; copy-tree logic hits a directory",IsADirectoryError: [Errno 21] Is a directory: '/tmp/pytest-of-carlkestrel/pytest-42/test_missing_data_clear_error0/golden'
+tests.test_chaos.TestDiskSpaceExhausted::test_safe_stop_before_corruption,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,"watchdog_command: tests probe ""watchdog"" CLI but implementation does not expose it","AssertionError: Watchdog command should not crash
+assert ('watchdog' in '' or 2 in (0, 1))
+ +  where '' = <built-in method lower of str object at 0x5faf872705e0>()
+ +    where <built-in method lower o"
+tests.test_chaos.TestExecutorKilled::test_kill_9_detects_and_recovers,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestFalseCompleteRefusal::test_blocked_task_not_marked_complete,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestGpuUnavailable::test_gpu_unavailable_graceful_degradation,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestJsonStateHalfWrite::test_partial_json_state_not_corrupted,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestLogfileStalls::test_watchdog_detects_stalled_task,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,"watchdog_command: tests probe ""watchdog"" CLI but implementation does not expose it","AssertionError: Watchdog should execute without crashing
+assert ('watchdog' in '' or 2 in (0, 1))
+ +  where '' = <built-in method lower of str object at 0x5faf872705e0>()
+ +    where <built-in method "
+tests.test_chaos.TestPassTaskEvidenceDeleted::test_missing_evidence_detected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestPlanChangesDuringRecovery::test_plan_hash_prevents_stale_plan,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,plan_hash_stale: resume CLI returns rc=8 instead of 0/1; gating threshold mismatch,"AssertionError: Resume should handle plan changes gracefully
+assert 8 in (0, 1)
+ +  where 8 = CompletedProcess(args=['/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python', '/home/carlkestrel/.cursor/"
+tests.test_chaos.TestPluginUpgradesDuringTask::test_plugin_version_recorded,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos.TestSqliteLocked::test_sqlite_locked_retries_or_fails,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,sqlite_locked: chaotic env returns non-matching stdout; lock path not handled,"AssertionError: Should handle SQLite lock gracefully
+assert ('locked' in '' or 'locked' in '' or 'busy' in '' or 'busy' in '' or -15 == 0)
+ +  where '' = <built-in method lower of str object at 0x5faf"
+tests.test_chaos.TestTrainingSubprocessKilled::test_training_killed_preserves_checkpoint,n/a,n/a,FAILED_CHAOS,UNVERIFIED_no_bisect_evidence,REGRESSION,legacy_status_column: schema migrated but chaos still uses old status column,sqlite3.OperationalError: no such column: status
+tests.test_chaos::test_auto_retry_hits_limit,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_checkpoint_write_interrupted,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_data_file_missing,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_disk_space_exhausted,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_false_complete_refusal,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_gpu_unavailable,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_json_state_half_write,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_logfile_stops_updating,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_pass_task_evidence_deleted,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_plan_changes_during_recovery,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_plugin_upgrades_during_task,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_sqlite_locked,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_chaos::test_training_subprocess_killed,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_orchestrator::test_10_passed_task_not_re_run,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: assert 'BLOCKED' == 'COMPLETE'
+  
+  - COMPLETE
+  + BLOCKED; r2=identical; r3=identical"
+tests.test_orchestrator::test_11_cycle_dependency_blocked,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,3 runs PASS
+tests.test_orchestrator::test_12_no_ready_exits_blocked,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,3 runs PASS
+tests.test_orchestrator::test_13_pause_continue_stop,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=assert False
+ +  where False = _wait_until(<function test_13_pause_continue_stop.<locals>.<lambda> a; r2=identical; r3=identical"
+tests.test_orchestrator::test_14_final_acceptance_failure_blocks,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: assert 'PENDING' == 'FAILED'
+  
+  - FAILED
+  + PENDING; r2=identical; r3=identical"
+tests.test_orchestrator::test_15_policy_change_takes_effect,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=assert []
+ +  where [] = _wait_until(<function test_15_policy_change_takes_effect.<locals>.<lambda> ; r2=identical; r3=identical"
+tests.test_orchestrator::test_16_daemon_start_on_fresh_project,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,3 runs PASS
+tests.test_orchestrator::test_17_daemon_child_arg_recognized,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,3 runs PASS
+tests.test_orchestrator::test_18_daemon_stop_terminates_orphan_workers,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: worker task never reached RUNNING
+assert False
+ +  where False = _wait_until(<functi; r2=identical; r3=identical"
+tests.test_orchestrator::test_1_five_serial_tasks_complete,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: {'status': 'BLOCKED', 'reason': 'mandatory tasks not PASS: task-1, task-2, task-3, t; r2=identical; r3=identical"
+tests.test_orchestrator::test_2_independent_readonly_tasks_parallel,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: {'status': 'BLOCKED', 'reason': 'mandatory tasks not PASS: join, ro-0, ro-1, ro-2', ; r2=identical; r3=identical"
+tests.test_orchestrator::test_3_failure_auto_retries_once,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: {'status': 'BLOCKED', 'reason': 'mandatory tasks not PASS: flaky, setup', 'project_r; r2=identical; r3=identical"
+tests.test_orchestrator::test_4_blocked_after_max_retries,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)",r1=TypeError: StateStore.transition_task() got an unexpected keyword argument 'event_type'; r2=identical; r3=identical
+tests.test_orchestrator::test_5_require_approval_pauses,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: task never reached WAITING_APPROVAL
+assert []; r2=identical; r3=identical"
+tests.test_orchestrator::test_6_approve_resumes,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: approval was never created
+assert []; r2=identical; r3=identical"
+tests.test_orchestrator::test_7_reject_skips_task,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: approval was never created
+assert []; r2=identical; r3=identical"
+tests.test_orchestrator::test_8_long_task_auto_verify,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: {'status': 'BLOCKED', 'reason': 'mandatory tasks not PASS: long', 'project_root': '/; r2=identical; r3=identical"
+tests.test_orchestrator::test_9_recover_after_kill,n/a,n/a,FAILED_ORCHESTRATOR,UNVERIFIED_no_bisect_evidence,REGRESSION,"orchestrator_wiring: claim/exec/verify not connected (3-run determinism confirms deterministic regression, NOT nondeterministic)","r1=AssertionError: {'status': 'BLOCKED', 'reason': 'mandatory tasks not PASS: long', 'project_root': '/; r2=identical; r3=identical"
+tests.test_r1_acceptance::test_editable_install_marker_exists,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_fixture_locator_resolves,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_fixture_locator_works_from_random_cwd,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_no_absolute_paths_in_conftest,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_other_data_roots_resolve,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_pyproject_version_is_a_semver,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_reproctl_console_script_present,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_reproctl_help_runs,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_reproctl_version_subcommand_runs,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_reproctl_version_via_module,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_scripts_package_imports,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r1_acceptance::test_version_three_sources_in_sync,PASS,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_action_in_grant_passes,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_action_not_in_grant_denied,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_ambiguous_mode_needs_review,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_canonical_hash_independent_of_order,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_canonical_hash_stable,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_circular_deps_rejected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_content_change_changes_hash,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_empty_acceptance_tests_rejected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_expired_contract_denies,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_human_cannot_set_passed_directly,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_illegal_execution_track_rejected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_legacy_experimental_fast,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_legacy_file_discovery,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_legacy_legacy_mode_map_strict_repro,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_legacy_pass_migrates_to_legacy_unverified,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_legacy_strict_repro_migrates,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_migration_backup_created,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_missing_acceptance_tests_rejected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_plan_hash_invalidation,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_post_recovery_hash_and_auth_consistent,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_revoked_contract_denies,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_snapshot_is_export_only,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_state_conflict_detected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_symlink_traversal_denied,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_transaction_rollback_no_half_migration,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_unknown_dep_rejected,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_unknown_mode_needs_review,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_valid_plan_passes,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_waived_vs_passed_column_separation,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_write_outside_allowed_roots_denied,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r2_acceptance::test_write_within_allowed_roots_passes,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_01_single_state_store_implementation,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_02_new_project_creates_one_sqlite,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_03_startup_writes_orchestrator_reads,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_04_orchestrator_writes_startup_reads,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_05_plan_and_authorization_same_transaction,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_06_transaction_failure_rolls_back,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_07_two_old_dbs_no_conflict_migrate,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_08_state_conflict_blocks,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_09_legacy_json_one_way_migration,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_10_snapshot_is_export_only,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_11_auth_hash_includes_schema_version,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_12_schema_upgrade_invalidates_authorization,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_13_plan_lineage_no_inheritance,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_14_concurrent_writes_no_state_drift,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_15_pause_resume_uses_same_db,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_16_single_state_authority_self_check,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,
+tests.test_r3_0_acceptance::test_summary_r3_0,n/a,n/a,PASSED,UNVERIFIED_no_bisect_evidence,PASSED,OK,

@@ -1,0 +1,156 @@
+{
+  "repository": "carlkestrel/kestrel-repro",
+  "pull_request": 1,
+  "branch": "review/r3-20260718-a828023",
+  "phase": "R3F-0",
+  "phase_status": "PASS",
+  "base_sha": "a828023f537dfbfed4d7798066f3ca084d8072c9",
+  "previous_head_sha": "851f3516702511e68985f54a5f3eca46d3a70c7a",
+  "new_head_sha": "fbcb12bb78874561c9356f178f1d112ee82cf2af",
+  "commit_sha": "fbcb12bb78874561c9356f178f1d112ee82cf2af",
+  "main_sha_verified": "a828023f537dfbfed4d7798066f3ca084d8072c9",
+  "test_commands": [
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_r1_acceptance.py --tb=short --junitxml=ci_reports/r3_repair/raw_logs/R1_run.xml --timeout=120",
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_r2_acceptance.py --tb=short --junitxml=ci_reports/r3_repair/raw_logs/R2_run.xml --timeout=120",
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_r3_0_acceptance.py --tb=short --junitxml=ci_reports/r3_repair/raw_logs/R3_0_run.xml --timeout=120",
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_orchestrator.py --tb=line --junitxml=ci_reports/r3_repair/raw_logs/orchestrator_run_1.xml --timeout=600",
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_orchestrator.py --tb=line --junitxml=ci_reports/r3_repair/raw_logs/orchestrator_run_2.xml --timeout=600",
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_orchestrator.py --tb=line --junitxml=ci_reports/r3_repair/raw_logs/orchestrator_run_3.xml --timeout=600",
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_chaos.py --tb=line --junitxml=ci_reports/r3_repair/raw_logs/chaos_run.xml --timeout=600"
+  ],
+  "collected": 218,
+  "passed": 133,
+  "failed": 21,
+  "skipped": 0,
+  "junit_files": [
+    "ci_reports/r3_repair/R3F_0_JUNIT.xml",
+    "ci_reports/r3_repair/raw_logs/R1_run.xml",
+    "ci_reports/r3_repair/raw_logs/R2_run.xml",
+    "ci_reports/r3_repair/raw_logs/R3_0_run.xml",
+    "ci_reports/r3_repair/raw_logs/orchestrator_run_1.xml",
+    "ci_reports/r3_repair/raw_logs/orchestrator_run_2.xml",
+    "ci_reports/r3_repair/raw_logs/orchestrator_run_3.xml",
+    "ci_reports/r3_repair/raw_logs/chaos_run.xml"
+  ],
+  "raw_log_files": [
+    "ci_reports/r3_repair/R3F_0_BASELINE.md",
+    "ci_reports/r3_repair/failure_lineage.csv"
+  ],
+  "changed_files_manifest": "ci_reports/r3_repair/R3F_0_BASELINE.md, ci_reports/r3_repair/R3F_0_JUNIT.xml, ci_reports/r3_repair/failure_lineage.csv, ci_reports/r3_repair/raw_logs/R1_run.xml, ci_reports/r3_repair/raw_logs/R2_run.xml, ci_reports/r3_repair/raw_logs/R3_0_run.xml, ci_reports/r3_repair/raw_logs/orchestrator_run_1.xml, ci_reports/r3_repair/raw_logs/orchestrator_run_2.xml, ci_reports/r3_repair/raw_logs/orchestrator_run_3.xml, ci_reports/r3_repair/raw_logs/chaos_run.xml",
+  "known_failures": [
+    {
+      "node_id": "tests.test_orchestrator::test_1_five_serial_tasks_complete",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: claim/exec/verify not connected (deterministic across 3 runs)"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_2_independent_readonly_tasks_parallel",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: claim/exec/verify not connected"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_3_failure_auto_retries_once",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: retry path not wired"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_4_blocked_after_max_retries",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: max_retries threshold mismatch"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_5_require_approval_pauses",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: WAITING_APPROVAL not entered"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_6_approve_resumes",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: approval not advancing"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_7_reject_skips_task",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: REJECTED state not honored"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_8_long_task_auto_verify",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: verifier not firing"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_9_recover_after_kill",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: recovery doesn't restore RUNNING"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_10_passed_task_not_re_run",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: tasks don't enter PASSED so rerun logic untested"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_13_pause_continue_stop",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: pause/continue/stop wiring"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_14_final_acceptance_failure_blocks",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: final acceptance gating"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_15_policy_change_takes_effect",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: PolicyEngine reload from file"
+    },
+    {
+      "node_id": "tests.test_orchestrator::test_18_daemon_stop_terminates_orphan_workers",
+      "classification": "REGRESSION",
+      "root_cause": "orchestrator_wiring: daemon worker lifecycle"
+    },
+    {
+      "node_id": "tests.test_chaos.TestAutoRetryHitsLimit::test_max_retries_then_fail",
+      "classification": "REGRESSION",
+      "root_cause": "legacy_status_column: chaos hits old status column on migrated SQLite"
+    },
+    {
+      "node_id": "tests.test_chaos.TestDataFileMissing::test_missing_data_clear_error",
+      "classification": "REGRESSION",
+      "root_cause": "is_a_directory: test creates golden directory; copy logic crashes"
+    },
+    {
+      "node_id": "tests.test_chaos.TestDiskSpaceExhausted::test_safe_stop_before_corruption",
+      "classification": "REGRESSION",
+      "root_cause": "watchdog_command: tests probe CLI sub-command that does not exist"
+    },
+    {
+      "node_id": "tests.test_chaos.TestLogfileStalls::test_watchdog_detects_stalled_task",
+      "classification": "REGRESSION",
+      "root_cause": "watchdog_command"
+    },
+    {
+      "node_id": "tests.test_chaos.TestPlanChangesDuringRecovery::test_plan_hash_prevents_stale_plan",
+      "classification": "REGRESSION",
+      "root_cause": "plan_hash_stale: resume CLI returns rc=8 not 0/1"
+    },
+    {
+      "node_id": "tests.test_chaos.TestSqliteLocked::test_sqlite_locked_retries_or_fails",
+      "classification": "REGRESSION",
+      "root_cause": "sqlite_locked: probed exit/stdout signature mismatch"
+    },
+    {
+      "node_id": "tests.test_chaos.TestTrainingSubprocessKilled::test_training_killed_preserves_checkpoint",
+      "classification": "REGRESSION",
+      "root_cause": "legacy_status_column"
+    }
+  ],
+  "unresolved_risks": [
+    "R3F-1: 3 CI workflows fail at YAML parse — no Jobs created, so all CI history is currently useless for evidence",
+    "R3F-3: orchestrator execution chain unverified end-to-end; 14 deterministic failures confirm wiring defect",
+    "R3F-7: 21 existing tests must NOT be weakened; new tests must add real assertions"
+  ],
+  "ready_for_external_review": true,
+  "ready_for_external_review_caveat": "Materials are uploaded for review only. ready_for_external_review=true does NOT mean external review has been completed, PR may be merged, release may be tagged, or real paper reproduction is finished.",
+  "external_review_status": "NOT_REQUESTED",
+  "generated_at": "2026-07-18T13:35:00+08:00"
+}
