@@ -6,7 +6,7 @@ This module supersedes:
 
 See ``docs/adr/ADR-001-single-state-authority.md`` for the rationale.
 
-Canonical DB path: ``<project_root>/.repro/state/state.sqlite3``
+Canonical DB path: ``<project_root>/.repro/execution/state.sqlite3``
 
 Schema highlights:
   * Single SQLite DB per project (verified by ``test_single_state_authority``).
@@ -1266,9 +1266,17 @@ def find_active_state_dbs(project_root: str | Path) -> list[Path]:
     ``legacy_state`` table.
 
     R3-0 acceptance #16: project must have exactly 0 or 1 active DB.
+
+    Also detects legacy authoritative state files (``execution_state.json``
+    under the canonical .repro/execution/ directory or under legacy
+    .execution/) that might conflict with the SQLite authority. Such
+    legacy files must have been migrated already; if they still exist
+    in an *authoritative* position alongside an active SQLite, raise
+    BLOCKED_STATE_CONFLICT.
     """
     root = Path(project_root).resolve()
     found: list[Path] = []
+    legacy_authoritative: list[Path] = []
     if not root.exists():
         return found
     # Limit search depth to 6 levels (avoid deep node_modules / .venv scans)
@@ -1282,22 +1290,60 @@ def find_active_state_dbs(project_root: str | Path) -> list[Path]:
             continue
         dirnames[:] = [d for d in dirnames if d not in skip_dirs]
         for name in filenames:
-            if name != "state.sqlite3":
-                continue
             p = Path(dirpath) / name
-            # Mark legacy if it has a legacy_state table with any entry
-            try:
-                conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True, timeout=5)
-                has_legacy = conn.execute(
-                    "SELECT COUNT(*) FROM legacy_state WHERE status='legacy_readonly'"
-                ).fetchone()[0]
-                conn.close()
-                if has_legacy > 0:
-                    continue  # legacy_readonly; not active
-            except sqlite3.OperationalError:
-                # Empty / corrupt DB; treat as active (worth flagging)
-                pass
-            found.append(p)
+            if name == "state.sqlite3":
+                # Mark legacy if it has a legacy_state table with any entry
+                try:
+                    conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True, timeout=5)
+                    has_legacy = conn.execute(
+                        "SELECT COUNT(*) FROM legacy_state WHERE status='legacy_readonly'"
+                    ).fetchone()[0]
+                    conn.close()
+                    if has_legacy > 0:
+                        continue  # legacy_readonly; not active
+                except sqlite3.OperationalError:
+                    # Empty / corrupt DB; treat as active (worth flagging)
+                    pass
+                found.append(p)
+            elif name == "execution_state.json":
+                # Legacy JSON authoritative state files
+                # Only flag if path is in a canonical authoritative location
+                rel_p = p.relative_to(root)
+                rel_parts = rel_p.parts
+                # canonical authoritative locations:
+                #   <root>/execution_state.json                            (len==1)
+                #   <root>/.repro/execution/execution_state.json          (last 3 == .repro,execution,execution_state.json)
+                #   <root>/.execution/execution_state.json                (last 3 == .execution,execution_state.json)
+                # Note: parent dir is `execution` in the latter two.
+                is_authoritative = (
+                    len(rel_parts) == 1
+                    or rel_parts[-3:] == (".repro", "execution", "execution_state.json")
+                    or rel_parts[-3:] == (".execution", "execution", "execution_state.json")
+                )
+                if is_authoritative:
+                    legacy_authoritative.append(p)
+
+    # Conflict check: if both an active SQLite and an un-migrated legacy
+    # JSON authoritative file exist, we have a state-conflict situation.
+    # Migration is supposed to move these JSON files to .repro/execution/
+    # checkpoints/ or rename them; their presence here means the migration
+    # was incomplete.
+    if found and legacy_authoritative:
+        # Local import to avoid circular-import risk between core and startup
+        from scripts.startup.errors import StartupError
+        raise StartupError(
+            code="BLOCKED_STATE_CONFLICT",
+            message=(
+                f"Found {len(found)} active SQLite state DB(s) AND "
+                f"{len(legacy_authoritative)} legacy authoritative JSON "
+                f"state file(s) at: "
+                f"{[str(p) for p in legacy_authoritative]}. "
+                "Run migration or remove legacy authoritative state before proceeding."
+            ),
+            ctx={"sqlite_dbs": [str(p) for p in found],
+                 "legacy_jsons": [str(p) for p in legacy_authoritative]},
+        )
+
     return found
 
 
