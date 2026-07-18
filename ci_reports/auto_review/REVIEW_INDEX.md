@@ -45,4 +45,33 @@ This file tracks every R3F phase: commit, head SHA, test results, evidence, push
 ---
 
 ## R3F-1 — Fix CI YAML syntax + actionlint
+
+| Field | Value |
+|---|---|
+| Phase | R3F-1 |
+| Status | **PASS** |
+| Local head SHA (start) | `f28f0eb6832450355a5f5077b36bcfa394152cbb` |
+| Local head SHA (after commit) | `25147075326ba96ece68344f599373624353467a` |
+| Remote head SHA | `25147075326ba96ece68344f599373624353467a` |
+| base SHA | `a828023f537dfbfed4d7798066f3ca084d8072c9` (untouched ✅) |
+| PR | https://github.com/carlkestrel/kestrel-repro/pull/1 (Draft ✅) |
+| Test commands | `/tmp/actionlint -no-color .github/workflows/*.yml`, `yaml.safe_load(...)` for each |
+| actionlint errors | 0 |
+| YAML parse errors | 0 |
+| Jobs declared | 16 (5 + 4 + 7) |
+| Exit-code swallow removed | 1 (`pytest ... || echo "..."` in ci-l3.yml `remaining-tests`) |
+| GPU Job strategy | `if: ${{ inputs.gpu_enabled == true }}`, `runs-on: ubuntu-latest`, explicit NO_GPU/NO_TORCH reporting |
+| Raw evidence | `ci_reports/r3_repair/R3F_1_BASELINE.md`, `R3F_1_actionlint.txt`, `R3F_1_jobs.json` |
+| New issues opened | 0 |
+| Issues closed | 0 |
+| Rollback commit | `25147075326ba96ece68344f599373624353467a` (single-commit phase; reset to `f28f0eb` to roll back) |
+| Pushed to `review/r3-20260718-a828023`? | ✅ yes (verified 2026-07-18 13:40; remote head = local head) |
+| GitHub Actions URL | https://github.com/carlkestrel/kestrel-repro/pull/1 (still Draft) |
+| `LATEST_REVIEW_REQUEST.json` updated | ✅ |
+| Allow next phase? | yes |
+| External review status | NOT_REQUESTED |
+
+---
+
+## R3F-2 — Single SQLite authority end-to-end verification
 _tbd_
