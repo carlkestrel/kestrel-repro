@@ -31,22 +31,22 @@ EXIT_STATES = {COMPLETE, BLOCKED, WAITING_APPROVAL, PAUSED, STOPPED}
 
 
 def load_plan(path: str | Path) -> dict:
-    """R3F-4: delegate to the canonical plan schema loader, with legacy
+    """R3F-4 + R3R-2: delegate to the canonical plan schema loader, with legacy
     fallback.
 
-    The Controller used to parse the plan file with a hand-rolled YAML/JSON
-    loader that accepted arbitrary dicts and could pass malformed plans to
-    the orchestrator. The canonical ``scripts.startup.plan_schema`` module
-    enforces schema validation, dependency-cycle detection, mode migration
-    (legacy → canonical), and ``NEEDS_MODE_REVIEW`` for ambiguous cases.
+    The Controller expects a ``dict`` (legacy format) and uses:
+      - ``self.plan.get("mode")`` for mode override
+      - ``self.plan.get("mandatory_task_ids", [])`` for mandatory tasks
+      - ``task["retry_policy"]["max_retries"]`` for retry decisions
 
     Behaviour:
-      1. Try canonical load first. If it succeeds, return the canonical dict.
+      1. Try canonical load first. If it succeeds, convert PlanSchema → dict
+         via ``to_runtime_dict()`` (R3R-2 fix: canonical plans previously raised
+         AttributeError because Controller accessed PlanSchema as a dict).
       2. If canonical fails because the file is in legacy JSON / non-frontmatter
          format, attempt ``migrate_legacy_plan`` and re-validate.
       3. If migration also fails, raise ``ValueError`` listing the validation
-         errors. (Earlier we returned early on missing frontmatter; this
-         preserves test-style plans while still enforcing the schema.)
+         errors.
     """
     from pathlib import Path as _P
 
@@ -56,12 +56,19 @@ def load_plan(path: str | Path) -> dict:
         validate_plan,
     )
     from startup.plan_schema import (
+        PlanSchema,
         load_plan as _canonical_load,
     )
 
     p = _P(path)
     try:
-        return _canonical_load(p)
+        result = _canonical_load(p)
+        # R3R-2: canonical load returns PlanSchema. Convert to dict for the
+        # Controller, which accesses self.plan via .get() and [].
+        if isinstance(result, PlanSchema):
+            return result.to_runtime_dict()
+        # Legacy fallback already returns a plain dict.
+        return result
     except SystemExit as exc:
         # _canonical_load sys.exits with code 5 on validation/format errors.
         # We catch it here and attempt legacy migration.

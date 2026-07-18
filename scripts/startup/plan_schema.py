@@ -257,6 +257,7 @@ class PlanSchema:
     _source_sha256: str = ""
     _canonical_sha256: str = ""
     _loaded_from: Path | None = None
+    _mandatory_task_ids: list[str] = field(default_factory=list)
 
     @property
     def canonical_plan_hash(self) -> str:
@@ -269,6 +270,84 @@ class PlanSchema:
     @property
     def needs_mode_review(self) -> bool:
         return self._needs_mode_review
+
+    def to_runtime_dict(self) -> dict[str, Any]:
+        """Convert PlanSchema to a plain dict for the Controller.
+
+        The Controller expects ``dict`` (legacy format) and uses:
+          - ``self.plan.get("mode")`` for mode override
+          - ``self.plan.get("mandatory_task_ids", [])`` for mandatory tasks
+          - ``task["retry_policy"]["max_retries"]`` for retry decisions
+
+        This method bridges the canonical schema to the legacy interface:
+          * ``max_attempts`` (canonical, total attempts) → ``max_retries``
+            (legacy, retries after first) via ``max_attempts - 1``
+          * All dataclass fields are flattened to plain dict/list/primitive.
+        """
+        def _rp_to_legacy(rp: RetryPolicy) -> dict[str, Any]:
+            max_attempts = getattr(rp, "max_attempts", 1)
+            return {
+                "max_retries": max(0, max_attempts - 1),
+                "delay_seconds": getattr(rp, "backoff_seconds", 60),
+                "retry_on_exit_codes": getattr(rp, "retry_on_exit_codes", [-1]),
+            }
+
+        def _task_to_dict(t: TaskDef) -> dict[str, Any]:
+            return {
+                "id": t.id,
+                "name": t.name,
+                "gate": t.gate,
+                "deps": list(t.deps),
+                "command": t.command,
+                "timeout_min": t.timeout_min,
+                "acceptance_tests": list(t.acceptance_tests),
+                "retry_policy": _rp_to_legacy(t.retry_policy),
+                "shell": t.shell,
+                "writes": list(t.writes),
+                "decision_point": t.decision_point,
+                "non_evidentiary": t.non_evidentiary,
+            }
+
+        budgets_d = {}
+        if self.budgets:
+            b = self.budgets
+            budgets_d = {
+                "time_minutes": b.time_minutes,
+                "disk_gb": b.disk_gb,
+                "vram_gb": b.vram_gb,
+                "temperature_c": b.temperature_c,
+                "max_retries": getattr(b, "max_retries", 3),
+            }
+
+        # mandatory_task_ids: PlanSchema dataclass has no dedicated field; the
+        # field may appear in the YAML dict (e.g. from _dict_to_task parsing).
+        # We reconstruct it from task-level mandatory flags if present.
+        mandatory_ids: list[str] = list(getattr(self, "_mandatory_task_ids", []))
+
+        return {
+            "schema_version": self.schema_version,
+            "plan_id": self.plan_id,
+            "project_id": self.project_id,
+            "project_root": self.project_root,
+            "paper_identity": self.paper_identity,
+            "target_claims": list(self.target_claims),
+            "research_intent": self.research_intent,
+            "execution_track": self.execution_track,
+            "automation_level": self.automation_level,
+            "research_purpose": self.research_purpose,
+            "repositories": list(self.repositories),
+            "dataset_contract": dict(self.dataset_contract),
+            "metric_protocol": dict(self.metric_protocol),
+            "budgets": budgets_d,
+            "tasks": [_task_to_dict(t) for t in self.tasks],
+            "writes": list(self.writes),
+            "rollback_strategy": self.rollback_strategy,
+            "mandatory_artifacts": list(self.mandatory_artifacts),
+            "decision_points": list(self.decision_points),
+            "mandatory_task_ids": mandatory_ids,
+            "_canonical_sha256": self._canonical_sha256,
+            "_source_sha256": self._source_sha256,
+        }
 
 
 # ─── Frontmatter parsing ──────────────────────────────────────────────
@@ -397,6 +476,13 @@ def _dict_to_plan(d: dict[str, Any], source_bytes: bytes,
     if not isinstance(tasks_raw, list):
         tasks_raw = []
 
+    # mandatory_task_ids: extract from plan-level YAML field. The canonical
+    # PlanSchema dataclass has no dedicated field, but the YAML may contain
+    # a top-level mandatory_task_ids list (e.g. from _dict_to_task parsing).
+    # We add it to the dataclass as a private field so to_runtime_dict
+    # can include it in the output dict.
+    mandatory_task_ids_raw: list[str] = list(d.get("mandatory_task_ids") or [])
+
     # Budget
     b_d = d.get("budgets") or {}
     budgets = BudgetDef(
@@ -442,6 +528,7 @@ def _dict_to_plan(d: dict[str, Any], source_bytes: bytes,
         _source_sha256=source_sha,
         _canonical_sha256=canonical_sha,
         _loaded_from=loaded_from,
+        _mandatory_task_ids=mandatory_task_ids_raw,
     )
 
 

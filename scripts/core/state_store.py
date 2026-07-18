@@ -239,6 +239,7 @@ class StateStore:
             "  retry_policy_json TEXT NOT NULL DEFAULT '{}',"
             "  resource_requirements_json TEXT NOT NULL DEFAULT '{}',"
             "  writes_json TEXT NOT NULL DEFAULT '[]',"
+            "  non_evidentiary INTEGER NOT NULL DEFAULT 0,"
             "  state TEXT NOT NULL DEFAULT 'PENDING',"
             "  owner TEXT,"
             "  attempts INTEGER NOT NULL DEFAULT 0,"
@@ -685,8 +686,8 @@ class StateStore:
                     "INSERT OR IGNORE INTO tasks("
                     "  id,plan_id,name,gate,deps_json,command,shell,timeout_min,"
                     "  acceptance_tests_json,retry_policy_json,"
-                    "  resource_requirements_json,writes_json,state,attempts,updated_at"
-                    ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "  resource_requirements_json,writes_json,non_evidentiary,state,attempts,updated_at"
+                    ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         t["id"], plan_id, t["name"], t["gate"],
                         json.dumps(t.get("deps", [])),
@@ -697,6 +698,7 @@ class StateStore:
                         json.dumps(t.get("retry_policy", {})),
                         json.dumps(t.get("resource_requirements", {})),
                         json.dumps(t.get("writes", [])),
+                        int(bool(t.get("non_evidentiary", False))),
                         "PENDING", 0, now,
                     ),
                 )
@@ -746,6 +748,7 @@ class StateStore:
             "retry_policy": json.loads(row["retry_policy_json"]),
             "resource_requirements": json.loads(row["resource_requirements_json"]),
             "writes": json.loads(row["writes_json"]),
+            "non_evidentiary": bool(row.get("non_evidentiary", 0)),
             "state": row["state"],
             "attempts": row["attempts"],
             "pid": row["pid"],
