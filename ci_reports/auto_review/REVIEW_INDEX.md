@@ -36,8 +36,9 @@ This file tracks every R3F phase: commit, head SHA, test results, evidence, push
 | New issues opened | 0 (cataloged existing 21 in failure_lineage.csv) |
 | Issues closed | 0 |
 | Rollback commit | `fbcb12bb78874561c9356f178f1d112ee82cf2af` (single-commit phase, reset to `851f3516702511e68985f54a5f3eca46d3a70c7a` to roll back) |
-| Pushed to `review/r3-20260718-a828023`? | _filled after push_ |
-| `LATEST_REVIEW_REQUEST.json` updated | ✅ |
+| Pushed to `review/r3-20260718-a828023`? | ✅ yes (push verified 2026-07-18 13:36, remote head = local head = `fed68f79`) |
+| GitHub Actions URL | https://github.com/carlkestrel/kestrel-repro/pull/1 (still Draft) |
+| `LATEST_REVIEW_REQUEST.json` updated | ✅ (commit `fed68f79` recorded) |
 | Allow next phase? | yes |
 | External review status | NOT_REQUESTED |
 
