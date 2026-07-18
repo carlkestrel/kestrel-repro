@@ -149,7 +149,7 @@ This file tracks every R3F phase: commit, head SHA, test results, evidence, push
 | Raw evidence | `ci_reports/r3_repair/R3F_4_BASELINE.md`, `R3F_4_chaos_JUNIT.xml`, `R3F_4_other_JUNIT.xml` |
 | Key changes | (1) `TaskDef.non_evidentiary` field; (2) `validate_plan` respects opt-out; (3) `migrate_legacy_plan` normalizes schema_version and auto-sets non_evidentiary; (4) controller `load_plan` delegates to canonical `startup.plan_schema` with legacy fallback |
 | Rollback commit | `b0dce34aca52ab057f104da670681964bad0a912` (single-commit phase; reset to `83f0c9ad` to roll back) |
-| Pushed to `review/r3-20260718-a828023`? | ⏳ pending |
+| Pushed to `review/r3-20260718-a828023`? | ✅ yes (verified 2026-07-18-19:02) |
 | GitHub Actions URL | https://github.com/carlkestrel/kestrel-repro/pull/1 (still Draft) |
 | `LATEST_REVIEW_REQUEST.json` updated | ✅ |
 | Allow next phase? | yes |
