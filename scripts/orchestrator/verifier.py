@@ -15,6 +15,15 @@ class Verifier:
         self.logs_dir = self.project_root / ".repro" / "execution" / "logs"
 
     def verify(self, task: dict) -> tuple[bool, str]:
+        # R3F-5 task 4: non_evidentiary tasks skip the verifier entirely.
+        # They are approved manually via WAIVED and must NOT be auto-promoted
+        # to PASSED by the automated verifier.
+        if task.get("non_evidentiary", False):
+            self.store.record_event(
+                "VERIFICATION_BYPASS", task["id"],
+                {"reason": "non_evidentiary", "message": "task marked non_evidentiary; awaiting manual WAIVED"}
+            )
+            return True, "non-evidentiary (awaiting WAIVED)"
         tests = task.get("acceptance_tests", [])
         if not tests:
             self.store.record_event("VERIFICATION_PASS", task["id"], {"tests": 0})

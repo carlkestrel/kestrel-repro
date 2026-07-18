@@ -60,6 +60,10 @@ class AuthorizationContract:
     contract_id: str
     project_root: str
     project_id: str = ""
+    # authorization_bound_hash (R3-0): stronger than canonical_plan_hash alone.
+    # Includes schema_version and canonicalization_version, so schema upgrades
+    # automatically invalidate old contracts and force NEEDS_RECONFIRMATION.
+    authorization_bound_hash: str = ""
     canonical_plan_hash: str = ""
     git_commit: str = ""
     created_at: str = ""
@@ -280,6 +284,7 @@ def _dict_to_contract(d: dict[str, Any]) -> AuthorizationContract:
         contract_id=str(d.get("contract_id", "")),
         project_root=str(d.get("project_root", "")),
         project_id=str(d.get("project_id", "")),
+        authorization_bound_hash=str(d.get("authorization_bound_hash", "")),
         canonical_plan_hash=str(d.get("canonical_plan_hash", "")),
         git_commit=str(d.get("git_commit", "")),
         created_at=str(d.get("created_at", "")),

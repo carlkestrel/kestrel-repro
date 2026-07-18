@@ -228,6 +228,10 @@ class Controller:
         )
         retry = failed.get("retry_policy") or {}
         max_retries = int(retry.get("max_retries", 0))
+        # NOTE: using ``<=`` here matches the test expectations in the orchestrator
+        # test suite. With max_retries=1: attempts=1 -> 1 <= 1 -> schedules retry
+        # (attempts becomes 2); attempts=2 -> 2 <= 1 -> False (stop).
+        # See R3F-5 note in test_4 re: assertion update.
         if int(failed["attempts"]) <= max_retries:
             delay = float(retry.get("delay_seconds", retry.get("backoff_seconds", 0)))
             self.store.transition(
@@ -244,13 +248,26 @@ class Controller:
             self.store.record_event("POLICY_DECISION", task["id"], {
                 "decision": decision, "reason": reason
             })
+            # R3F-5 fix: APPROVED tasks (from auto_approve_low_risk or a prior
+            # approval) bypass the REQUIRE_APPROVAL path and go straight to claim.
             if task["status"] == "APPROVED":
-                decision = "AUTO_EXECUTE"
+                decision = AUTO_EXECUTE
                 reason = f"{reason} (already approved)"
             if decision == REQUIRE_APPROVAL:
-                self.approvals.request(task, reason)
-                progressed = True
-                continue
+                # R3F-5: try auto-approve for low-risk gates.
+                if self.approvals.auto_approve_low_risk(task):
+                    refreshed = self.store.get_task(task["id"])
+                    if refreshed:
+                        task.update(refreshed)
+                    # If auto-approve worked, task is now APPROVED; fall through.
+                    if task["status"] == "APPROVED":
+                        decision = AUTO_EXECUTE
+                        reason = f"{reason} (auto-approved low-risk)"
+                if decision == REQUIRE_APPROVAL:
+                    # Still needs human approval — stay in WAITING_APPROVAL state.
+                    self.approvals.request(task, reason)
+                    progressed = True
+                    continue
             if decision == REJECT:
                 self.store.transition(
                     task["id"], "REJECTED", expected={"READY", "APPROVED"},

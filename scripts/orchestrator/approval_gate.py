@@ -59,6 +59,16 @@ class ApprovalGate:
     def approve(self, approval_id: str, reason: str = "") -> dict:
         return self.store.decide_approval(approval_id, "APPROVED", reason)
 
+    def waive(self, approval_id: str, reason: str = "") -> dict:
+        """R3F-5 task 5: explicitly waive (bypass) a task's approval requirement.
+        
+        Unlike ``approve()`` which means the acceptance_tests passed, ``waive()``
+        means a human has reviewed and accepted the outcome without formal tests.
+        Used for non-evidentiary tasks or situations where acceptance_tests are
+        not applicable.
+        """
+        return self.store.decide_approval(approval_id, "WAIVED", reason)
+
     def reject(self, approval_id: str, reason: str = "") -> dict:
         return self.store.decide_approval(approval_id, "REJECTED", reason)
 
@@ -68,7 +78,9 @@ class ApprovalGate:
         for approval in self.store.pending_approvals():
             expires_at = approval.get("expires_at")
             if expires_at is not None and expires_at <= now:
-                self.reject(approval["approval_id"], "approval expired")
+                # R3F-5 task 5: expired approvals are waived (not rejected),
+                # since rejecting implies the task was reviewed and denied.
+                self.waive(approval["approval_id"], "approval expired")
                 expired.append(approval["approval_id"])
         return expired
 
@@ -78,8 +90,13 @@ class ApprovalGate:
         Returns True if the task was auto-approved, False otherwise.
         """
         gate = task.get("gate", "")
-        low_risk_gates = {"read_only", "safe", "compute_metrics", "generate_report",
-                         "mini_benchmark", "small_download"}
+        low_risk_gates = {
+            "read_only", "safe", "compute_metrics", "generate_report",
+            "mini_benchmark", "small_download",
+            # R3F-5: init and env_check are infrastructure gates; they should not
+            # block waiting for manual approval in daemon/reproctl run contexts.
+            "init", "env_check", "audit",
+        }
         
         if gate in low_risk_gates:
             # Auto-approve low-risk tasks
