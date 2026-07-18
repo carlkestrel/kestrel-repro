@@ -152,16 +152,16 @@ jobs:
       - name: Orchestrator package import
         run: |
           echo "=== Orchestrator import smoke ==="
-          python3 -c "
-import sys; sys.path.insert(0, 'scripts')
-from orchestrator import (
-    ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
-    StateStore, TaskExecutor, Verifier, Watchdog, EventJournal,
-    RecoveryManager, BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL,
-    REQUIRE_APPROVAL, REJECT, AUTO_EXECUTE, CycleDependencyError,
-)
-print('Orchestrator imports: OK')
-"
+          python3 - <<'PYEOF'
+          import sys; sys.path.insert(0, 'scripts')
+          from orchestrator import (
+              ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
+              StateStore, TaskExecutor, Verifier, Watchdog, EventJournal,
+              RecoveryManager, BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL,
+              REQUIRE_APPROVAL, REJECT, AUTO_EXECUTE, CycleDependencyError,
+          )
+          print('Orchestrator imports: OK')
+          PYEOF
 
       - name: Orchestrator CLI parser tests
         run: pytest tests/test_orchestrator.py -v --tb=short \
@@ -170,18 +170,18 @@ print('Orchestrator imports: OK')
       - name: CVO import tests
         run: |
           echo "=== CVO import smoke ==="
-          python3 -c "
-import sys; sys.path.insert(0, 'scripts')
-from cvo import (
-    ALL_NODES, CVORunner, CVOStateStore, NODE_MAP, STAGE_LABELS,
-    STAGE_NODES, get_node, get_next_ready, get_stage, ValidationNode,
-    val_000_run, val_010_run, __version__ as cvo_version,
-)
-print(f'CVO version: {cvo_version}')
-print(f'CVO nodes registered: {len(ALL_NODES)}')
-print(f'Stages: {sorted(STAGE_NODES.keys())}')
-print('CVO imports: OK')
-"
+          python3 - <<'PYEOF'
+          import sys; sys.path.insert(0, 'scripts')
+          from cvo import (
+              ALL_NODES, CVORunner, CVOStateStore, NODE_MAP, STAGE_LABELS,
+              STAGE_NODES, get_node, get_next_ready, get_stage, ValidationNode,
+              val_000_run, val_010_run, __version__ as cvo_version,
+          )
+          print(f'CVO version: {cvo_version}')
+          print(f'CVO nodes registered: {len(ALL_NODES)}')
+          print(f'Stages: {sorted(STAGE_NODES.keys())}')
+          print('CVO imports: OK')
+          PYEOF
 
       - name: Orchestrator structural tests
         run: pytest tests/test_orchestrator.py -v --tb=short \
@@ -190,18 +190,18 @@ print('CVO imports: OK')
       - name: Audit CLI import smoke
         run: |
           echo "=== Audit CLI import ==="
-          python3 -c "
-import sys; sys.path.insert(0, 'scripts')
-from cvo.audit_cli import main as audit_main, build_parser
-p = build_parser()
-print('audit_cli parser built OK')
-# Verify the validate subcommand exists
-subparsers = {a.title: None for a in p._actions[-1].choices}
-print(f'audit subcommands: {sorted(subparsers.keys())}')
-assert 'validate' in subparsers, 'validate subcommand missing'
-assert 'init' in subparsers, 'init subcommand missing'
-print('Audit CLI: OK')
-"
+          python3 - <<'PYEOF'
+          import sys; sys.path.insert(0, 'scripts')
+          from cvo.audit_cli import main as audit_main, build_parser
+          p = build_parser()
+          print('audit_cli parser built OK')
+          # Verify the validate subcommand exists
+          subparsers = {a.title: None for a in p._actions[-1].choices}
+          print(f'audit subcommands: {sorted(subparsers.keys())}')
+          assert 'validate' in subparsers, 'validate subcommand missing'
+          assert 'init' in subparsers, 'init subcommand missing'
+          print('Audit CLI: OK')
+          PYEOF
 
       - name: No hardcoded paths
         run: pytest tests/test_startup.py::test_no_hardcoded_paths_in_new_code -v --tb=short
