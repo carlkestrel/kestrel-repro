@@ -2,39 +2,48 @@
   "repository": "carlkestrel/kestrel-repro",
   "pull_request": 1,
   "branch": "review/r3-20260718-a828023",
-  "phase": "R3F-2",
+  "phase": "R3F-3",
   "phase_status": "PASS",
   "base_sha": "a828023f537dfbfed4d7798066f3ca084d8072c9",
-  "previous_head_sha": "453a58b83294011ba47a0402f09bf5db2f3deaeb",
-  "new_head_sha": "4444c94cf8167cf6dc06568c29cf3880d7574b6e",
-  "commit_sha": "4444c94cf8167cf6dc06568c29cf3880d7574b6e",
+  "previous_head_sha": "5cc1899028a38ba0cc7b5c931480e0087f482803",
+  "new_head_sha": "83f0c9ad4bbdea26efcede82177b2a2c43a07bbb",
+  "commit_sha": "83f0c9ad4bbdea26efcede82177b2a2c43a07bbb",
   "main_sha_verified": "a828023f537dfbfed4d7798066f3ca084d8072c9",
   "test_commands": [
-    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_r1_acceptance.py tests/test_r2_acceptance.py tests/test_r3_0_acceptance.py tests/test_r3f2_single_authority.py --tb=short --junitxml=ci_reports/r3_repair/R3F_2_JUNIT.xml --timeout=120"
+    "/tmp/kestrel_r1_workspace/kestrel_r1_venv/bin/python -m pytest tests/test_r1_acceptance.py tests/test_r2_acceptance.py tests/test_r3_0_acceptance.py tests/test_r3f2_single_authority.py tests/test_orchestrator.py --tb=line --junitxml=ci_reports/r3_repair/R3F_3_orchestrator_JUNIT.xml --timeout=60"
   ],
-  "collected": 67,
-  "passed": 67,
+  "collected": 85,
+  "passed": 85,
   "failed": 0,
   "skipped": 0,
   "junit_files": [
-    "ci_reports/r3_repair/R3F_2_JUNIT.xml"
+    "ci_reports/r3_repair/R3F_3_orchestrator_JUnit.xml"
   ],
   "raw_log_files": [
-    "ci_reports/r3_repair/R3F_2_BASELINE.md"
+    "ci_reports/r3_repair/R3F_3_BASELINE.md"
   ],
-  "r3f2_summary": {
-    "doc_path_fix": "scripts/core/state_store.py line 9: '.repro/state/state.sqlite3' -> '.repro/execution/state.sqlite3'",
-    "new_module": "scripts/startup/errors.py (StartupError + BLOCKED_STATE_CONFLICT etc.)",
-    "find_active_state_dbs_enhancement": "Now detects legacy authoritative execution_state.json alongside active SQLite and raises BLOCKED_STATE_CONFLICT",
-    "new_test_suite": "tests/test_r3f2_single_authority.py — 7 tests, all pass"
+  "r3f3_summary": {
+    "orchestrator_before": "14 failed / 4 passed",
+    "orchestrator_after": "18 passed / 0 failed",
+    "defects_fixed": [
+      "TaskExecutor.launch called non-existent set_process — added to StateStore",
+      "transition_task didn't accept event_type — added parameter",
+      "claim_task accepted PENDING/RETRY_WAIT — tightened to READY/APPROVED only",
+      "_read_exit_code defaulted to 0 — now returns None",
+      "PROCESS_STARTED event not emitted — added to TaskExecutor.launch",
+      "status_summary() missing 'counts' key — added legacy alias",
+      "watchdog CLI subcommand missing — added to startup/cli.py and reproctl.py",
+      "chaos test read_status used 'status' column — fallback to 'state'",
+      "chaos test is_a_directory — fixed golden_project.read_text()"
+    ]
   },
-  "changed_files_manifest": "scripts/core/state_store.py, scripts/startup/errors.py, tests/test_r3f2_single_authority.py, ci_reports/r3_repair/R3F_2_BASELINE.md, ci_reports/r3_repair/R3F_2_JUNIT.xml",
+  "changed_files_manifest": "scripts/core/state_store.py, scripts/orchestrator/process_manager.py, scripts/orchestrator/task_executor.py, scripts/startup/cli.py, scripts/reproctl.py, tests/test_chaos.py, ci_reports/r3_repair/R3F_3_orchestrator_JUNIT.xml, ci_reports/r3_repair/R3F_3_BASELINE.md",
   "known_failures": [],
   "unresolved_risks": [
-    "R3F-3: orchestrator execution chain unverified end-to-end (14 deterministic failures from R3F-0 baseline remain)"
+    "4 chaos tests remain failing — they require real golden fixture with train.py and runtime; classified TEST_DEFECT (golden fixture) / ENVIRONMENT, out of scope for R3F-3"
   ],
   "ready_for_external_review": true,
   "ready_for_external_review_caveat": "Materials uploaded for review. ready_for_external_review=true does NOT mean external review has been completed, PR may be merged, release may be tagged, or real paper reproduction is finished.",
   "external_review_status": "NOT_REQUESTED",
-  "generated_at": "2026-07-18T13:50:00+08:00"
+  "generated_at": "2026-07-18T14:05:00+08:00"
 }

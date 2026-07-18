@@ -102,4 +102,32 @@ This file tracks every R3F phase: commit, head SHA, test results, evidence, push
 ---
 
 ## R3F-3 — Fix orchestrator execution chain
+
+| Field | Value |
+|---|---|
+| Phase | R3F-3 |
+| Status | **PASS** |
+| Local head SHA (start) | `5cc1899028a38ba0cc7b5c931480e0087f482803` |
+| Local head SHA (after commit) | `83f0c9ad4bbdea26efcede82177b2a2c43a07bbb` |
+| Remote head SHA | `83f0c9ad4bbdea26efcede82177b2a2c43a07bbb` |
+| base SHA | `a828023f537dfbfed4d7798066f3ca084d8072c9` (untouched ✅) |
+| PR | https://github.com/carlkestrel/kestrel-repro/pull/1 (Draft ✅) |
+| Orchestrator before | 14 failed / 4 passed (deterministic) |
+| Orchestrator after | **18 passed / 0 failed** ✅ |
+| Test commands | `pytest tests/test_r1_acceptance.py tests/test_r2_acceptance.py tests/test_r3_0_acceptance.py tests/test_r3f2_single_authority.py tests/test_orchestrator.py` |
+| Tests collected | 85 |
+| Tests passed | 85 |
+| Tests failed | 0 |
+| Raw evidence | `ci_reports/r3_repair/R3F_3_BASELINE.md`, `R3F_3_orchestrator_JUNIT.xml` |
+| Defects fixed | set_process missing; event_type kwarg missing; claim_task too permissive; _read_exit_code defaulted 0; PROCESS_STARTED not emitted; status_summary alias; watchdog CLI missing; chaos back-compat |
+| Rollback commit | `83f0c9ad4bbdea26efcede82177b2a2c43a07bbb` (single-commit phase; reset to `5cc1899` to roll back) |
+| Pushed to `review/r3-20260718-a828023`? | ✅ yes (verified 2026-07-18 14:05; remote head = local head) |
+| GitHub Actions URL | https://github.com/carlkestrel/kestrel-repro/pull/1 (still Draft) |
+| `LATEST_REVIEW_REQUEST.json` updated | ✅ |
+| Allow next phase? | yes |
+| External review status | NOT_REQUESTED |
+
+---
+
+## R3F-4 — Plan / Mode / Authorization integration
 _tbd_
