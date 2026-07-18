@@ -7,15 +7,12 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 import sys
 import time
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Result types

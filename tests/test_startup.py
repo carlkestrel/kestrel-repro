@@ -25,9 +25,6 @@ Covers all 20 mandatory test cases from the spec:
 """
 from __future__ import annotations
 
-import csv
-import importlib.util
-import io
 import json
 import os
 import shutil
@@ -36,7 +33,7 @@ import subprocess
 import sys
 import textwrap
 import time
-from contextlib import contextmanager, redirect_stdout, redirect_stderr
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -51,6 +48,7 @@ STARTUP_PKG = SCRIPTS / "startup"
 # Tests load the startup package by temporarily putting SCRIPTS on sys.path
 # so that `import startup.cli` works (which requires a proper package).
 import sys as _sys
+
 if str(SCRIPTS) not in _sys.path:
     _sys.path.insert(0, str(SCRIPTS))
 
@@ -58,10 +56,10 @@ from startup import cli as _cli_mod
 from startup import config as _cfg_mod
 from startup import doctor as _doc_mod
 from startup import lock as _lock_mod
+from startup import log_setup as _log_mod
 from startup import plan_validate as _plan_mod
 from startup import recovery as _rec_mod
 from startup import secrets_redactor as _red_mod
-from startup import log_setup as _log_mod
 from startup import state_machine as _sm_mod
 from startup import stop as _stop_mod
 

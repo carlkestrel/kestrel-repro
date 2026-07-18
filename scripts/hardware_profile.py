@@ -13,7 +13,6 @@ import argparse
 import json
 import platform
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any

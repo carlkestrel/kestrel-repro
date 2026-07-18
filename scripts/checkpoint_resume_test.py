@@ -2,7 +2,6 @@
 """L3 Checkpoint Resume Test: save/load checkpoint produces identical results."""
 
 import argparse
-import os
 import re
 import subprocess
 import sys

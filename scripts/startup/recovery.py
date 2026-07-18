@@ -6,7 +6,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import lock as _lock
 from . import state_machine as _sm
 
 EXIT_RESUME_FAILED = 8

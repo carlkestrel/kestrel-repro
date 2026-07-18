@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Acceptance tests for ReproPerf AutoTuner."""
-import json, pathlib, subprocess, sys, re, ast
+import ast
+import json
+import pathlib
+import subprocess
+import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 OUT_DIR = REPO / "performance"
@@ -47,7 +51,7 @@ def test_templates():
             rec(f"T02 template {name}", False, "MISSING")
             all_ok = False
     if all_ok:
-        rec(f"T02 all 14 templates exist", True, f"{len(expected)} files")
+        rec("T02 all 14 templates exist", True, f"{len(expected)} files")
     assert all_ok, "some templates missing"
 
 
@@ -75,12 +79,12 @@ def test_command():
     path = REPO / "commands" / "repro-perf.md"
     content = path.read_text()
     has_fm = content.startswith("---")
-    rec(f"T04 repro-perf.md has YAML frontmatter", has_fm)
-    rec(f"T04 repro-perf.md has 12 fundamental rules",
+    rec("T04 repro-perf.md has YAML frontmatter", has_fm)
+    rec("T04 repro-perf.md has 12 fundamental rules",
         content.count("12.") >= 1 or content.count("Fundamental") >= 1)
-    rec(f"T04 repro-perf.md has NO_SAFE_SPEEDUP rule",
+    rec("T04 repro-perf.md has NO_SAFE_SPEEDUP rule",
         "NO_SAFE_SPEEDUP" in content)
-    rec(f"T04 repro-perf.md has strict/optimized separation",
+    rec("T04 repro-perf.md has strict/optimized separation",
         "strict_performance.yaml" in content and "optimized_performance.yaml" in content)
 
 
@@ -88,7 +92,7 @@ def test_command():
 def test_health_phase():
     r = run("--phase", "health")
     ok = r.returncode == 0
-    rec(f"T05 health phase exit=0", ok, r.stderr[:60] if not ok else "")
+    rec("T05 health phase exit=0", ok, r.stderr[:60] if not ok else "")
     # Check outputs
     for fname in ["hardware_inventory.json", "health_report.md"]:
         p = OUT_DIR / fname
@@ -100,7 +104,7 @@ def test_baseline_phase():
     r = run("--phase", "baseline", "--config-id", "test-baseline",
             "--micro-batch", "2", "--grad-accum-steps", "1", "--num-workers", "0")
     ok = r.returncode == 0
-    rec(f"T06 baseline phase exit=0", ok, r.stderr[:60] if not ok else "")
+    rec("T06 baseline phase exit=0", ok, r.stderr[:60] if not ok else "")
     for fname in ["baseline_metrics.csv", "baseline_profile.json"]:
         p = OUT_DIR / fname
         ok &= rec(f"T06 {fname} created", p.exists())
@@ -110,7 +114,7 @@ def test_baseline_phase():
 def test_capacity_phase():
     r = run("--phase", "capacity", "--config-id", "test-capacity")
     ok = r.returncode == 0
-    rec(f"T07 capacity phase exit=0", ok, r.stderr[:60] if not ok else "")
+    rec("T07 capacity phase exit=0", ok, r.stderr[:60] if not ok else "")
     for fname in ["capacity_trials.csv", "safe_capacity.yaml"]:
         p = OUT_DIR / fname
         ok &= rec(f"T07 {fname} created", p.exists())
@@ -123,9 +127,9 @@ def test_parity_phase():
             "--candidate-id", "test-candidate",
             "--precision", "FP32")
     ok = r.returncode == 0
-    rec(f"T08 parity phase exit=0", ok, r.stderr[:60] if not ok else "")
+    rec("T08 parity phase exit=0", ok, r.stderr[:60] if not ok else "")
     p = OUT_DIR / "numerical_parity_report.md"
-    rec(f"T08 numerical_parity_report.md created", p.exists())
+    rec("T08 numerical_parity_report.md created", p.exists())
 
 
 # ── T09: soak phase ─────────────────────────────────────────────────────────────
@@ -133,9 +137,9 @@ def test_soak_phase():
     r = run("--phase", "soak", "--config-id", "test-candidate",
             "--duration", "10")
     ok = r.returncode == 0
-    rec(f"T09 soak phase exit=0", ok, r.stderr[:60] if not ok else "")
+    rec("T09 soak phase exit=0", ok, r.stderr[:60] if not ok else "")
     p = OUT_DIR / "soak_test_report.md"
-    rec(f"T09 soak_test_report.md created", p.exists())
+    rec("T09 soak_test_report.md created", p.exists())
 
 
 # ── T10: recommend phase ────────────────────────────────────────────────────────
@@ -143,7 +147,7 @@ def test_recommend_phase():
     r = run("--phase", "recommend",
             "--micro-batch", "2", "--num-workers", "0")
     ok = r.returncode == 0
-    rec(f"T10 recommend phase exit=0", ok, r.stderr[:60] if not ok else "")
+    rec("T10 recommend phase exit=0", ok, r.stderr[:60] if not ok else "")
     for fname in ["recommendation.md", "strict_performance.yaml", "rollback.yaml"]:
         p = OUT_DIR / fname
         rec(f"T10 {fname} created", p.exists())
@@ -156,19 +160,19 @@ def test_strict_optimized():
     rollback = OUT_DIR / "rollback.yaml"
 
     s_ok = strict.exists()
-    rec(f"T11 strict_performance.yaml exists", s_ok)
+    rec("T11 strict_performance.yaml exists", s_ok)
 
     if s_ok:
         s_content = strict.read_text()
-        rec(f"T11 strict: protocol_preserved=true",
+        rec("T11 strict: protocol_preserved=true",
             "protocol_preserved: true" in s_content or "protocol_preserved: true" in s_content)
-        rec(f"T11 strict: torch_compile=false",
+        rec("T11 strict: torch_compile=false",
             "torch_compile: false" in s_content)
-        rec(f"T11 strict: precision=FP32",
+        rec("T11 strict: precision=FP32",
             "precision: FP32" in s_content)
 
-    rec(f"T11 rollback.yaml exists", rollback.exists())
-    rec(f"T11 rollback: has default_config",
+    rec("T11 rollback.yaml exists", rollback.exists())
+    rec("T11 rollback: has default_config",
         rollback.exists() and "default_config:" in rollback.read_text())
 
 
@@ -178,7 +182,7 @@ def test_no_safe_speedup():
     if rec_path.exists():
         content = rec_path.read_text()
         # When no optimization trials exist, should say NO_SAFE_SPEEDUP
-        rec(f"T12 recommendation.md has verdict block",
+        rec("T12 recommendation.md has verdict block",
             "verdict" in content.lower() or "Verdict" in content)
 
 
@@ -191,7 +195,7 @@ def test_12_rules():
         "measurement noise", "immediate rollback", "overclocking",
         "quality reduction"
     ] if r.lower() in src.lower())
-    rec(f"T13 12 fundamental rules in command", rules_found >= 10,
+    rec("T13 12 fundamental rules in command", rules_found >= 10,
         f"~{rules_found} keywords found")
 
 
@@ -203,7 +207,7 @@ def test_tuning_trials_columns():
                  "samples_per_second", "gpu_memory_peak_mb", "loss", "gradient_norm",
                  "throughput_delta_pct", "memory_delta_mb", "nan_count", "status"]
     missing = [c for c in required if c not in content]
-    rec(f"T14 tuning_trials.csv has required columns", not missing,
+    rec("T14 tuning_trials.csv has required columns", not missing,
         f"missing: {missing}" if missing else "all present")
 
 
@@ -214,7 +218,7 @@ def test_rollback_triggers():
     triggers = ["OOM", "NUMERICAL_DIFFERENT", "LOSS_NAN", "METRIC_DEVIATION",
                 "THERMAL_THROTTLING", "SOAK_TEST_FAIL"]
     found = [t for t in triggers if t in content]
-    rec(f"T15 rollback.yaml has all 6 triggers", len(found) >= 6,
+    rec("T15 rollback.yaml has all 6 triggers", len(found) >= 6,
         f"found: {found}")
 
 

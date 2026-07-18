@@ -6,7 +6,6 @@ import os
 import sys
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 from . import secrets_redactor as _redact
 
@@ -31,7 +30,7 @@ _DATEFMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
 def get_logger(name: str = "reproctl.startup",
-               log_file: Optional[Path] = None,
+               log_file: Path | None = None,
                level: str | None = None) -> Logger:
     """Return a logger configured with the secret filter.
 

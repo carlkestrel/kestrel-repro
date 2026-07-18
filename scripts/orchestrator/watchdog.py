@@ -10,13 +10,11 @@ This module extends the base Watchdog with:
 """
 from __future__ import annotations
 
-import os
 import re
 import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 try:
     import torch
@@ -50,31 +48,31 @@ class Watchdog:
         alive = self.process_manager.is_alive(pid)
         timed_out = False
         elapsed = 0.0
-        
+
         if task.get("started_at"):
             started = datetime.fromisoformat(task["started_at"]).timestamp()
             elapsed = max(0.0, time.time() - started)
             timed_out = elapsed > float(task.get("timeout_min", 0)) * 60
-        
+
         diagnosis = {
             "pid": pid,
             "alive": alive,
             "timed_out": timed_out,
             "elapsed_seconds": elapsed,
         }
-        
+
         # GPU monitoring
         if alive and pid:
             gpu_info = self.get_gpu_info()
             diagnosis["gpu"] = gpu_info
-            
+
             # Check GPU health
             if gpu_info.get("available"):
                 if gpu_info.get("temperature_c", 0) > 85:
                     diagnosis["gpu_warning"] = "High GPU temperature"
                 if gpu_info.get("memory_used_pct", 0) > 95:
                     diagnosis["gpu_warning"] = "High GPU memory usage"
-            
+
             # Check for OOM in logs
             oom_detected = self._check_oom_in_logs(task)
             if oom_detected:
@@ -82,17 +80,17 @@ class Watchdog:
                 diagnosis["oom_recovery_strategy"] = self._get_next_recovery_strategy(
                     task.get("id")
                 )
-            
+
             # Check log staleness
             log_stale = self._check_log_stale(task)
             if log_stale:
                 diagnosis["log_stale"] = True
-        
+
         if timed_out and alive:
             self.process_manager.terminate(int(pid))
             diagnosis["terminated"] = True
             self.store.record_event("WATCHDOG_TIMEOUT", task["id"], diagnosis)
-        
+
         return diagnosis
 
     def get_gpu_info(self, force_refresh: bool = False) -> dict:
@@ -100,12 +98,12 @@ class Watchdog:
         now = time.time()
         if not force_refresh and (now - self._cache_time) < self._cache_ttl:
             return self._gpu_cache.get(0, {})
-        
+
         info = {"available": False, "devices": [], "type": None}
-        
+
         if not TORCH_AVAILABLE:
             return info
-        
+
         # Check MPS first (Apple Silicon)
         mps_info = self._get_mps_info()
         if mps_info.get("available"):
@@ -113,20 +111,20 @@ class Watchdog:
             self._cache_time = now
             self._gpu_cache[0] = info
             return info
-        
+
         # Check CUDA (NVIDIA)
         try:
             if torch.cuda.is_available():
                 info["available"] = True
                 info["type"] = "cuda"
                 info["device_count"] = torch.cuda.device_count()
-                
+
                 for i in range(torch.cuda.device_count()):
                     dev_info = {
                         "id": i,
                         "name": torch.cuda.get_device_name(i),
                     }
-                    
+
                     # Memory info
                     mem_allocated = torch.cuda.memory_allocated(i) / 1024**3  # GB
                     mem_reserved = torch.cuda.memory_reserved(i) / 1024**3
@@ -135,20 +133,20 @@ class Watchdog:
                     dev_info["memory_reserved_gb"] = round(mem_reserved, 2)
                     dev_info["memory_total_gb"] = round(mem_total, 2)
                     dev_info["memory_used_pct"] = round(mem_reserved / mem_total * 100, 1)
-                    
+
                     self._gpu_cache[i] = dev_info
-                
+
                 # Get temperature via nvidia-smi
                 temp_info = self._get_nvidia_smi_temp()
                 if temp_info and 0 in self._gpu_cache:
                     self._gpu_cache[0].update(temp_info)
-                
+
                 info["devices"] = [self._gpu_cache.get(i, {}) for i in range(info["device_count"])]
             else:
                 info["type"] = "none"
         except Exception as e:
             info["error"] = str(e)
-        
+
         self._cache_time = now
         self._gpu_cache[0] = info
         return info
@@ -156,17 +154,17 @@ class Watchdog:
     def _get_mps_info(self) -> dict:
         """Get MPS (Metal Performance Shaders) GPU info for Apple Silicon."""
         info = {"available": False, "type": "mps", "devices": []}
-        
+
         try:
             if not hasattr(torch.backends, "mps"):
                 return info
-            
+
             if not torch.backends.mps.is_available():
                 return info
-            
+
             info["available"] = True
             info["device_count"] = 1
-            
+
             # MPS device info
             dev_info = {
                 "id": 0,
@@ -174,7 +172,7 @@ class Watchdog:
                 "type": "mps",
                 "architecture": "Apple GPU",
             }
-            
+
             # Try to get memory info (MPS has limited memory reporting)
             try:
                 if hasattr(torch.mps, "current_allocated_memory"):
@@ -182,7 +180,7 @@ class Watchdog:
                     dev_info["memory_allocated_gb"] = round(mem_allocated, 2)
             except Exception:
                 pass
-            
+
             try:
                 if hasattr(torch.mps, "set_per_process_memory_fraction"):
                     # Get system memory for GPU context
@@ -196,13 +194,13 @@ class Watchdog:
                         dev_info["memory_total_gb"] = round(total_mem_bytes / 1024**3, 2)
             except Exception:
                 pass
-            
+
             info["devices"].append(dev_info)
             self._gpu_cache[0] = info
-            
+
         except Exception as e:
             info["error"] = str(e)
-        
+
         return info
 
     def _get_nvidia_smi_temp(self) -> dict | None:
@@ -230,7 +228,7 @@ class Watchdog:
         log_path = task.get("log_path")
         if not log_path or not Path(log_path).exists():
             return False
-        
+
         try:
             content = Path(log_path).read_text(errors="ignore")
             oom_patterns = [
@@ -253,7 +251,7 @@ class Watchdog:
         log_path = task.get("log_path")
         if not log_path or not Path(log_path).exists():
             return False
-        
+
         try:
             mtime = Path(log_path).stat().st_mtime
             age = time.time() - mtime
@@ -288,23 +286,23 @@ class Watchdog:
             "dataloader_stall": False,
             "issues": [],
         }
-        
+
         log_path = task.get("log_path")
         if not log_path or not Path(log_path).exists():
             return health
-        
+
         try:
             content = Path(log_path).read_text(errors="ignore")
-            
+
             # Check for NaN/Inf
             if re.search(r"\bnan\b", content, re.IGNORECASE):
                 health["nan_detected"] = True
                 health["issues"].append("NaN detected in training")
-            
+
             if re.search(r"\binf\b", content, re.IGNORECASE):
                 health["inf_detected"] = True
                 health["issues"].append("Inf detected in training")
-            
+
             # Check for loss stalling (loss not decreasing over last N lines)
             loss_values = re.findall(r"loss[:\s=]+([0-9.]+)", content, re.IGNORECASE)
             if len(loss_values) >= 10:
@@ -312,23 +310,23 @@ class Watchdog:
                 if max(recent) - min(recent) < 0.001:
                     health["loss_stalling"] = True
                     health["issues"].append("Loss appears to be stalling")
-            
+
             # Check for dataloader issues
             if re.search(r"DataLoader.*stuck|timeout.*dataloader", content, re.IGNORECASE):
                 health["dataloader_stall"] = True
                 health["issues"].append("DataLoader appears stuck")
-            
+
             # Check for gradient explosion
             if re.search(r"gradient.*nan|grad.*inf|exploding.*gradient", content, re.IGNORECASE):
                 health["issues"].append("Gradient explosion detected")
-            
+
             # Check for OOM patterns
             if re.search(r"out.*of.*memory|OOM", content, re.IGNORECASE):
                 health["issues"].append("OOM detected")
-            
+
         except Exception:
             pass
-        
+
         return health
 
     def get_system_info(self) -> dict:
@@ -339,7 +337,7 @@ class Watchdog:
             "disk_free_gb": 0,
             "gpu": self.get_gpu_info(),
         }
-        
+
         try:
             # CPU/Memory via psutil-like output
             result = subprocess.run(
@@ -355,7 +353,7 @@ class Watchdog:
                         info["memory_used_pct"] = round(used / total * 100, 1)
         except Exception:
             pass
-        
+
         # Disk info
         if self.project_root:
             try:
@@ -364,7 +362,7 @@ class Watchdog:
                 info["disk_free_gb"] = round(usage.free / 1024**3, 1)
             except Exception:
                 pass
-        
+
         return info
 
     def terminate_running(self) -> list[int]:

@@ -4,8 +4,14 @@ Uses real torch.utils.data.Dataset with synthetic point clouds.
 Included in fixtures/ directory for testing purposes only.
 """
 
-import argparse, json, os, torch, torch.nn as nn, torch.nn.functional as F
+import argparse
+import json
+import os
 from pathlib import Path
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
 

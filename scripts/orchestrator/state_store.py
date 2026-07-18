@@ -14,23 +14,23 @@ StateStore automatically aliases `PASS` → `PASSED` and `FAIL` → `FAILED`
 in `transition_task` and `list_tasks`.
 """
 from scripts.core.state_store import (
-    StateStore,
-    StateConflict,
-    InvalidTransition,
+    CURRENT_CANONICALIZATION_VERSION,
+    HUMAN_TRANSITIONS,
+    LEGACY_TASK_STATE_ALIASES,
     PROJECT_STATES,
     TASK_STATES,
     TASK_TRANSITIONS,
-    HUMAN_TRANSITIONS,
     VERIFIER_SOURCES,
-    LEGACY_TASK_STATE_ALIASES,
-    utc_now,
+    InvalidTransition,
+    StateConflict,
+    StateStore,
+    assert_single_state_authority,
     canonical_db_path,
     canonical_repro_dir,
     compute_authorization_bound_hash,
-    upgrade_schema_with_hash_reset,
     find_active_state_dbs,
-    assert_single_state_authority,
-    CURRENT_CANONICALIZATION_VERSION,
+    upgrade_schema_with_hash_reset,
+    utc_now,
 )
 
 # Backward-compat alias names

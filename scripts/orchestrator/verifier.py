@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 # R3F-7: Required fields per acceptance test type.
 _REQUIRED_FIELDS: dict[str, list[str]] = {
     "file_exists":        ["path"],

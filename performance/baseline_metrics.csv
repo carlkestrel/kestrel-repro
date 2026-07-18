@@ -32,3 +32,4 @@ trial-76b4cfa7,test-baseline,strict_repro,2,1,0,2,False,False,False,False,1,cuda
 trial-fb510f05,test-baseline,strict_repro,2,1,0,2,False,False,False,False,1,cuda,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0.0,error: No module named 'torch',0,0.0,2026-07-18T04:14:24.863991+00:00
 trial-80f9f533,test-baseline,strict_repro,2,1,0,2,False,False,False,False,1,cuda,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0.0,error: No module named 'torch',0,0.0,2026-07-18T04:22:09.184196+00:00
 trial-866b724d,test-baseline,strict_repro,2,1,0,2,False,False,False,False,1,cuda,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0.0,error: No module named 'torch',0,0.0,2026-07-18T04:30:34.294618+00:00
+trial-f019c4a8,test-baseline,strict_repro,2,1,0,2,False,False,False,False,1,cuda,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0.0,0.0,error: No module named 'torch',0,0.0,2026-07-18T13:37:50.349654+00:00

@@ -1,6 +1,8 @@
 """End-to-end test: run the minimal PyTorch fixture through a fake
 `/repro-launch` flow and verify all artifacts appear in the right places."""
-import subprocess, json, shutil, tempfile
+import json
+import subprocess
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]

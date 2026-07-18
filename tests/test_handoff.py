@@ -1,5 +1,9 @@
 """Test handoff.json structure and recovery flow (P4_T03 + P4_T04)."""
-import sys, importlib.util, json, tempfile, os
+import importlib.util
+import json
+import os
+import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]

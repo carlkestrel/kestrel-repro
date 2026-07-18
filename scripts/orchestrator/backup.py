@@ -290,7 +290,7 @@ def integrity_check(project_root: Path) -> dict:
                     actual = hashlib.sha256(Path(plan_path).read_bytes()).hexdigest()[:16]
                     if actual != expected_hash:
                         issues.append(
-                            f"Plan hash mismatch: plan on disk differs from recorded hash"
+                            "Plan hash mismatch: plan on disk differs from recorded hash"
                         )
                     else:
                         checks_passed.append("plan_hash_verified")

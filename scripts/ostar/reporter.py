@@ -17,12 +17,10 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from . import constants as _C
 from . import exit_validator
 from . import soak_state as _state
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data containers
@@ -112,18 +110,18 @@ def generate_markdown_report(summary: OvernightSummary) -> str:
     ci_bar = "█" * int(ci_pct / 5) + "░" * (20 - int(ci_pct / 5))
 
     lines = [
-        f"# Overnight Soak Test Report",
-        f"",
+        "# Overnight Soak Test Report",
+        "",
         f"**Run ID**: `{summary.run_id}`",
         f"**Verdict**: {verdict_badge}",
         f"**Started**: {summary.started_at}",
         f"**Ended**: {summary.ended_at}",
         f"**Duration**: {hours:.1f}h {minutes:.0f}m ({summary.duration_seconds:.0f}s)",
-        f"",
-        f"## Executive Summary",
-        f"",
-        f"| Metric | Value |",
-        f"|---|---|",
+        "",
+        "## Executive Summary",
+        "",
+        "| Metric | Value |",
+        "|---|---|",
         f"| Cycles Completed | {summary.cycles_completed} |",
         f"| CI Success Rate | {ci_pct:.1f}% `{ci_bar}` |",
         f"| Bugs Found | {summary.bugs_found} |",
@@ -137,18 +135,18 @@ def generate_markdown_report(summary: OvernightSummary) -> str:
         f"| Min Disk Free | {summary.min_disk_free_gb:.1f} GB |",
         f"| GPU Memory Leak | {'YES' if summary.gpu_memory_leak else 'NO'} |",
         f"| CPU Memory Leak | {'YES' if summary.cpu_memory_leak else 'NO'} |",
-        f"",
-        f"## Startup Readiness",
-        f"",
+        "",
+        "## Startup Readiness",
+        "",
         f"**FAST mode**: {'✅ CAN START' if summary.fast_can_start else '❌ BLOCKED'}",
         f"**STRICT mode**: {'✅ CAN START' if summary.strict_can_start else '❌ BLOCKED'}",
-        f"",
+        "",
     ]
 
     if summary.unresolved_issues:
         lines.extend([
             f"## Unresolved Issues ({len(summary.unresolved_issues)})",
-            f"",
+            "",
         ])
         for issue in summary.unresolved_issues:
             severity = issue.get("severity", "?").upper()
@@ -160,7 +158,7 @@ def generate_markdown_report(summary: OvernightSummary) -> str:
     if summary.flaky_tests:
         lines.extend([
             f"## Flaky Tests ({len(summary.flaky_tests)})",
-            f"",
+            "",
         ])
         for fl in summary.flaky_tests:
             lines.append(
@@ -169,13 +167,13 @@ def generate_markdown_report(summary: OvernightSummary) -> str:
             )
 
     lines.extend([
-        f"",
-        f"## Verdict Explanation",
-        f"",
-        f"```",
+        "",
+        "## Verdict Explanation",
+        "",
+        "```",
         _VERDICT_EXPLANATIONS.get(summary.verdict, f"Unknown: {summary.verdict}"),
-        f"```",
-        f"",
+        "```",
+        "",
         f"---\n*Generated: {datetime.now(timezone.utc).isoformat()} UTC*",
     ])
     return "\n".join(lines)

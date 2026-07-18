@@ -16,10 +16,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .state_store import StateStore
 from .event_journal import EventJournal
+from .state_store import StateStore
 from .verifier import Verifier
-from .task_executor import TaskExecutor
 
 
 def utc_now() -> str:

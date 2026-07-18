@@ -27,17 +27,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
 import threading
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
 
 
 class Status(str, Enum):
@@ -144,9 +142,9 @@ _KEYWORD_PATTERNS = {
 }
 
 
-def _scan_log_keywords(log_path: Optional[Path]) -> dict:
+def _scan_log_keywords(log_path: Path | None) -> dict:
     if not log_path or not log_path.exists():
-        return {k: 0 for k in _KEYWORD_PATTERNS}
+        return dict.fromkeys(_KEYWORD_PATTERNS, 0)
     try:
         # Tail the last 200 lines (cheap and avoids re-reading huge files).
         text = subprocess.run(
@@ -154,7 +152,7 @@ def _scan_log_keywords(log_path: Optional[Path]) -> dict:
             capture_output=True, text=True, timeout=2.0,
         ).stdout
     except Exception:
-        return {k: 0 for k in _KEYWORD_PATTERNS}
+        return dict.fromkeys(_KEYWORD_PATTERNS, 0)
     hits = {}
     for k, pat in _KEYWORD_PATTERNS.items():
         hits[k] = len(pat.findall(text))
@@ -208,15 +206,15 @@ class TrainingMonitor:
     def __init__(
         self,
         run_id: str,
-        log_path: Optional[Path] = None,
-        telemetry_dir: Optional[Path] = None,
+        log_path: Path | None = None,
+        telemetry_dir: Path | None = None,
     ):
         self.run_id = run_id
         self.log_path = log_path
         self.telemetry_dir = telemetry_dir
-        self._last_sample_ts: Optional[float] = None
+        self._last_sample_ts: float | None = None
         self._stage: str = ""
-        self._stage_start: Optional[float] = None
+        self._stage_start: float | None = None
         self._stages: list = []
         self._lock = threading.Lock()
         self._stop_evt = threading.Event()
@@ -260,8 +258,8 @@ class TrainingMonitor:
         *,
         loss: float = 0.0,
         grad_norm: float = 0.0,
-        class_dist: Optional[dict] = None,
-        ckpt_mtime: Optional[float] = None,
+        class_dist: dict | None = None,
+        ckpt_mtime: float | None = None,
         step_time_s: float = 0.0,
     ) -> Metrics:
         """Take one snapshot. Returns the classified Metrics dataclass."""
@@ -322,7 +320,7 @@ class TrainingMonitor:
 def write_telemetry(
     metrics: Metrics,
     telemetry_dir: Path,
-    stages: Optional[list] = None,
+    stages: list | None = None,
 ) -> None:
     """Stand-alone writer for callers that don't want a TrainingMonitor instance."""
     telemetry_dir.mkdir(parents=True, exist_ok=True)

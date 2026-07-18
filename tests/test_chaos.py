@@ -23,9 +23,12 @@ Chaos categories (15 tests):
 15. False complete (blocked task marked PASS)
 """
 
-import json, os, signal, sqlite3, subprocess, sys, tempfile, time
+import os
+import sqlite3
+import subprocess
+import sys
+import time
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 

@@ -18,7 +18,6 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 THIS = Path(__file__).resolve()
 PACKAGE_ROOT = THIS.parent.parent

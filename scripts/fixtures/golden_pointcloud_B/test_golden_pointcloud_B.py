@@ -10,10 +10,12 @@ This test:
 7. Asserts: no RUNNING tasks after completion
 """
 
-import json, os, shutil, subprocess, sys, tempfile
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
-
-import pytest
 
 PLUGIN_ROOT = Path(__file__).parent.parent.parent.resolve()
 

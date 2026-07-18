@@ -1,9 +1,0 @@
-{
-  "phase": "P8_test",
-  "tasks": {
-    "P8_T01": {"status": "PASS", "files": ["tests/test_state_machine.py","tests/test_mode_switch.py","tests/test_human_checkpoint.py"], "tests_passed": 10, "tests_failed": 0},
-    "P8_T02": {"status": "PASS", "files": ["tests/test_handoff.py","tests/test_checkpoint_recovery.py","tests/test_metrics_recompute.py","tests/test_parity.py"], "tests_passed": 8, "tests_failed": 0},
-    "P8_T03": {"status": "PASS", "files": ["tests/test_minimal_e2e.py","tests/test_plugin_discovery.py","fixtures/minimal_pytorch_repo/train.py"], "tests_passed": 6, "tests_failed": 0}
-  },
-  "totals": {"files": 9, "fixture": 1, "tests_passed": 24, "tests_failed": 0}
-}

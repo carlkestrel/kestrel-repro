@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
 import signal
 import subprocess
 import sys
@@ -18,7 +17,12 @@ if str(PACKAGE_PARENT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_PARENT))
 
 from orchestrator.controller import (  # noqa: E402
-    BLOCKED, COMPLETE, Controller, PAUSED, STOPPED, WAITING_APPROVAL,
+    BLOCKED,
+    COMPLETE,
+    PAUSED,
+    STOPPED,
+    WAITING_APPROVAL,
+    Controller,
     load_plan,
 )
 from orchestrator.policy_engine import PolicyEngine  # noqa: E402

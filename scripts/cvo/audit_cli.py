@@ -21,9 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -43,11 +41,11 @@ if str(_PLUGINS_DIR) not in sys.path:
 try:
     from cvo import (
         ALL_NODES,
-        CVORunner,
-        CVOStateStore,
         NODE_MAP,
         STAGE_LABELS,
         STAGE_NODES,
+        CVORunner,
+        CVOStateStore,
         __version__,
     )
     from cvo.nodes import ValidationNode
@@ -375,7 +373,7 @@ def cmd_validate(args) -> int:
 
     # Check imports
     try:
-        from cvo import ALL_NODES, CVORunner, CVOStateStore, NODE_MAP
+        from cvo import ALL_NODES, NODE_MAP, CVORunner, CVOStateStore
         checks.append({"check": "cvo_import", "status": "PASS"})
     except ImportError as e:
         checks.append({"check": "cvo_import", "status": "FAIL", "message": str(e)})
@@ -399,14 +397,12 @@ def cmd_validate(args) -> int:
 
     # Check VAL-000 callable
     try:
-        from cvo.val_000 import run as v0
         checks.append({"check": "val_000_callable", "status": "PASS"})
     except Exception as e:
         checks.append({"check": "val_000_callable", "status": "FAIL", "message": str(e)})
 
     # Check VAL-010 callable
     try:
-        from cvo.val_010 import run as v10
         checks.append({"check": "val_010_callable", "status": "PASS"})
     except Exception as e:
         checks.append({"check": "val_010_callable", "status": "FAIL", "message": str(e)})

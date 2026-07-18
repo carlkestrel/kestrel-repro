@@ -12,7 +12,10 @@ Outputs (relative to --output-dir):
     logs/train.log
     metrics/raw_metrics.json
 """
-import argparse, json, os, random, sys
+import argparse
+import json
+import random
+import sys
 from pathlib import Path
 
 

@@ -23,13 +23,9 @@ from __future__ import annotations
 import json
 import os
 import threading
-import time
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
-
-import yaml
+from typing import Any
 
 
 def utc_now() -> str:
@@ -50,7 +46,7 @@ class CVOStateStore:
         "CANCELLED",
     }
 
-    _instance: Optional["CVOStateStore"] = None
+    _instance: CVOStateStore | None = None
     _lock = threading.Lock()
 
     def __init__(self, project_root: Path | str | None = None):
@@ -182,7 +178,7 @@ class CVOStateStore:
 
     def summary(self) -> dict[str, int]:
         """Count nodes by status."""
-        counts: dict[str, int] = {s: 0 for s in self.VALID_STATUSES}
+        counts: dict[str, int] = dict.fromkeys(self.VALID_STATUSES, 0)
         for node in self.list_all():
             counts[node.get("status", "PENDING")] += 1
         return counts

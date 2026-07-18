@@ -1,7 +1,13 @@
 """Tiny PyTorch training for golden test A."""
 
-import argparse, json, os, sys, torch, torch.nn as nn, torch.optim as optim
+import argparse
+import json
+import os
 from pathlib import Path
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 
 class TinyNet(nn.Module):

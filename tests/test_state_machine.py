@@ -1,5 +1,6 @@
 """Test the project state machine (mode transitions)."""
-import sys, importlib.util
+import importlib.util
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -8,6 +9,7 @@ mod = importlib.util.module_from_spec(spec)
 sys.modules["reproctl"] = mod  # register for @dataclass etc.
 spec.loader.exec_module(mod)
 import os  # noqa: E402
+
 os.chdir(str(REPO))
 m = mod
 
@@ -32,7 +34,6 @@ def test_default_state():
     Before calling _load_state(), we ensure a clean state by removing any
     existing STATE.json so it gets re-materialized from defaults.
     """
-    import os
     # Ensure clean state: remove existing STATE.json so _load_state()
     # re-materializes from defaults
     p = m._state_path()

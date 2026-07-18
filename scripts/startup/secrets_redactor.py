@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 # Match things that look like credentials. Order matters: longer/more
 # specific patterns first.

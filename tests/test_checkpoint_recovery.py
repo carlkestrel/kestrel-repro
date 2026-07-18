@@ -1,6 +1,7 @@
 """Test checkpoint recovery (L3): save → load → produce identical metrics."""
-import tempfile, os, json
-from pathlib import Path
+import json
+import os
+import tempfile
 
 
 def test_checkpoint_metadata_round_trip():

@@ -11,7 +11,6 @@ Verifies system state before a soak run begins:
 """
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
@@ -19,7 +18,6 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from . import constants as _C
 from . import hardware_monitor as _hw
@@ -184,7 +182,7 @@ class Guard:
                 )
                 self._result.git_dirty_diff = diff.stdout[:5000]  # cap at 5 KB
                 self._result.warnings.append(
-                    f"Uncommitted changes present (first 5KB captured in guard result)"
+                    "Uncommitted changes present (first 5KB captured in guard result)"
                 )
                 self._result.add_check(
                     "GIT_DIRTY_PROTECTION", True,

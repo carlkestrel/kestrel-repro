@@ -29,12 +29,11 @@ import argparse
 import json
 import os
 import signal
-import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+import traceback
 
 # Allow running directly
 _THIS = Path(__file__).resolve()
@@ -42,14 +41,13 @@ _PKG = _THIS.parent.parent.parent
 if str(_PKG) not in sys.path:
     sys.path.insert(0, str(_PKG))
 
-from scripts.ostar import constants as _C
 from scripts.ostar import config as _cfg
-from scripts.ostar import hardware_monitor as _hw
+from scripts.ostar import constants as _C
 from scripts.ostar import guard as _guard
+from scripts.ostar import hardware_monitor as _hw
+from scripts.ostar import reporter as _report
 from scripts.ostar import soak_engine as _engine
 from scripts.ostar import soak_state as _state
-from scripts.ostar import reporter as _report
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Path helpers
@@ -140,7 +138,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     print(f"[OSTAR] Start time: {_now()}")
 
     # Run rehearsal
-    print(f"[OSTAR] Running 30-minute rehearsal...")
+    print("[OSTAR] Running 30-minute rehearsal...")
     engine = _engine.SoakEngine(project, cfg, soak_root)
     result = engine.run_rehearsal()
 
@@ -151,8 +149,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
                    "Fix rehearsal failures before starting full soak")
         return _C.EXIT_REHEARSAL_FAIL
 
-    print(f"[OSTAR] Rehearsal PASSED ✅")
-    print(f"[OSTAR] Plan ready. Run `reproctl soak start` to begin the full soak.")
+    print("[OSTAR] Rehearsal PASSED ✅")
+    print("[OSTAR] Plan ready. Run `reproctl soak start` to begin the full soak.")
     return _C.EXIT_OK
 
 
@@ -197,7 +195,7 @@ def cmd_start(args: argparse.Namespace) -> int:
             _write_pid(soak_root, pid)
             print(f"[OSTAR] Soak started (PID {pid})")
             print(f"[OSTAR] Log: {soak_root / 'logs' / f'soak_{pid}.log'}")
-            print(f"[OSTAR] Run `reproctl soak status` to monitor")
+            print("[OSTAR] Run `reproctl soak status` to monitor")
         return _C.EXIT_OK
     else:
         # Dry-run: run one cycle only
@@ -338,7 +336,7 @@ def cmd_stop(args: argparse.Namespace) -> int:
             if not _pid_alive(pid):
                 break
         if _pid_alive(pid):
-            print(f"[OSTAR] Graceful stop failed, sending SIGKILL...")
+            print("[OSTAR] Graceful stop failed, sending SIGKILL...")
             os.kill(pid, signal.SIGKILL)
     else:
         print(f"[OSTAR] PID {pid} already dead")
@@ -562,7 +560,6 @@ def main(argv: list[str] | None = None) -> int:
         print("\n[OSTAR] Interrupted")
         return _C.EXIT_MANUAL_STOP
     except Exception as e:
-        import traceback
         traceback.print_exc()
         _print_err("INTERNAL", _C.EXIT_INTERNAL, str(e))
         return _C.EXIT_INTERNAL

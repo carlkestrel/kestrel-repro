@@ -1,5 +1,7 @@
 """Test mode switching (P1_T02 surface)."""
-import sys, importlib.util, json
+import importlib.util
+import json
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -7,7 +9,8 @@ spec = importlib.util.spec_from_file_location("reproctl", str(REPO / "scripts" /
 mod = importlib.util.module_from_spec(spec)
 sys.modules["reproctl"] = mod
 spec.loader.exec_module(mod)
-import json, os  # noqa: E402
+import os  # noqa: E402
+
 os.chdir(str(REPO))  # ensure .repro/ writes go to repo root
 m = mod
 

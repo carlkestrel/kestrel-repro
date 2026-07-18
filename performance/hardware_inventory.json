@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-07-18T04:30:34.234229+00:00",
+  "created_at": "2026-07-18T13:37:50.287525+00:00",
   "hostname": "carlkestrel-System-Product-Name",
   "container": "",
   "os": {
@@ -13,7 +13,7 @@
   },
   "ram": {
     "total_gb": 33.28,
-    "available_gb": 13.33,
+    "available_gb": 24.63,
     "swap_total_gb": 8.59,
     "swap_free_gb": 8.59
   },
@@ -25,19 +25,19 @@
     {
       "mount_point": "/run",
       "total_gb": 3.33,
-      "free_gb": 3.33,
+      "free_gb": 3.32,
       "fstype": "tmpfs"
     },
     {
       "mount_point": "/",
       "total_gb": 207.79,
-      "free_gb": 57.65,
+      "free_gb": 56.8,
       "fstype": "ext4"
     },
     {
       "mount_point": "/dev/shm",
       "total_gb": 16.64,
-      "free_gb": 14.32,
+      "free_gb": 16.56,
       "fstype": "tmpfs"
     },
     {
@@ -67,7 +67,7 @@
   ],
   "shm": {
     "size_gb": 16.64,
-    "available_gb": 14.32
+    "available_gb": 16.56
   },
   "health_checks": {
     "ecc_errors": false,

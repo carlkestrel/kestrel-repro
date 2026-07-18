@@ -15,7 +15,6 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
 
 EXIT_DOCTOR_FAIL = 3
 

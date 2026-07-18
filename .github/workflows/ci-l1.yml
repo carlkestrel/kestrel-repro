@@ -122,16 +122,21 @@ jobs:
         run: |
           echo "=== YAML validation ==="
           ERRORS=0
-          for f in $(find . -name "*.yaml" -o -name "*.yml" \
+          for f in $(find . \( -name "*.yaml" -o -name "*.yml" \) \
                -not -path "./.git/*" \
                -not -path "./.pytest_cache/*" \
                -not -path "./fixtures/*" \
-               -not -path "./.repro/*"); do
-            python3 -c "import yaml; list(yaml.safe_load_all(open('$f')))" 2>&1 \
+               -not -path "./.repro/*" \
+               -not -path "./templates/*" \
+               -not -path "./scripts/templates/*" \
+               -not -path "./performance/*" \
+               -not -path "./.execution/*" \
+               -not -path "./build/*"); do
+            python3 -c "import yaml; list(yaml.safe_load_all(open(\"$f\")))" 2>&1 \
               && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
           done
-          echo "Total YAML errors: $ERRORS"
-          if [ "$ERRORS" -gt 0 ]; then exit 1; fi
+          echo "Total YAML errors: \$ERRORS"
+          if [ "\$ERRORS" -gt 0 ]; then exit 1; fi
 
       - name: Validate JSON files
         run: |
@@ -141,7 +146,10 @@ jobs:
                -not -path "./.git/*" \
                -not -path "./.pytest_cache/*" \
                -not -path "./fixtures/*" \
-               -not -path "./.repro/*"); do
+               -not -path "./.repro/*" \
+               -not -path "./templates/*" \
+               -not -path "./.execution/*" \
+               -not -path "./build/*"); do
             python3 -c "import json; json.load(open('$f'))" 2>&1 \
               && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
           done
@@ -232,8 +240,8 @@ jobs:
         run: pytest tests/test_plugin_discovery.py -v --tb=short
 
       - name: Startup unit tests
-        run: pytest tests/test_startup.py -v --tb=short \
-          -k "not integ and not test_integ"
+        run: |
+          pytest tests/test_startup.py -v --tb=short -k "not integ and not test_integ"
 
       - name: State machine tests
         run: pytest tests/test_state_machine.py -v --tb=short

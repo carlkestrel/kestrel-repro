@@ -4,16 +4,10 @@ conftest.py sets up sys.path so orchestrator imports work.
 """
 
 import json
-import os
 import shutil
-import sqlite3
 import subprocess
 import sys
-import tempfile
-import time
 from pathlib import Path
-
-import pytest
 
 THIS = Path(__file__).resolve()
 PLUGIN_ROOT = THIS.parents[1]
@@ -24,8 +18,8 @@ REPROCTL = SCRIPTS_DIR / "reproctl.py"
 class TestMigration:
     def test_migrate_adds_version_fields(self, tmp_path):
         """Migrate adds schema_version, plugin_version, plan_hash to fresh DB."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import migrate
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         result = migrate.migrate(store)
@@ -39,8 +33,8 @@ class TestMigration:
 
     def test_migrate_dry_run_reports_changes(self, tmp_path):
         """--check-only does not modify state."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import migrate
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.set_metadata("schema_version", "0.1.0")
@@ -53,8 +47,8 @@ class TestMigration:
 
     def test_migrate_creates_backup(self, tmp_path):
         """Migration creates a backup before modifying."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import migrate
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.set_metadata("schema_version", "0.1.0")
@@ -68,8 +62,8 @@ class TestMigration:
 
     def test_rollback_restores_state(self, tmp_path):
         """Rollback restores from a backup directory."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import migrate
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.set_metadata("test_marker", "before_migrate")
@@ -90,8 +84,8 @@ class TestMigration:
 
     def test_minimum_version_blocked(self, tmp_path):
         """Migrations from versions older than minimum are blocked."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import migrate
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.set_metadata("schema_version", "0.0.1")
@@ -104,8 +98,8 @@ class TestMigration:
 class TestBackup:
     def test_backup_creates_snapshot_manifest(self, tmp_path):
         """Backup creates snapshot_manifest.json with file records."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import backup
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.set_metadata("test_key", "test_value")
@@ -122,8 +116,8 @@ class TestBackup:
 
     def test_integrity_check_detects_orphan_running(self, tmp_path):
         """Integrity check detects tasks that are RUNNING but process is dead."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import backup
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.init_project("default", str(tmp_path))
@@ -147,8 +141,8 @@ class TestBackup:
 
     def test_integrity_check_detects_missing_evidence(self, tmp_path):
         """Integrity check detects PASS tasks without finished_at."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import backup
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.init_project("default", str(tmp_path))
@@ -171,8 +165,8 @@ class TestBackup:
 
     def test_integrity_check_detects_empty_acceptance_tests(self, tmp_path):
         """Integrity check detects tasks without acceptance_tests."""
-        from scripts.orchestrator.state_store import StateStore
         from scripts.orchestrator import backup
+        from scripts.orchestrator.state_store import StateStore
 
         store = StateStore(tmp_path)
         store.init_project("default", str(tmp_path))

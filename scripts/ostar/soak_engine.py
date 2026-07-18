@@ -13,19 +13,16 @@ from __future__ import annotations
 import json
 import os
 import signal
-import subprocess
 import sys
 import threading
 import time
 import traceback
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
-from . import constants as _C
 from . import config as _cfg
+from . import constants as _C
 from . import exit_validator
 from . import guard as _guard
 from . import hardware_monitor as _hw
@@ -603,7 +600,8 @@ class SoakEngine:
     # ─────────────────────────────────────────────────────────────────────
 
     def _fingerprint_error(self, error: str, output: str) -> str:
-        import hashlib, re
+        import hashlib
+        import re
         combined = (error + output)[:4000]
         type_match = re.search(
             r"(Error|Exception|AssertionError|CUDA|OOM|Timeout):\s*(\S+)",
@@ -615,7 +613,6 @@ class SoakEngine:
         return hashlib.sha256(f"{type_str}@{loc_str}".encode()).hexdigest()[:32]
 
     def _classify(self, error: str, output: str) -> tuple[str, str]:
-        import re
         text = (error + "\n" + output).lower()
         if any(k in text for k in ["split", "label", "miou_ch"]):
             return "PROTOCOL", "paper protocol"

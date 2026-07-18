@@ -37,7 +37,9 @@ jobs:
           cache: pip
 
       - name: Install deps
-        run: pip install pytest pyyaml jsonschema torch --index-url https://download.pytorch.org/whl/cpu --quiet
+        run: |
+          pip install pytest pyyaml jsonschema --quiet --disable-pip-version-check
+          pip install torch --index-url https://download.pytorch.org/whl/cpu --quiet --disable-pip-version-check || true
 
       - name: Version command
         run: |
@@ -81,7 +83,9 @@ jobs:
           cache: pip
 
       - name: Install deps
-        run: pip install pytest pyyaml jsonschema torch --index-url https://download.pytorch.org/whl/cpu --quiet
+        run: |
+          pip install pytest pyyaml jsonschema --quiet --disable-pip-version-check
+          pip install torch --index-url https://download.pytorch.org/whl/cpu --quiet --disable-pip-version-check || true
 
       - name: Full startup integration suite (test_startup.py integ_* tests)
         run: pytest tests/test_startup.py -v --tb=short -k "test_integ"
@@ -164,8 +168,8 @@ jobs:
           PYEOF
 
       - name: Orchestrator CLI parser tests
-        run: pytest tests/test_orchestrator.py -v --tb=short \
-          -k "test_17_daemon_child_arg_recognized"
+        run: |
+          pytest tests/test_orchestrator.py -v --tb=short -k "test_17_daemon_child_arg_recognized"
 
       - name: CVO import tests
         run: |
@@ -184,8 +188,8 @@ jobs:
           PYEOF
 
       - name: Orchestrator structural tests
-        run: pytest tests/test_orchestrator.py -v --tb=short \
-          -k "test_1_five_serial_tasks_complete or test_11_cycle_dependency_blocked or test_12_no_ready_exits_blocked"
+        run: |
+          pytest tests/test_orchestrator.py -v --tb=short -k "test_1_five_serial_tasks_complete or test_11_cycle_dependency_blocked or test_12_no_ready_exits_blocked"
 
       - name: Audit CLI import smoke
         run: |

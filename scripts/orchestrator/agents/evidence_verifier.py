@@ -6,12 +6,11 @@ This agent verifies evidence chains and ensures reproducibility documentation.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 from .base import (
-    AgentResult,
     AgentRegistry,
+    AgentResult,
     HandoffContext,
     SpecialistAgent,
     utc_now,

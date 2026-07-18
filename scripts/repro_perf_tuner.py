@@ -45,15 +45,11 @@ import os
 import pathlib
 import random
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
-import time
 import traceback
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable, Optional
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -83,12 +79,12 @@ class GPUInfo:
     memory_total_mb: float
     memory_free_mb: float
     memory_used_mb: float
-    temperature_c: Optional[int]
-    power_draw_w: Optional[int]
-    power_limit_w: Optional[int]
-    graphics_clock_mhz: Optional[int]
-    sm_clock_mhz: Optional[int]
-    mem_clock_mhz: Optional[int]
+    temperature_c: int | None
+    power_draw_w: int | None
+    power_limit_w: int | None
+    graphics_clock_mhz: int | None
+    sm_clock_mhz: int | None
+    mem_clock_mhz: int | None
     driver_version: str = ""
     cuda_version: str = ""
     cudnn_version: str = ""
@@ -654,7 +650,6 @@ def check_numerical_parity(baseline_id: str, candidate_id: str,
                            candidate_config_id=candidate_id)
 
     try:
-        import torch
         # Simulate: real comparison would run both configs and compare outputs
         # Here we produce a passing result for template completeness
         result.model_output_l2 = random.random() * tol * 0.5
@@ -972,7 +967,7 @@ def cmd_recommend(args) -> None:
         "device: cuda\n"
         "protocol_preserved: true\n"
         "protocol_deviations: []\n"
-        f"numerical_reference: (baseline config id)\n"
+        "numerical_reference: (baseline config id)\n"
         "performance_reference:\n"
         "  throughput_samples_per_s: null\n"
         "  step_time_mean_s: null\n"

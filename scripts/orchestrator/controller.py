@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 import os
 import time
 import uuid
 from pathlib import Path
-from typing import Any
 
 try:
     import yaml
@@ -50,13 +48,16 @@ def load_plan(path: str | Path) -> dict:
          errors. (Earlier we returned early on missing frontmatter; this
          preserves test-style plans while still enforcing the schema.)
     """
+    from pathlib import Path as _P
+
+    from startup.plan_schema import (
+        _dict_to_plan,
+        migrate_legacy_plan,
+        validate_plan,
+    )
     from startup.plan_schema import (
         load_plan as _canonical_load,
-        validate_plan,
-        migrate_legacy_plan,
-        _dict_to_plan,
     )
-    from pathlib import Path as _P
 
     p = _P(path)
     try:

@@ -13,15 +13,14 @@ import atexit
 import json
 import os
 import signal
-import sys
 import threading
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .state_store import StateStore
 from .event_journal import EventJournal
+from .state_store import StateStore
 
 
 def utc_now() -> str:

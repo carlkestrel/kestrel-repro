@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
-
 
 # Schema for MetricDefinition
 METRIC_DEFINITION_SCHEMA = {
@@ -169,7 +167,7 @@ def validate_schema(data: dict, schema_name: str) -> tuple[bool, list[str]]:
     Returns (is_valid, errors).
     """
     import jsonschema
-    
+
     schema_map = {
         "metric_definition": METRIC_DEFINITION_SCHEMA,
         "metric_protocol_fingerprint": METRIC_PROTOCOL_FINGERPRINT_SCHEMA,
@@ -177,11 +175,11 @@ def validate_schema(data: dict, schema_name: str) -> tuple[bool, list[str]]:
         "metric_source": METRIC_SOURCE_SCHEMA,
         "metric_conflict": METRIC_CONFLICT_SCHEMA,
     }
-    
+
     schema = schema_map.get(schema_name)
     if schema is None:
         return False, [f"Unknown schema: {schema_name}"]
-    
+
     try:
         jsonschema.validate(instance=data, schema=schema)
         return True, []
@@ -213,7 +211,7 @@ def save_schemas(output_dir: Path) -> None:
         "metric_source": METRIC_SOURCE_SCHEMA,
         "metric_conflict": METRIC_CONFLICT_SCHEMA,
     }
-    
+
     for name, schema in schemas.items():
         path = output_dir / f"{name}.schema.json"
         path.write_text(json.dumps(schema, indent=2))

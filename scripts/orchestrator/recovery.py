@@ -10,12 +10,8 @@ This module extends the base RecoveryManager with:
 from __future__ import annotations
 
 import hashlib
-import json
-import re
-import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 
 def utc_now() -> str:
@@ -43,17 +39,17 @@ class RecoveryManager:
         verification_ready: list[str] = []
         orphaned: list[str] = []
         checkpoint_issues: list[dict] = []
-        
+
         for task in self.store.list_tasks({"RUNNING"}):
             pid = task.get("pid")
             if self.process_manager.is_alive(pid):
                 alive.append(task["id"])
                 continue
-            
+
             # Check checkpoint integrity
             checkpoint = task.get("checkpoint")
             checkpoint_path = self.project_root / checkpoint if checkpoint else None
-            
+
             if checkpoint_path and checkpoint_path.exists():
                 # Verify checkpoint integrity
                 integrity = self.verify_checkpoint(checkpoint_path)
@@ -67,17 +63,17 @@ class RecoveryManager:
                     self.store.record_event(
                         "CHECKPOINT_INTEGRITY_WARNING", task["id"], integrity
                     )
-            
+
             checkpoint_exists = bool(
                 checkpoint and checkpoint_path and checkpoint_path.exists()
             )
-            
+
             self.store.transition(
                 task["id"], "VERIFYING", expected="RUNNING",
                 fields={"pid": None}, event_type="TASK_RECOVERED",
             )
             verification_ready.append(task["id"])
-            
+
             if not checkpoint_exists:
                 orphaned.append(task["id"])
 
@@ -123,54 +119,54 @@ class RecoveryManager:
             "reason": None,
             "details": {},
         }
-        
+
         if not checkpoint_path.exists():
             result["reason"] = "file does not exist"
             return result
-        
+
         # Check file size
         size = checkpoint_path.stat().st_size
         if size < 100:
             result["reason"] = "file too small"
             return result
-        
+
         result["details"]["size_bytes"] = size
-        
+
         # Try to load with PyTorch
         try:
             import torch
-            
+
             # Check if it's a PyTorch checkpoint
             try:
                 # Try loading as full checkpoint
                 ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-                
+
                 # Verify expected keys
                 expected_keys = ["model_state_dict", "optimizer_state_dict"]
                 found_keys = []
                 missing_keys = []
-                
+
                 for key in expected_keys:
                     if key in ckpt or any(key in k for k in ckpt.keys()) if isinstance(ckpt, dict) else False:
                         found_keys.append(key)
                     else:
                         missing_keys.append(key)
-                
+
                 result["details"]["keys_found"] = found_keys
                 result["details"]["keys_missing"] = missing_keys
-                
+
                 # Check for epoch info
                 if "epoch" in ckpt:
                     result["details"]["epoch"] = ckpt["epoch"]
                 if "step" in ckpt:
                     result["details"]["step"] = ckpt["step"]
-                
+
                 # Calculate checksum
                 result["details"]["checksum"] = self._file_checksum(checkpoint_path)
-                
+
                 result["valid"] = True
                 result["reason"] = "loaded successfully"
-                
+
             except Exception as e:
                 # Try loading as state dict only
                 try:
@@ -181,13 +177,13 @@ class RecoveryManager:
                     result["reason"] = "state_dict loaded successfully"
                 except Exception as e2:
                     result["reason"] = f"failed to load: {e}, {e2}"
-                    
+
         except ImportError:
             # No PyTorch - basic file check only
             result["details"]["type"] = "no_torch"
             result["valid"] = size > 1000  # Basic size heuristic
             result["reason"] = "no PyTorch, basic size check"
-        
+
         return result
 
     def find_last_valid_checkpoint(self, checkpoints_dir: Path) -> Path | None:
@@ -199,26 +195,26 @@ class RecoveryManager:
         """
         if not checkpoints_dir.exists():
             return None
-        
+
         # Common checkpoint patterns
         patterns = ["*.pth", "*.pt", "*checkpoint*.pth", "*checkpoint*.pt", "*.ckpt"]
-        
+
         candidates = []
         for pattern in patterns:
             candidates.extend(checkpoints_dir.glob(pattern))
-        
+
         if not candidates:
             return None
-        
+
         # Sort by modification time (most recent first)
         candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-        
+
         # Try each until we find a valid one
         for candidate in candidates:
             integrity = self.verify_checkpoint(candidate)
             if integrity["valid"]:
                 return candidate
-        
+
         return None
 
     def get_recovery_info(self, task: dict) -> dict:
@@ -231,23 +227,23 @@ class RecoveryManager:
             "recovery_command": None,
             "metrics_continuity": "unknown",
         }
-        
+
         checkpoint = task.get("checkpoint")
         if checkpoint:
             checkpoint_path = self.project_root / checkpoint
             recovery["checkpoint_path"] = str(checkpoint_path)
             recovery["has_checkpoint"] = checkpoint_path.exists()
-            
+
             if checkpoint_path.exists():
                 integrity = self.verify_checkpoint(checkpoint_path)
                 recovery["checkpoint_valid"] = integrity["valid"]
                 recovery["checkpoint_epoch"] = integrity.get("details", {}).get("epoch")
                 recovery["checkpoint_step"] = integrity.get("details", {}).get("step")
-                
+
                 # Build recovery command
                 if integrity["valid"]:
                     recovery["recovery_command"] = self._build_recovery_command(task, checkpoint_path)
-        
+
         # Check metric continuity
         run_id = task.get("run_id")
         if run_id:
@@ -258,7 +254,7 @@ class RecoveryManager:
                 recovery["metrics_continuity"] = "possible_mixing"
             else:
                 recovery["metrics_continuity"] = "ok"
-        
+
         return recovery
 
     def _build_recovery_command(self, task: dict, checkpoint_path: Path) -> str:
@@ -291,37 +287,37 @@ class RecoveryManager:
             - unknown: insufficient data to determine
         """
         from .evidence_manager import EvidenceManager
-        
+
         em = EvidenceManager(self.project_root)
         runs = em.list_runs(task_id=task_id)
-        
+
         if len(runs) <= 1:
             return {"status": "ok", "reason": "single run"}
-        
+
         # Check if runs have proper continuity tags
         continuity_ok = True
         issues = []
-        
+
         for run in runs:
             manifest = run
             if manifest.get("status") == "RECOVERED":
                 # Check if recovery marker exists
                 if not any(
-                    "recovered_from" in str(r) 
+                    "recovered_from" in str(r)
                     for r in runs
                 ):
                     continuity_ok = False
                     issues.append(f"Run {run.get('run_id')} marked as RECOVERED but no source")
-        
+
         if not continuity_ok:
             return {
                 "status": "mixed",
                 "reason": "potential metric mixing across recovery",
                 "issues": issues,
             }
-        
+
         return {"status": "ok", "reason": "continuity validated"}
-    
+
     def get_recovery_summary(self) -> dict:
         """Get a summary of all recovery states."""
         summary = {
@@ -332,11 +328,11 @@ class RecoveryManager:
             "no_checkpoint": 0,
             "needs_attention": [],
         }
-        
+
         for task in self.store.list_tasks():
             summary["total_tasks"] += 1
             status = task.get("status")
-            
+
             if status == "RUNNING":
                 summary["running"] += 1
             elif status in {"PENDING", "READY"}:
@@ -352,5 +348,5 @@ class RecoveryManager:
                         })
                 else:
                     summary["no_checkpoint"] += 1
-        
+
         return summary

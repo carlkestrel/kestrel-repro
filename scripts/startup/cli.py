@@ -17,7 +17,6 @@ import argparse
 import json
 import os
 import platform
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,15 +31,32 @@ if str(_PKG_PARENT) not in sys.path:
 
 from startup import (
     __version__,
+)
+from startup import (
     config as _config,
+)
+from startup import (
     doctor as _doctor,
+)
+from startup import (
     lock as _lock,
+)
+from startup import (
     log_setup as _log,
+)
+from startup import (
     plan_schema as _plan_schema,
+)
+from startup import (
     plan_validate as _plan_legacy,
+)
+from startup import (
     recovery as _recovery,
-    secrets_redactor as _redact,
+)
+from startup import (
     state_machine as _sm,
+)
+from startup import (
     stop as _stop,
 )
 
@@ -213,7 +229,7 @@ def _cmd_self_test(project: Path, plan: Path | None, cfg: dict,
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     if report["overall"] == "PASS":
-        print(f"[self-test] PASS — all checks ok", file=sys.stdout)
+        print("[self-test] PASS — all checks ok", file=sys.stdout)
         print(f"[self-test] report: {report_path}", file=sys.stdout)
         return EXIT_OK
     else:

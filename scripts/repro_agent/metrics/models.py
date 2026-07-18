@@ -199,7 +199,7 @@ class SplitName(str, Enum):
 
 class MetricDefinition:
     """Definition of a metric."""
-    
+
     def __init__(
         self,
         metric_id: str,
@@ -232,7 +232,7 @@ class MetricDefinition:
         self.absent_class_policy = absent_class_policy
         self.prediction_level = prediction_level
         self.evaluation_scope = evaluation_scope
-    
+
     def to_dict(self) -> dict:
         return {
             "metric_id": self.metric_id,
@@ -251,7 +251,7 @@ class MetricDefinition:
             "prediction_level": self.prediction_level.value,
             "evaluation_scope": self.evaluation_scope.value,
         }
-    
+
     @classmethod
     def from_dict(cls, d: dict) -> MetricDefinition:
         return cls(
@@ -279,7 +279,7 @@ class MetricProtocolFingerprint:
     This is the canonical representation of a metric's protocol,
     used to determine if two metrics can be compared.
     """
-    
+
     def __init__(
         self,
         paper_id: str | None = None,
@@ -339,12 +339,12 @@ class MetricProtocolFingerprint:
         self.seed_policy = seed_policy
         self.run_aggregation = run_aggregation
         self.unit = unit
-    
+
     @property
     def fingerprint_hash(self) -> str:
         """Compute hash of protocol fingerprint."""
         return compute_hash(self.to_dict())
-    
+
     def is_compatible_with(self, other: MetricProtocolFingerprint) -> ProtocolCompatibility:
         """
         Check if this protocol is compatible with another.
@@ -352,7 +352,7 @@ class MetricProtocolFingerprint:
         Returns EXACT_MATCH, COMPARABLE_WITH_DECLARED_DEVIATION, or PROTOCOL_MISMATCH.
         """
         mismatches = []
-        
+
         # Critical fields that must match
         critical_fields = [
             ("dataset_name", "Dataset name"),
@@ -374,16 +374,16 @@ class MetricProtocolFingerprint:
             ("checkpoint_selector", "Checkpoint selector"),
             ("run_aggregation", "Run aggregation"),
         ]
-        
+
         for field, name in critical_fields:
             self_val = getattr(self, field)
             other_val = getattr(other, field)
             if self_val != other_val and self_val is not None and other_val is not None:
                 mismatches.append(f"{name}: {self_val} vs {other_val}")
-        
+
         if not mismatches:
             return ProtocolCompatibility.EXACT_MATCH
-        
+
         # Check if mismatches are minor (comparable)
         minor_fields = [
             "voting_runs",
@@ -391,13 +391,13 @@ class MetricProtocolFingerprint:
             "postprocessing",
             "checkpoint_epoch",
         ]
-        
+
         for field in minor_fields:
             if field in mismatches:
                 return ProtocolCompatibility.COMPARABLE_WITH_DECLARED_DEVIATION
-        
+
         return ProtocolCompatibility.PROTOCOL_MISMATCH
-    
+
     def to_dict(self) -> dict:
         return {
             "paper_id": self.paper_id,
@@ -429,7 +429,7 @@ class MetricProtocolFingerprint:
             "run_aggregation": self.run_aggregation,
             "unit": self.unit.value if self.unit else None,
         }
-    
+
     @classmethod
     def from_dict(cls, d: dict) -> MetricProtocolFingerprint:
         return cls(
@@ -466,7 +466,7 @@ class MetricProtocolFingerprint:
 
 class MetricSource:
     """Source of metric information."""
-    
+
     def __init__(
         self,
         source_id: str,
@@ -497,7 +497,7 @@ class MetricSource:
         self.extractor = extractor
         self.extraction_confidence = extraction_confidence
         self.created_at = utc_now()
-    
+
     def to_dict(self) -> dict:
         return {
             "source_id": self.source_id,
@@ -519,7 +519,7 @@ class MetricSource:
 
 class MetricObservation:
     """Observed metric value."""
-    
+
     def __init__(
         self,
         observation_id: str,
@@ -551,7 +551,7 @@ class MetricObservation:
         self.per_class_values = per_class_values
         self.std = std
         self.n_samples = n_samples
-    
+
     def to_dict(self) -> dict:
         return {
             "observation_id": self.observation_id,
@@ -574,7 +574,7 @@ class MetricObservation:
 
 class MetricConflict:
     """Conflict between metric definitions or observations."""
-    
+
     def __init__(
         self,
         conflict_id: str,
@@ -591,7 +591,7 @@ class MetricConflict:
         self.involved_sources = involved_sources or []
         self.severity = severity
         self.detected_at = utc_now()
-    
+
     def to_dict(self) -> dict:
         return {
             "conflict_id": self.conflict_id,
@@ -606,7 +606,7 @@ class MetricConflict:
 
 class RunManifest:
     """Manifest for a training run."""
-    
+
     def __init__(
         self,
         run_id: str,
@@ -636,7 +636,7 @@ class RunManifest:
         self.best_checkpoint = best_checkpoint
         self.best_epoch = best_epoch
         self.status = status
-    
+
     def to_dict(self) -> dict:
         return {
             "run_id": self.run_id,

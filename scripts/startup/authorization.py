@@ -23,8 +23,6 @@ R2 acceptance:
 """
 from __future__ import annotations
 
-import hashlib
-import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

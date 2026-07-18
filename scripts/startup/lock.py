@@ -23,7 +23,6 @@ import socket
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 # R1 INVARIANT: lock default must inherit from scripts/_version.py.
 try:

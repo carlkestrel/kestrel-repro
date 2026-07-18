@@ -6,12 +6,8 @@ import os
 import subprocess
 import sys
 import tempfile
-import time
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-
-import pytest
 
 # Add scripts dir to path
 _SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
@@ -385,8 +381,7 @@ def test_resource_sample():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_exit_validator_no_run():
-    from scripts.ostar import exit_validator
-    from scripts.ostar import soak_state
+    from scripts.ostar import exit_validator, soak_state
     tmp = Path(tempfile.mkdtemp())
     store = soak_state.SoakStateStore(tmp)
     validator = exit_validator.ExitValidator(store)

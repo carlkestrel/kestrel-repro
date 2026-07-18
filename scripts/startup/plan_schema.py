@@ -39,7 +39,6 @@ import json
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -518,7 +517,7 @@ def _has_cycle(tasks: list[TaskDef]) -> bool:
     """Return True if the task dependency graph has a cycle."""
     by_id = {t.id: t for t in tasks}
     WHITE, GRAY, BLACK = 0, 1, 2
-    color = {tid: WHITE for tid in by_id}
+    color = dict.fromkeys(by_id, WHITE)
 
     def visit(tid: str) -> bool:
         color[tid] = GRAY

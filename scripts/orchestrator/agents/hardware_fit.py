@@ -6,15 +6,13 @@ This agent evaluates hardware requirements and provides fit recommendations.
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
 from typing import Any
 
 from .base import (
-    AgentResult,
     AgentRegistry,
+    AgentResult,
     HandoffContext,
     SpecialistAgent,
-    utc_now,
 )
 
 

@@ -2,7 +2,7 @@
 
 > Baseline: `test-baseline`
 > Candidate: `test-candidate`
-> Timestamp: 2026-07-18T04:30:34.355206+00:00
+> Timestamp: 2026-07-18T13:37:50.409761+00:00
 
 ## Tolerances
 
@@ -17,9 +17,9 @@
 
 | Check | Value | Within Tolerance? |
 |---|---|---|
-| Model output (L2) | 0.00e+00 | ✅ |
-| Loss relative diff | 0.00e+00 | ✅ |
-| Gradient L2 | 0.00e+00 | ✅ |
+| Model output (L2) | 2.69e-07 | ✅ |
+| Loss relative diff | 1.30e-07 | ✅ |
+| Gradient L2 | 1.87e-07 | ✅ |
 | NaN count | 0 | ✅ |
 | Inf count | 0 | ✅ |
 | Gradient vanishing | False | ✅ |
@@ -28,13 +28,13 @@
 
 ## Verdict
 
-**ERROR: No module named 'torch'**
+**NUMERICAL_EQUIVALENT**
 
-Numerical difference detected — candidate fails parity.
+All numerical checks passed within tolerance.
 
 ## Details
 
-- No module named 'torch'
+*(none)*
 
 ## Source
 

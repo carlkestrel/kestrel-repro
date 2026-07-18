@@ -1,7 +1,10 @@
 """Generate synthetic test data for golden_pointcloud_B fixture."""
 
-import json, struct, torch
+import json
+import struct
 from pathlib import Path
+
+import torch
 
 
 def generate_point_cloud(n_points: int = 128, n_classes: int = 3) -> tuple[bytes, int]:

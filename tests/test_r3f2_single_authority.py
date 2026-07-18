@@ -13,11 +13,8 @@ by exercising the additional guarantees introduced or hardened in R3F-2:
 """
 from __future__ import annotations
 
-import os
-import sqlite3
 import sys
 import tempfile
-import textwrap
 from pathlib import Path
 
 # Make scripts.core importable. Pytest puts the project root on sys.path;
@@ -25,8 +22,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE / "scripts"))
 
-from scripts.core.state_store import find_active_state_dbs, StateStore  # noqa: E402
-from scripts.startup.errors import StartupError, BLOCKED_STATE_CONFLICT  # noqa: E402
+from scripts.core.state_store import StateStore, find_active_state_dbs  # noqa: E402
+from scripts.startup.errors import BLOCKED_STATE_CONFLICT, StartupError  # noqa: E402
 
 
 def test_canonical_doc_path_matches_actual():

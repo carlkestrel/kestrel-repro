@@ -197,3 +197,9 @@ trial-3d765615,test-capacity,strict_repro,8,1,8,FP32,1,capacity,8,error: No modu
 trial-2aa99a99,test-capacity,strict_repro,4,1,4,FP32,1,capacity,4,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T04:30:34.324865+00:00
 trial-f49e1ce3,test-capacity,strict_repro,2,1,2,FP32,1,capacity,2,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T04:30:34.324908+00:00
 trial-cb71706d,test-capacity,strict_repro,1,1,1,FP32,1,capacity,1,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T04:30:34.324949+00:00
+trial-d7457683,test-capacity,strict_repro,32,1,32,FP32,1,capacity,32,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T13:37:50.379267+00:00
+trial-a00e1981,test-capacity,strict_repro,16,1,16,FP32,1,capacity,16,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T13:37:50.379379+00:00
+trial-b4332ad9,test-capacity,strict_repro,8,1,8,FP32,1,capacity,8,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T13:37:50.379477+00:00
+trial-91553bdc,test-capacity,strict_repro,4,1,4,FP32,1,capacity,4,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T13:37:50.379557+00:00
+trial-1d81a42a,test-capacity,strict_repro,2,1,2,FP32,1,capacity,2,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T13:37:50.379618+00:00
+trial-8eac6532,test-capacity,strict_repro,1,1,1,FP32,1,capacity,1,error: No module named 'torch',0.0,0.0,0.0,0,0.0,0.0,,0.0,2026-07-18T13:37:50.379662+00:00

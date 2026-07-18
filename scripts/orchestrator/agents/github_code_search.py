@@ -8,7 +8,6 @@ This module provides enhanced GitHub code search capabilities:
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import time
@@ -57,8 +56,8 @@ class GitHubCodeSearch:
 
     def _make_request(self, endpoint: str, params: dict | None = None) -> dict | None:
         """Make authenticated GitHub API request."""
-        import urllib.request
         import urllib.parse
+        import urllib.request
 
         self._rate_limit()
 

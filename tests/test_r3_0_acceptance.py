@@ -21,15 +21,10 @@ R3-0 acceptance criteria (16 tests):
 """
 from __future__ import annotations
 
-import hashlib
 import json
-import os
-import shutil
 import sqlite3
 import sys
-import tempfile
 import threading
-import time
 from pathlib import Path
 
 import pytest
@@ -40,22 +35,25 @@ if str(PLUGIN_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
 
 from scripts.core.state_store import (
-    StateStore as CoreStateStore,
-    StateConflict, InvalidTransition,
-    compute_authorization_bound_hash,
-    upgrade_schema_with_hash_reset,
-    find_active_state_dbs,
+    CURRENT_CANONICALIZATION_VERSION,
+    StateConflict,
     assert_single_state_authority,
     canonical_db_path,
-    CURRENT_CANONICALIZATION_VERSION,
+    compute_authorization_bound_hash,
+    find_active_state_dbs,
+    upgrade_schema_with_hash_reset,
 )
-from scripts.startup.state_store import StateStore as StartupStateStore
+from scripts.core.state_store import (
+    StateStore as CoreStateStore,
+)
 from scripts.orchestrator.state_store import StateStore as OrchStateStore
 from scripts.startup.migration import (
-    migrate_legacy_state, sha256_of,
-    compute_authorization_bound_hash, CURRENT_CANONICALIZATION_VERSION,
+    CURRENT_CANONICALIZATION_VERSION,
+    compute_authorization_bound_hash,
+    migrate_legacy_state,
+    sha256_of,
 )
-
+from scripts.startup.state_store import StateStore as StartupStateStore
 
 # ─── Fixtures ─────────────────────────────────────────────────────────
 

@@ -23,13 +23,12 @@ import argparse
 import json
 import os
 import signal
-import socket
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Path setup
@@ -41,10 +40,13 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 from scripts.orchestrator.controller import (
-    BLOCKED, COMPLETE, Controller, PAUSED, STOPPED, WAITING_APPROVAL,
-    load_plan,
+    BLOCKED,
+    COMPLETE,
+    PAUSED,
+    STOPPED,
+    WAITING_APPROVAL,
+    Controller,
 )
-from scripts.orchestrator.policy_engine import PolicyEngine
 from scripts.orchestrator.process_manager import ProcessManager
 from scripts.orchestrator.state_store import StateStore
 
@@ -166,7 +168,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     - Evidence tracking
     """
     project = _resolve_project(args.project)
-    
+
     # Doctor check first
     if not args.skip_doctor:
         print("Running preflight checks...")
@@ -179,7 +181,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                     print(f"  - {check['name']}: {check['message']}")
             return EXIT_DOCTOR_FAIL
         print(f"Doctor: {doctor_result['summary']}")
-    
+
     # Find plan
     plan_path = Path(args.plan) if args.plan else project / DEFAULT_PLAN_PATH
     if not plan_path.exists():
@@ -190,19 +192,19 @@ def cmd_run(args: argparse.Namespace) -> int:
             if yaml_files:
                 plan_path = yaml_files[0]
         if not plan_path.exists():
-            print(f"ERROR: Plan not found. Create {DEFAULT_PLAN_PATH} or use --plan <path>", 
+            print(f"ERROR: Plan not found. Create {DEFAULT_PLAN_PATH} or use --plan <path>",
                   file=sys.stderr)
             return EXIT_NOT_FOUND
-    
+
     print(f"Starting autopilot with plan: {plan_path}")
     print(f"Automation mode: {args.automation}")
     print(f"Run until: {args.until}")
     print("-" * 60)
-    
+
     # Create autopilot lock
     pid_path = project / ".repro" / "execution" / "autopilot.pid"
     pid_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     existing_pid = _read_pid(project)
     if existing_pid:
         manager = ProcessManager()
@@ -212,9 +214,9 @@ def cmd_run(args: argparse.Namespace) -> int:
             return EXIT_INTERNAL
         else:
             print(f"Cleaning up stale PID file from previous run (PID {existing_pid})")
-    
+
     _write_pid(project, os.getpid())
-    
+
     # Setup signal handlers for graceful shutdown
     def signal_handler(signum, frame):
         print("\nReceived shutdown signal, stopping gracefully...")
@@ -222,10 +224,10 @@ def cmd_run(args: argparse.Namespace) -> int:
         store.set_control_state("PAUSED")
         _write_pid(project, 0)
         sys.exit(0)
-    
+
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     # Run the controller
     try:
         controller = Controller(
@@ -237,27 +239,27 @@ def cmd_run(args: argparse.Namespace) -> int:
             resume=args.resume,
             poll_interval=args.poll_interval,
         )
-        
+
         # Write initial heartbeat
         _heartbeat(project, "autopilot", os.getpid(), {
             "plan": str(plan_path),
             "mode": args.mode or "default",
             "automation": args.automation,
         })
-        
+
         # Run until blocked or complete
         result = controller.run()
-        
+
         # Handle result
         status = result["status"]
         reason = result.get("reason", "")
-        
+
         print("\n" + "=" * 60)
         print(f"Autopilot finished: {status}")
         if reason:
             print(f"Reason: {reason}")
         print("=" * 60)
-        
+
         # Print task summary
         tasks = result.get("tasks", [])
         if tasks:
@@ -268,7 +270,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             print("\nTask summary:")
             for st, count in sorted(counts.items()):
                 print(f"  {st}: {count}")
-        
+
         # Print recovery info
         recovery = result.get("recovery", {})
         if recovery:
@@ -276,9 +278,9 @@ def cmd_run(args: argparse.Namespace) -> int:
             for k, v in recovery.items():
                 if v:
                     print(f"  {k}: {v}")
-        
+
         _write_pid(project, 0)
-        
+
         if status == COMPLETE:
             return EXIT_OK
         elif status in {PAUSED, STOPPED}:
@@ -290,7 +292,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             return EXIT_BLOCKED
         else:
             return EXIT_INTERNAL
-        
+
     except Exception as e:
         print(f"ERROR: Autopilot failed: {e}", file=sys.stderr)
         import traceback
@@ -307,9 +309,9 @@ def cmd_status(args: argparse.Namespace) -> int:
     """Show autopilot status."""
     project = _resolve_project(args.project)
     store = _store(project)
-    
+
     status = store.status_summary()
-    
+
     # Add autopilot-specific info
     pid = _read_pid(project)
     if pid:
@@ -326,7 +328,7 @@ def cmd_status(args: argparse.Namespace) -> int:
             "running": False,
             "status": "NOT_RUNNING",
         }
-    
+
     # Read heartbeat
     hb = _heartbeat_path(project)
     if hb.exists():
@@ -336,13 +338,13 @@ def cmd_status(args: argparse.Namespace) -> int:
             status["heartbeat"] = "corrupt"
     else:
         status["heartbeat"] = None
-    
+
     # Control state
     control = store.control_state()
     status["control_state"] = control
-    
+
     _output(status)
-    
+
     # Print human-readable summary
     print(f"\n{'=' * 60}")
     print(f"Project: {project}")
@@ -351,22 +353,22 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f" (PID {pid})", end="")
     print()
     print(f"Control state: {control}")
-    
+
     counts = status.get("counts", {})
     if counts:
         print("\nTask counts:")
         for st, count in sorted(counts.items()):
             bar = "█" * min(count, 20)
             print(f"  {st:15s}: {count:3d} {bar}")
-    
+
     pending = status.get("pending_approvals", [])
     if pending:
         print(f"\nPending approvals: {len(pending)}")
         for apr in pending[:5]:
             print(f"  - {apr.get('task_id', 'unknown')}: {apr.get('approval_id', 'unknown')}")
-    
+
     print("=" * 60)
-    
+
     return EXIT_OK
 
 
@@ -377,11 +379,11 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_recover(args: argparse.Namespace) -> int:
     """Recover from interrupted state."""
     project = _resolve_project(args.project)
-    
+
     print("Running recovery...")
-    
+
     store = _store(project)
-    
+
     # Check if autopilot is running
     pid = _read_pid(project)
     if pid:
@@ -390,20 +392,20 @@ def cmd_recover(args: argparse.Namespace) -> int:
             print(f"Autopilot is running with PID {pid}")
             print("Use 'stop' first before recovering")
             return EXIT_INTERNAL
-    
+
     # Run recovery through the store
     try:
         # Get current state
         status = store.status_summary()
         running_tasks = [t for t in status.get("tasks", []) if t.get("status") == "RUNNING"]
-        
+
         if not running_tasks:
             print("No running tasks to recover")
         else:
             print(f"\nFound {len(running_tasks)} RUNNING tasks")
             for task in running_tasks:
                 print(f"  - {task.get('id')}: PID {task.get('pid')}")
-        
+
         # Check heartbeats
         hb = _heartbeat_path(project)
         if hb.exists():
@@ -415,7 +417,7 @@ def cmd_recover(args: argparse.Namespace) -> int:
                     print("WARNING: Heartbeat is stale (>5 min)")
             except json.JSONDecodeError:
                 print("WARNING: Heartbeat file is corrupt")
-        
+
         # Run doctor check
         if not args.skip_doctor:
             print("\nRunning preflight checks...")
@@ -424,15 +426,15 @@ def cmd_recover(args: argparse.Namespace) -> int:
                 print(f"WARNING: Doctor FAILED - {doctor_result['summary']}")
             else:
                 print(f"Doctor: {doctor_result['summary']}")
-        
+
         # Resume
         print("\nResuming autopilot...")
         args_dict = vars(args)
         args_dict["resume"] = True
         args_dict["skip_doctor"] = True
-        
+
         return cmd_run(argparse.Namespace(**args_dict))
-        
+
     except Exception as e:
         print(f"ERROR: Recovery failed: {e}", file=sys.stderr)
         import traceback
@@ -458,7 +460,7 @@ def cmd_stop(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     store = _store(project)
     store.set_control_state("STOPPED")
-    
+
     # Terminate running tasks
     manager = ProcessManager()
     store = _store(project)
@@ -468,13 +470,13 @@ def cmd_stop(args: argparse.Namespace) -> int:
         if pid and manager.is_alive(pid):
             manager.terminate(int(pid), grace_seconds=2.0)
             terminated.append(pid)
-    
+
     _write_pid(project, 0)
-    
+
     print(f"Autopilot stopped: {project}")
     if terminated:
         print(f"Terminated {len(terminated)} running tasks: {terminated}")
-    
+
     return EXIT_OK
 
 
@@ -506,26 +508,26 @@ def cmd_takeover(args: argparse.Namespace) -> int:
     4. Prepares for autopilot execution
     """
     project = _resolve_project(args.project)
-    
+
     print(f"Takeover analysis for: {project}")
     print("-" * 60)
-    
+
     # Detect project type
     project_type = _detect_project_type(project)
     print(f"Detected project type: {project_type}")
-    
+
     # Check for existing repro state
     repro_dir = project / ".repro"
     has_repro = repro_dir.exists()
-    
+
     if has_repro:
-        print(f"\nExisting .repro directory found")
+        print("\nExisting .repro directory found")
         execution_dir = repro_dir / "execution"
         if execution_dir.exists():
             # Check for state files
             state_files = list(execution_dir.glob("*.json")) + list(execution_dir.glob("*.sqlite*"))
             print(f"  State files: {len(state_files)}")
-            
+
             # Read execution state if exists
             exec_state = execution_dir / "execution_state.json"
             if exec_state.exists():
@@ -533,11 +535,11 @@ def cmd_takeover(args: argparse.Namespace) -> int:
                     state = json.loads(exec_state.read_text())
                     print(f"  Last task: {state.get('current_task', 'unknown')}")
                     print(f"  Plan hash: {state.get('plan_hash', 'unknown')[:16]}...")
-                except:
+                except Exception:
                     pass
     else:
-        print(f"\nNo existing .repro directory - fresh project")
-    
+        print("\nNo existing .repro directory - fresh project")
+
     # Check for primary repo
     primary = project / "primary"
     if primary.exists():
@@ -550,9 +552,9 @@ def cmd_takeover(args: argparse.Namespace) -> int:
                     stderr=subprocess.DEVNULL, text=True
                 ).strip()
                 print(f"  Commit: {sha[:12]}")
-            except:
+            except Exception:
                 pass
-    
+
     # Check for plan
     plan_path = project / DEFAULT_PLAN_PATH
     if plan_path.exists():
@@ -561,7 +563,7 @@ def cmd_takeover(args: argparse.Namespace) -> int:
         print(f"\nNo plan file found at {DEFAULT_PLAN_PATH}")
         if project_type == "paper_repro":
             print("  Consider creating a plan with reproctl plan command")
-    
+
     # Generate takeover report
     report = {
         "project": str(project),
@@ -572,10 +574,10 @@ def cmd_takeover(args: argparse.Namespace) -> int:
         "autopilot_ready": has_repro and plan_path.exists(),
         "recommendation": _get_takeover_recommendation(project_type, has_repro, plan_path.exists()),
     }
-    
+
     print("\n" + "=" * 60)
     _output(report, pretty=False)
-    
+
     return EXIT_OK
 
 
@@ -589,16 +591,16 @@ def _detect_project_type(project: Path) -> str:
         if train_files:
             return "paper_repro"
         return "code_repo"
-    
+
     # Check for .repro but no primary
     repro_dir = project / ".repro"
     if repro_dir.exists():
         return "existing_repro"
-    
+
     # Check for experiment markers
     if (project / "experiments").exists():
         return "experiment"
-    
+
     return "unknown"
 
 
@@ -624,9 +626,9 @@ def cmd_events(args: argparse.Namespace) -> int:
     """Stream the event log."""
     project = _resolve_project(args.project)
     store = _store(project)
-    
+
     events = store.events(after_seq=args.after_seq, limit=args.limit)
-    
+
     if args.tail:
         # Tail mode - keep watching for new events
         last_seq = events[-1]["seq"] if events else 0
@@ -642,7 +644,7 @@ def cmd_events(args: argparse.Namespace) -> int:
             pass
     else:
         _output({"events": events, "count": len(events)})
-    
+
     return EXIT_OK
 
 
@@ -654,22 +656,22 @@ def cmd_approve(args: argparse.Namespace) -> int:
     """Approve a pending task."""
     project = _resolve_project(args.project)
     store = _store(project)
-    
+
     approval_id = args.approval_id.strip()
-    
+
     # Find the approval
     pending = store.pending_approvals()
     target = None
-    
+
     if approval_id.startswith("apr_"):
         target = next((a for a in pending if a.get("approval_id") == approval_id), None)
     else:
         target = next((a for a in pending if a.get("task_id") == approval_id), None)
-    
+
     if target is None:
         print(f"Approval not found: {approval_id}")
         return EXIT_NOT_FOUND
-    
+
     result = store.decide_approval(target["approval_id"], "APPROVED")
     print(f"Approved: {target.get('task_id')}")
     return EXIT_OK
@@ -679,22 +681,22 @@ def cmd_reject(args: argparse.Namespace) -> int:
     """Reject a pending task."""
     project = _resolve_project(args.project)
     store = _store(project)
-    
+
     approval_id = args.approval_id.strip()
-    
+
     # Find the approval
     pending = store.pending_approvals()
     target = None
-    
+
     if approval_id.startswith("apr_"):
         target = next((a for a in pending if a.get("approval_id") == approval_id), None)
     else:
         target = next((a for a in pending if a.get("task_id") == approval_id), None)
-    
+
     if target is None:
         print(f"Approval not found: {approval_id}")
         return EXIT_NOT_FOUND
-    
+
     result = store.decide_approval(target["approval_id"], "REJECTED", args.reason or "")
     print(f"Rejected: {target.get('task_id')}")
     return EXIT_OK
@@ -707,7 +709,7 @@ def cmd_reject(args: argparse.Namespace) -> int:
 def cmd_daemon(args: argparse.Namespace) -> int:
     """Control the autopilot daemon."""
     project = _resolve_project(args.project)
-    
+
     if args.action == "start":
         return _daemon_start(project, args)
     elif args.action == "status":
@@ -724,11 +726,11 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
     if existing and ProcessManager().is_alive(existing):
         print(f"Autopilot already running with PID {existing}")
         return EXIT_OK
-    
+
     plan_path = Path(args.plan) if args.plan else project / DEFAULT_PLAN_PATH
     log_path = project / ".repro" / "execution" / "autopilot.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     cmd = [
         sys.executable, str(THIS),
         "run",
@@ -740,10 +742,10 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
         cmd.extend(["--mode", args.mode])
     if args.resume:
         cmd.append("--resume")
-    
+
     env = os.environ.copy()
     env["AUTOPILOT_DAEMON"] = "1"
-    
+
     proc = subprocess.Popen(
         cmd,
         cwd=str(project),
@@ -753,7 +755,7 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
-    
+
     # Wait for startup
     deadline = time.monotonic() + 5.0
     manager = ProcessManager()
@@ -761,7 +763,7 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
         if manager.is_alive(proc.pid):
             break
         time.sleep(0.1)
-    
+
     if manager.is_alive(proc.pid):
         _write_pid(project, proc.pid)
         print(f"Autopilot started: PID {proc.pid}")
@@ -776,21 +778,21 @@ def _daemon_status(project: Path) -> int:
     """Show daemon status."""
     pid = _read_pid(project)
     info = {"project": str(project), "pid": pid}
-    
+
     if pid is None:
         info["status"] = "NOT_RUNNING"
     elif ProcessManager().is_alive(pid):
         info["status"] = "RUNNING"
     else:
         info["status"] = "STALE"
-    
+
     hb = _heartbeat_path(project)
     if hb.exists():
         try:
             info["heartbeat"] = json.loads(hb.read_text())
         except json.JSONDecodeError:
             info["heartbeat"] = "corrupt"
-    
+
     _output(info)
     return EXIT_OK
 
@@ -801,9 +803,9 @@ def _daemon_stop(project: Path) -> int:
     if pid is None:
         print("Autopilot not running")
         return EXIT_OK
-    
+
     manager = ProcessManager()
-    
+
     # Stop running tasks first
     try:
         store = _store(project)
@@ -814,21 +816,21 @@ def _daemon_stop(project: Path) -> int:
         store.set_control_state("STOPPED")
     except Exception as e:
         print(f"Warning: Error stopping tasks: {e}")
-    
+
     # Stop daemon
     if manager.is_alive(pid):
         try:
             os.killpg(pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
-    
+
     time.sleep(0.5)
     if manager.is_alive(pid):
         try:
             os.killpg(pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
-    
+
     _write_pid(project, 0)
     print("Autopilot stopped")
     return EXIT_OK
@@ -841,31 +843,31 @@ def _daemon_stop(project: Path) -> int:
 def cmd_l0l3(args: argparse.Namespace) -> int:
     """Run the L0-L3 automated verification loop."""
     project = _resolve_project(args.project)
-    
+
     # Import L0L3Loop
     sys.path.insert(0, str(PACKAGE_ROOT))
     from scripts.l0_l3_loop import L0L3Loop
-    
+
     primary = Path(args.primary) if args.primary else None
-    
+
     loop = L0L3Loop(
         project_root=project,
         primary=primary,
         conda_env=args.conda_env,
     )
-    
+
     summary = loop.run_all(
         stop_on_fail=not args.continue_on_fail,
         l1_steps=args.l1_steps,
         l2_epochs=args.l2_epochs,
     )
-    
+
     # Save results
     output_path = Path(args.output) if args.output else None
     loop.save_results(output_path)
-    
+
     _output(summary)
-    
+
     return EXIT_OK if summary["all_passed"] else EXIT_BLOCKED
 
 
@@ -876,17 +878,17 @@ def cmd_l0l3(args: argparse.Namespace) -> int:
 def cmd_report(args: argparse.Namespace) -> int:
     """Generate reproduction report."""
     project = _resolve_project(args.project)
-    
+
     # Import ReportGenerator
     sys.path.insert(0, str(PACKAGE_ROOT))
     from scripts.orchestrator.report_generator import ReportGenerator
     from scripts.orchestrator.state_store import StateStore
-    
+
     store = StateStore(project)
     tasks = store.list_tasks()
-    
+
     rg = ReportGenerator(project)
-    
+
     if args.format == "markdown":
         md = rg.generate_markdown_report(tasks)
         print(md)
@@ -895,7 +897,7 @@ def cmd_report(args: argparse.Namespace) -> int:
     else:
         report = rg.generate_go_pivot_nogo(tasks)
         _output(report)
-    
+
     return EXIT_OK
 
 
@@ -909,7 +911,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="NORA-style continuous execution controller for paper reproduction",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    
+
     # run - continuous execution
     p_run = sub.add_parser("run", help="Run continuous autopilot until blocked or complete")
     p_run.add_argument("--project", required=True, help="Project root directory")
@@ -928,31 +930,31 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Skip preflight doctor checks")
     p_run.add_argument("--poll-interval", type=float, default=0.5,
                        help="Poll interval in seconds (default: 0.5)")
-    
+
     # status
     p_status = sub.add_parser("status", help="Show autopilot status")
     p_status.add_argument("--project", required=True, help="Project root directory")
-    
+
     # recover
     p_recover = sub.add_parser("recover", help="Recover from interrupted state")
     p_recover.add_argument("--project", required=True, help="Project root directory")
     p_recover.add_argument("--skip-doctor", action="store_true",
                           help="Skip preflight doctor checks")
-    
+
     # pause/stop/continue
     p_pause = sub.add_parser("pause", help="Pause the autopilot")
     p_pause.add_argument("--project", required=True, help="Project root directory")
-    
+
     p_stop = sub.add_parser("stop", help="Stop the autopilot")
     p_stop.add_argument("--project", required=True, help="Project root directory")
-    
+
     p_cont = sub.add_parser("continue", help="Continue a paused autopilot")
     p_cont.add_argument("--project", required=True, help="Project root directory")
-    
+
     # takeover
     p_takeover = sub.add_parser("takeover", help="Analyze and takeover an existing project")
     p_takeover.add_argument("--project", required=True, help="Project root directory")
-    
+
     # events
     p_events = sub.add_parser("events", help="Stream the event log")
     p_events.add_argument("--project", required=True, help="Project root directory")
@@ -960,31 +962,31 @@ def build_parser() -> argparse.ArgumentParser:
     p_events.add_argument("--limit", type=int, default=100, help="Max events to return")
     p_events.add_argument("--tail", action="store_true", help="Tail the event log")
     p_events.add_argument("--poll-interval", type=float, default=1.0, help="Poll interval for tail")
-    
+
     # approve/reject
     p_approve = sub.add_parser("approve", help="Approve a pending task")
     p_approve.add_argument("--project", required=True, help="Project root directory")
     p_approve.add_argument("approval_id", help="Approval ID or task ID")
-    
+
     p_reject = sub.add_parser("reject", help="Reject a pending task")
     p_reject.add_argument("--project", required=True, help="Project root directory")
     p_reject.add_argument("approval_id", help="Approval ID or task ID")
     p_reject.add_argument("--reason", default="", help="Rejection reason")
-    
+
     # daemon
     p_daemon = sub.add_parser("daemon", help="Control the autopilot daemon")
     p_daemon.add_argument("--project", required=True, help="Project root directory")
     p_daemon.add_argument("action", choices=["start", "status", "stop"],
                          help="Daemon action")
-    p_daemon.add_argument("--plan", help=f"Plan file path")
+    p_daemon.add_argument("--plan", help="Plan file path")
     p_daemon.add_argument("--automation", default="safe-auto",
                           choices=["safe-auto", "auto", "manual"])
     p_daemon.add_argument("--mode", choices=["strict", "optimized"])
     p_daemon.add_argument("--resume", action="store_true")
-    
+
     # version
     p_version = sub.add_parser("version", help="Show autopilot version")
-    
+
     # l0l3 - L0-L3 loop
     p_l0l3 = sub.add_parser("l0l3", help="Run L0-L3 automated verification loop")
     p_l0l3.add_argument("--project", required=True, help="Project root directory")
@@ -994,12 +996,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_l0l3.add_argument("--l2-epochs", type=int, default=3, help="L2: number of mini loop epochs")
     p_l0l3.add_argument("--continue-on-fail", action="store_true", help="Continue to next stage on failure")
     p_l0l3.add_argument("--output", help="Output path for results JSON")
-    
+
     # report - Generate reproduction report
     p_report = sub.add_parser("report", help="Generate reproduction report")
     p_report.add_argument("--project", required=True, help="Project root directory")
     p_report.add_argument("--format", default="markdown", choices=["markdown", "json"], help="Report format")
-    
+
     return parser
 
 
@@ -1024,12 +1026,12 @@ HANDLERS = {
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    
+
     handler = HANDLERS.get(args.command)
     if handler is None:
         parser.print_help()
         return EXIT_INTERNAL
-    
+
     try:
         return handler(args)
     except SystemExit as e:

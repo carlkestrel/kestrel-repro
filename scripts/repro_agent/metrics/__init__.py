@@ -1,47 +1,47 @@
 """
 Metric Protocol Auditor (MPA) - Package Initialization
 """
+from .conflict_detector import ConflictDetector
+from .golden_test import SiamKPConvGoldenTest, run_golden_test
+from .hardcode_detector import HardcodeDetector
 from .models import (
+    WRONG_DOIS,
+    AbsentClassPolicy,
+    ClassAggregation,
+    ConflictType,
+    DatasetVersion,
+    DataSubset,
+    Direction,
+    EvaluationScope,
+    MetricConflict,
     MetricDefinition,
     MetricObservation,
     MetricProtocolFingerprint,
     MetricSource,
-    MetricConflict,
-    RunManifest,
     MetricStatus,
-    SourceRole,
-    TaskType,
-    Direction,
-    Unit,
-    ClassAggregation,
-    SampleAggregation,
-    AbsentClassPolicy,
     PredictionLevel,
-    EvaluationScope,
     ProjectVerdict,
-    ConflictType,
     ProtocolCompatibility,
-    DatasetVersion,
-    DataSubset,
-    SplitName,
-    SiamKPConv_CLASS_NAMES,
-    SiamKPConv_NUM_CLASSES,
+    RunManifest,
+    SampleAggregation,
     SiamKPConv_CHANGE_CLASSES,
-    SiamKPConv_PAPER_TARGETS,
-    SiamKPConv_PAPER_TARGET_STD,
-    SiamKPConv_MIOU_CH_TARGET,
-    SiamKPConv_MIOU_CH_STD,
-    SiamKPConv_MACC_TARGET,
+    SiamKPConv_CLASS_NAMES,
     SiamKPConv_MACC_STD,
+    SiamKPConv_MACC_TARGET,
+    SiamKPConv_MIOU_CH_STD,
+    SiamKPConv_MIOU_CH_TARGET,
+    SiamKPConv_NUM_CLASSES,
     SiamKPConv_PAPER_METADATA,
-    WRONG_DOIS,
+    SiamKPConv_PAPER_TARGET_STD,
+    SiamKPConv_PAPER_TARGETS,
+    SourceRole,
+    SplitName,
+    TaskType,
+    Unit,
 )
-from .schemas import validate_schema, load_schema, save_schemas
-from .registry import MetricRegistry, get_standard_metrics, create_miou_ch_definition
 from .recompute import MetricRecomputer
-from .conflict_detector import ConflictDetector
-from .hardcode_detector import HardcodeDetector
-from .golden_test import SiamKPConvGoldenTest, run_golden_test
+from .registry import MetricRegistry, create_miou_ch_definition, get_standard_metrics
+from .schemas import load_schema, save_schemas, validate_schema
 
 __all__ = [
     # Models

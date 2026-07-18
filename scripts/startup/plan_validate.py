@@ -5,7 +5,6 @@ import hashlib
 import re
 import sys
 from pathlib import Path
-from typing import Any
 
 try:
     import yaml  # type: ignore
@@ -74,7 +73,7 @@ def _detect_cycles(tasks: list[dict]) -> bool:
     """Return True if the dependency graph has any cycle."""
     by_id = {t.get("id"): t for t in tasks}
     WHITE, GRAY, BLACK = 0, 1, 2
-    color = {tid: WHITE for tid in by_id}
+    color = dict.fromkeys(by_id, WHITE)
 
     def visit(node: str) -> bool:
         color[node] = GRAY

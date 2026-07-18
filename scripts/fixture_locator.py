@@ -26,9 +26,10 @@ Resolution order:
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from importlib import resources as _resources
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Union
 
 TraversableOrPath = Union[_resources.abc.Traversable, Path]
 
@@ -124,8 +125,6 @@ def fixture_path(*parts: str) -> Path:
         return joined
 
     # Traversable → Materialise via importlib.resources.as_file
-    import atexit
-    import contextlib
     import tempfile
 
     # as_file returns a context manager but we want a stable path.

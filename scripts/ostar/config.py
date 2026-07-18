@@ -5,17 +5,14 @@ Handles loading, validation, and schema enforcement for OSTAR soak runs.
 from __future__ import annotations
 
 import json
-import os
 import re
-import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from zoneinfo import ZoneInfo
 
 from . import constants as _C
-
 
 # Add project root to path for schema import
 _THIS = Path(__file__).resolve()
@@ -131,7 +128,7 @@ class OSTARConfig:
         }
 
     @classmethod
-    def from_args(cls, args) -> "OSTARConfig":
+    def from_args(cls, args) -> OSTARConfig:
         """Build config from parsed argparse namespace or dict."""
         cfg = cls()
         # Handle both argparse.Namespace and plain dict
@@ -208,7 +205,7 @@ class OSTARConfig:
                     f"gpu_temperature_limit must be 30-110°C, got {self.gpu_temperature_limit}",
                 )
         try:
-            zoneinfo.ZoneInfo(self.timezone)
+            ZoneInfo(self.timezone)
         except Exception:
             errors.append(f"invalid timezone: {self.timezone!r}")
         return errors

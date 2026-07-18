@@ -21,12 +21,15 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scripts.core.state_store import StateStore
 from typing import Any
 
 try:
@@ -36,10 +39,9 @@ except ImportError:
 
 # R3-0: import canonical authorization-bound hash
 from scripts.core.state_store import (
-    compute_authorization_bound_hash,
     CURRENT_CANONICALIZATION_VERSION,
+    compute_authorization_bound_hash,
 )
-
 
 # ─── Migration report ─────────────────────────────────────────────────
 
@@ -173,7 +175,7 @@ def _migrate_gate(legacy_gate: dict[str, Any]) -> dict[str, str]:
 def migrate_legacy_state(
     project_root: Path,
     output_dir: Path | None = None,
-    store: "StateStore | None" = None,
+    store: StateStore | None = None,
 ) -> MigrationReport:
     """Migrate all legacy state files to the R2 SQLite store.
 

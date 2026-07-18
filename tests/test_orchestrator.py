@@ -3,14 +3,10 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import sys
-import textwrap
 import threading
 import time
 from pathlib import Path
-
-import pytest
 
 THIS = Path(__file__).resolve()
 PLUGIN_ROOT = THIS.parents[1]
@@ -19,14 +15,17 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from orchestrator import (  # noqa: E402
-    ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
+    ApprovalGate,
+    Controller,
     StateStore,
 )
 from orchestrator.controller import (  # noqa: E402
-    BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL, load_plan,
+    BLOCKED,
+    COMPLETE,
+    PAUSED,
+    STOPPED,
+    WAITING_APPROVAL,
 )
-from orchestrator.scheduler import CycleDependencyError  # noqa: E402
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -143,7 +142,7 @@ def test_2_independent_readonly_tasks_parallel(tmp_path: Path) -> None:
             "id": f"ro-{index}", "name": f"parallel {index}",
             "gate": "read_only", "deps": [],
             "command": _task_command([
-                f"sleep 0.5",
+                "sleep 0.5",
                 f"echo {index} > {project / 'output' / f'p-{index}.txt'}",
             ], workdir=project),
             "timeout_min": 5, "acceptance_tests": [],

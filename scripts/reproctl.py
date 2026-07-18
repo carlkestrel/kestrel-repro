@@ -43,15 +43,11 @@ Commands (legacy, retained for backward compatibility):
 import argparse
 import json
 import os
-import sys
 import subprocess
-import shutil
+import sys
 import uuid
-import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
-
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 
@@ -110,7 +106,7 @@ _LEGACY_MAPPED_TO_NEW = {
 }
 
 
-def _dispatch_to_audit() -> Optional[int]:
+def _dispatch_to_audit() -> int | None:
     """Route `reproctl audit ...` commands to scripts/cvo/audit_cli.py."""
     if len(sys.argv) < 2 or sys.argv[1] != "audit":
         return None
@@ -131,7 +127,7 @@ def _dispatch_to_audit() -> Optional[int]:
     return audit_main()
 
 
-def _dispatch_startup_subcommand(args) -> Optional[int]:
+def _dispatch_startup_subcommand(args) -> int | None:
     """Forward startup subcommands to ``scripts/startup/cli.py``.
 
     Used for ``start | doctor | resume | stop | watchdog | verify``.
@@ -160,7 +156,7 @@ def _dispatch_startup_subcommand(args) -> Optional[int]:
     return startup_main(forwarded)
 
 
-def _dispatch_to_orchestrator() -> Optional[int]:
+def _dispatch_to_orchestrator() -> int | None:
     """Route orchestrator subcommands to ``scripts/orchestrator/cli.py``.
 
     The orchestrator owns ``run``, ``pause``, ``continue``, ``status``,
@@ -206,7 +202,7 @@ def _find_project_arg(argv: list[str]) -> str | None:
     return None
 
 
-def _dispatch_to_startup() -> Optional[int]:
+def _dispatch_to_startup() -> int | None:
     """If argv matches a new subcommand, run startup/cli.py and return its
     exit code. Otherwise return None (fall through to legacy handling)."""
     if len(sys.argv) < 2:
@@ -236,7 +232,7 @@ def _dispatch_to_startup() -> Optional[int]:
     return startup_main(sys.argv[1:])
 
 
-def _dispatch_to_soak() -> Optional[int]:
+def _dispatch_to_soak() -> int | None:
     """Route `reproctl soak ...` commands to scripts/ostar/cli.py."""
     if len(sys.argv) < 2 or sys.argv[1] != "soak":
         return None
@@ -511,7 +507,7 @@ def now_iso() -> str:
 VALID_PROJECT_MODES = ("reproduce", "diagnose", "extend")
 
 
-def get_project_mode(state: Optional[dict] = None) -> str:
+def get_project_mode(state: dict | None = None) -> str:
     """Return the current project mode. Default: 'reproduce'.
 
     Backward compatible: if state is None, try to load from disk;
@@ -528,7 +524,7 @@ def get_project_mode(state: Optional[dict] = None) -> str:
     return state.get("project_mode", "reproduce")
 
 
-def set_project_mode(mode: str, reason: str = "", state: Optional[dict] = None) -> dict:
+def set_project_mode(mode: str, reason: str = "", state: dict | None = None) -> dict:
     """Switch project mode and append an entry to mode_switches audit trail.
 
     Writes a row to repro_audit/DECISION_LOG.md with timestamp + reason.
@@ -555,7 +551,7 @@ def set_project_mode(mode: str, reason: str = "", state: Optional[dict] = None) 
     return state
 
 
-def require_mode(required: str, state: Optional[dict] = None) -> None:
+def require_mode(required: str, state: dict | None = None) -> None:
     """Exit with code 1 unless current project mode equals `required`.
 
     Used by functions that must not run in a different mode
@@ -672,7 +668,7 @@ def _ensure_tracker_file() -> Path:
 
 def _read_tracker_rows(p: Path) -> list:
     import csv
-    with open(p, "r", newline="", encoding="utf-8") as f:
+    with open(p, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
@@ -1051,7 +1047,6 @@ def cmd_check_principles(args: argparse.Namespace) -> None:
 
 def cmd_integrity_check(args: argparse.Namespace) -> None:
     """Verify schema files and core artifact integrity."""
-    import hashlib
     plugin_root = PLUGIN_ROOT
     schemas_dir = plugin_root / "schemas"
     results = {"schemas": {}, "warnings": [], "errors": []}
@@ -1106,13 +1101,15 @@ def cmd_integrity_check(args: argparse.Namespace) -> None:
     # Summary
     print(json.dumps(results, indent=2))
     if results["errors"]:
-        print(f"\n{fail(f'{len(results["errors"])} error(s) found')}")
+        n_err = len(results["errors"])
+        print(f"\n{fail(f'{n_err} error(s) found')}")
         sys.exit(1)
     elif results["schemas"]:
         missing = expected_schemas - set(results["schemas"].keys())
         if missing:
             results["warnings"].extend(f"Missing schema: {m}" for m in missing)
-            print(f"\n{warn(f'{len(missing)} schema(s) missing')}")
+            n_err = len(missing)
+            print(f"\n{warn(f'{n_err} schema(s) missing')}")
         else:
             print(f"\n{ok('All 8 schemas valid and storage_governance.py functional')}")
         sys.exit(0 if not results["warnings"] else 0)
@@ -1171,7 +1168,7 @@ def print_gate_status(state: dict) -> None:
 
 # ── Short-Loop Tests ─────────────────────────────────────────────────────────
 
-def run_smoke_test(primary_path: Path, config_path: Optional[Path] = None) -> dict:
+def run_smoke_test(primary_path: Path, config_path: Path | None = None) -> dict:
     """L0: Run real forward/backward pass on one batch."""
     print(step("Running L0 Smoke Test (forward + backward pass)..."))
 
@@ -1191,9 +1188,9 @@ def run_smoke_test(primary_path: Path, config_path: Optional[Path] = None) -> di
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L0 Smoke Test passed"))
+        print(ok("L0 Smoke Test passed"))
     else:
-        print(fail(f"L0 Smoke Test failed"))
+        print(fail("L0 Smoke Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1206,7 +1203,7 @@ def run_smoke_test(primary_path: Path, config_path: Optional[Path] = None) -> di
     }
 
 
-def run_overfit_test(primary_path: Path, config_path: Optional[Path] = None,
+def run_overfit_test(primary_path: Path, config_path: Path | None = None,
                      steps: int = 100) -> dict:
     """L1: Overfit a single batch to random labels."""
     print(step("Running L1 Overfit Test (memorize single batch)..."))
@@ -1226,9 +1223,9 @@ def run_overfit_test(primary_path: Path, config_path: Optional[Path] = None,
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L1 Overfit Test passed"))
+        print(ok("L1 Overfit Test passed"))
     else:
-        print(fail(f"L1 Overfit Test failed"))
+        print(fail("L1 Overfit Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1241,7 +1238,7 @@ def run_overfit_test(primary_path: Path, config_path: Optional[Path] = None,
     }
 
 
-def run_mini_loop_test(primary_path: Path, config_path: Optional[Path] = None,
+def run_mini_loop_test(primary_path: Path, config_path: Path | None = None,
                        epochs: int = 3) -> dict:
     """L2: Run end-to-end loop on mini dataset."""
     print(step(f"Running L2 Mini-Loop Test ({epochs} epochs)..."))
@@ -1261,9 +1258,9 @@ def run_mini_loop_test(primary_path: Path, config_path: Optional[Path] = None,
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L2 Mini-Loop Test passed"))
+        print(ok("L2 Mini-Loop Test passed"))
     else:
-        print(fail(f"L2 Mini-Loop Test failed"))
+        print(fail("L2 Mini-Loop Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1276,13 +1273,13 @@ def run_mini_loop_test(primary_path: Path, config_path: Optional[Path] = None,
     }
 
 
-def run_checkpoint_resume_test(primary_path: Path, config_path: Optional[Path] = None) -> dict:
+def run_checkpoint_resume_test(primary_path: Path, config_path: Path | None = None) -> dict:
     """L3: Verify checkpoint save/load produces identical results."""
     print(step("Running L3 Checkpoint Resume Test..."))
 
     resume_script = SCRIPTS_DIR / "checkpoint_resume_test.py"
     if not resume_script.exists():
-        print(warn(f"checkpoint_resume_test.py not found, skipping"))
+        print(warn("checkpoint_resume_test.py not found, skipping"))
         return {"status": "skipped", "reason": "checkpoint_resume_test.py not found"}
 
     cmd = [sys.executable, str(resume_script)]
@@ -1295,9 +1292,9 @@ def run_checkpoint_resume_test(primary_path: Path, config_path: Optional[Path] =
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L3 Checkpoint Resume Test passed"))
+        print(ok("L3 Checkpoint Resume Test passed"))
     else:
-        print(fail(f"L3 Checkpoint Resume Test failed"))
+        print(fail("L3 Checkpoint Resume Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1342,8 +1339,8 @@ def can_launch(mode: str = "strict_repro") -> bool:
 
 
 def launch_training(run_id: str, mode: str, seed: int, epochs: int,
-                    config_override: Optional[str] = None,
-                    extra_args: Optional[list[str]] = None) -> None:
+                    config_override: str | None = None,
+                    extra_args: list[str] | None = None) -> None:
     """Launch full training with gate enforcement."""
 
     state = load_state()
@@ -1477,7 +1474,7 @@ def launch_training(run_id: str, mode: str, seed: int, epochs: int,
     sys.exit(exit_code)
 
 
-def _find_train_script(repo_path: Path) -> Optional[Path]:
+def _find_train_script(repo_path: Path) -> Path | None:
     """Find the training script in the repository."""
     candidates = [
         repo_path / "train.py",
@@ -1510,7 +1507,7 @@ def _get_git_branch(path: Path) -> str:
 
 # ── Metric Verification ──────────────────────────────────────────────────────
 
-def verify_metrics(run_id: Optional[str] = None) -> dict:
+def verify_metrics(run_id: str | None = None) -> dict:
     """Verify that metrics can be reproduced from checkpoints."""
     state = load_state()
 
@@ -1585,7 +1582,7 @@ def cmd_init(args: argparse.Namespace) -> None:
     print(ok(f"Initialized at {REPRO_DIR}"))
     print(f"  Paper URL: {state['paper_url'] or '(none set)'}")
     print(f"  Target:    {state['target_metrics'] or '(none set)'}")
-    print(f"\n  Next: Run '/repro-discover' to find candidate repositories.")
+    print("\n  Next: Run '/repro-discover' to find candidate repositories.")
 
 
 def cmd_status(args: argparse.Namespace) -> None:

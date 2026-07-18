@@ -19,7 +19,6 @@ from pathlib import Path
 
 import pytest
 
-
 PLUGIN_ROOT_HINT = Path(__file__).resolve().parent.parent
 
 
@@ -43,7 +42,7 @@ def test_editable_install_marker_exists():
 def test_scripts_package_imports():
     """Top-level ``scripts`` package imports cleanly without sys.path tricks."""
     import scripts  # noqa: F401
-    from scripts import _version, reproctl, fixture_locator  # noqa: F401
+    from scripts import _version, fixture_locator, reproctl  # noqa: F401
 
 
 def test_reproctl_version_via_module():

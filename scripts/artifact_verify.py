@@ -18,15 +18,11 @@ Usage:
 """
 
 import argparse
-import hashlib
 import json
 import re
 import subprocess
-import sys
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
 
 
 @dataclass
@@ -354,8 +350,6 @@ def verify_checkpoint_source(ckpt_meta: dict) -> VerificationResult:
                                   message="rerun source missing run_id or valid commit_sha")
     return VerificationResult(check="checkpoint_source", passed=False,
                               message=f"unknown checkpoint source: {source!r}")
-
-    return results
 
 
 def format_results(results: list[VerificationResult]) -> str:

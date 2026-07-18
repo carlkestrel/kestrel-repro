@@ -28,10 +28,7 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -43,28 +40,29 @@ PLUGIN_ROOT = Path(__file__).parent.parent.resolve()
 if str(PLUGIN_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
 
-from startup.plan_schema import (
-    PlanSchema, TaskDef, load_plan, dump_plan, validate_plan,
-    CURRENT_SCHEMA_VERSION, ValidationError,
-    migrate_legacy_mode,
-    _dict_to_plan,
-)
-from startup.mode import parse_mode, ModeTriple, NEEDS_MODE_REVIEW as MODE_REVIEW
 from startup.authorization import (
-    AuthorizationContract, AuthorizationError, load_contract,
-    validate_contract,
+    AuthorizationContract,
+    AuthorizationError,
+)
+from startup.lock import acquire, check_plan_hash, release
+from startup.migration import (
+    find_legacy_files,
+    migrate_legacy_state,
+)
+from startup.mode import NEEDS_MODE_REVIEW as MODE_REVIEW
+from startup.mode import ModeTriple, parse_mode
+from startup.plan_schema import (
+    PlanSchema,
+    _dict_to_plan,
+    load_plan,
+    migrate_legacy_mode,
+    validate_plan,
 )
 from startup.state_store import (
-    StateStore, TASK_STATES, TASK_TRANSITIONS,
-    StateConflict, InvalidTransition,
-    PROJECT_STATES,
+    InvalidTransition,
+    StateConflict,
+    StateStore,
 )
-from startup.migration import (
-    migrate_legacy_state, MigrationReport,
-    find_legacy_files, parse_legacy_file, sha256_of,
-)
-from startup.lock import acquire, release, check_plan_hash, LockHeld
-
 
 # ─── Fixtures ───────────────────────────────────────────────────────
 
@@ -279,7 +277,6 @@ def test_canonical_hash_stable(plan_yaml_file):
 
 def test_canonical_hash_independent_of_order():
     """Same plan loaded twice → same hash."""
-    import yaml
     data = {
         "schema_version": "2.0",
         "plan_id": "X",
@@ -321,7 +318,6 @@ def test_content_change_changes_hash(tmp_path):
 # ─── 10. Plan hash change → authorization invalidated ────────────
 
 def test_plan_hash_invalidation(tmp_path):
-    import yaml
     repro_dir = tmp_path / ".repro"
     repro_dir.mkdir()
     lock_path = repro_dir / "run.lock"
@@ -427,7 +423,7 @@ def test_symlink_traversal_denied(tmp_path):
 # ─── 15. Expired/revoked contracts block ────────────────────────
 
 def test_expired_contract_denies():
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     contract = AuthorizationContract(
         contract_id="c6",
         project_root="/tmp",

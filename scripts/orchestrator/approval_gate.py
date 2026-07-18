@@ -4,8 +4,6 @@ import time
 import uuid
 from typing import Any
 
-from .state_store import StateStore
-
 
 class ApprovalGate:
     """Persist approval requests and explicit decisions in the state store.
@@ -97,7 +95,7 @@ class ApprovalGate:
             # block waiting for manual approval in daemon/reproctl run contexts.
             "init", "env_check", "audit",
         }
-        
+
         if gate in low_risk_gates:
             # Auto-approve low-risk tasks
             approval_id = self.request(task, reason=f"Auto-approved low-risk gate: {gate}")

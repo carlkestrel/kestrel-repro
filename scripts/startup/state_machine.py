@@ -8,19 +8,21 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
+from . import doctor as _doctor
 from . import lock as _lock
 from . import plan_validate as _plan
-from . import doctor as _doctor
-from . import config as _config
 
 # R3-0: import from canonical core
 try:
     from scripts.core.state_store import (
-        StateStore as _CanonicalStateStore,
-        compute_authorization_bound_hash as _compute_auth_hash,
         CURRENT_CANONICALIZATION_VERSION,
+    )
+    from scripts.core.state_store import (
+        StateStore as _CanonicalStateStore,
+    )
+    from scripts.core.state_store import (
+        compute_authorization_bound_hash as _compute_auth_hash,
     )
 except ImportError:
     _CanonicalStateStore = None  # type: ignore
@@ -237,7 +239,7 @@ def claim_one(*, project_root: Path, plan_path: Path,
     current_hash = ""
     try:
         current_hash = _plan.validate(plan_path)
-    except SystemExit as e:
+    except SystemExit:
         # If the plan can't even be validated, we can't claim anything.
         raise
 
