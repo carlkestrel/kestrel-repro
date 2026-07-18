@@ -30,11 +30,44 @@ class TaskExecutor:
             # Inject t4 conda env so `python` resolves to the right interpreter.
             "PATH": f"{os.path.dirname(sys.executable)}:{os.environ.get('PATH', '')}",
         }
-        proc = self.process_manager.start(
-            task["command"], cwd=self.project_root, log_path=log_path, env=env
-        )
-        self.store.set_process(task["id"], proc.pid, str(log_path))
+        # R3F-3: orphan-process guard. The pid/log_path persistence happens
+        # AFTER the process is actually started. If persistence fails, we
+        # terminate the just-launched process so we don't leave an orphan.
+        try:
+            proc = self.process_manager.start(
+                task["command"], cwd=self.project_root, log_path=log_path, env=env
+            )
+        except Exception:
+            # Failed before start; nothing to clean up.
+            raise
+        try:
+            self.store.set_process(task["id"], proc.pid, str(log_path))
+        except Exception:
+            # Persistence failed — kill the orphan so the controller loop
+            # can mark the task as FAILED rather than leaving it RUNNING
+            # with no recoverable pid.
+            try:
+                proc.terminate()
+                proc.wait(timeout=2)
+            except Exception:
+                pass
+            raise
+        # R3F-3: emit PROCESS_STARTED so audit/observability tests can
+        # verify a real subprocess was launched for the task.
+        try:
+            self.store.record_event(
+                "PROCESS_STARTED", task["id"],
+                {"pid": proc.pid, "log_path": str(log_path), "attempt": attempt},
+            )
+        except Exception:
+            # Event emission is best-effort — do not fail the launch.
+            pass
         return proc
+
+    def launch_with_orphan_guard(self, task: dict):
+        """Convenience wrapper around ``launch`` that re-raises cleanly on
+        orphan-process scenarios so callers can wrap with explicit handling."""
+        return self.launch(task)
 
     def poll(self, task: dict) -> int | None:
         return self.process_manager.poll(int(task["pid"]))

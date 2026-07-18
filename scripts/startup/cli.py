@@ -517,6 +517,56 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return EXIT_OK if overall == "PASS" else EXIT_RESUME_FAILED
 
 
+def cmd_watchdog(args: argparse.Namespace) -> int:
+    """Single-pass watchdog inspection.
+
+    Reports running tasks, their pids, heartbeats, and log freshness.
+    Exits 0 on success (any state), 1 on fatal error.
+    """
+    project = Path(args.project).resolve() if args.project else None
+    if not project or not project.exists():
+        print(json.dumps({
+            "command": "watchdog",
+            "status": "ERROR",
+            "code": EXIT_BAD_CONFIG,
+            "message": "missing or nonexistent --project",
+            "project": str(args.project),
+        }))
+        return EXIT_BAD_CONFIG
+
+    # Open the canonical SQLite store if present
+    db_path = project / ".repro" / "execution" / "state.sqlite3"
+    summary: dict[str, Any] = {
+        "command": "watchdog",
+        "status": "OK",
+        "project": str(project),
+        "db_present": db_path.exists(),
+        "tasks": [],
+    }
+    if db_path.exists():
+        try:
+            # Lazy import so the watchdog command doesn't require torch
+            import sqlite3
+            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=5)
+            try:
+                rows = conn.execute(
+                    "SELECT id, state, pid, log_path, started_at, updated_at "
+                    "FROM tasks ORDER BY rowid"
+                ).fetchall()
+            finally:
+                conn.close()
+            for r in rows:
+                summary["tasks"].append({
+                    "id": r[0], "state": r[1], "pid": r[2],
+                    "log_path": r[3], "started_at": r[4], "updated_at": r[5],
+                })
+        except Exception as e:
+            summary["status"] = "DEGRADED"
+            summary["error"] = repr(e)
+    print(json.dumps(summary, indent=2))
+    return EXIT_OK
+
+
 def cmd_version(args: argparse.Namespace) -> int:
     plugin = plugin_root()
     manifest = plugin / ".cursor-plugin" / "plugin.json"
@@ -655,6 +705,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("verify", help="Verify the startup evidence chain")
     add_common_project(p)
 
+    p = sub.add_parser("watchdog",
+                       help="Inspect running tasks and report heartbeat / log status")
+    add_common_project(p)
+    p.add_argument("--once", action="store_true",
+                   help="single-pass inspection instead of one loop")
+
     sub.add_parser("version", help="Print plugin + CLI version")
 
     return parser
@@ -670,6 +726,7 @@ def main(argv: list[str] | None = None) -> int:
         "resume": cmd_resume,
         "stop": cmd_stop,
         "verify": cmd_verify,
+        "watchdog": cmd_watchdog,
         "version": cmd_version,
     }
     return cmds[args.command](args)

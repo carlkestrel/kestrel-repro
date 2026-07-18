@@ -769,6 +769,11 @@ class StateStore:
 
         Returns the task dict if the claim succeeded, or None if another
         owner already claimed it or the task is no longer READY.
+
+        Per R3F-3 task 4: only READY or APPROVED tasks may be claimed.
+        PENDING must be promoted to READY by the scheduler first (when
+        dependencies are satisfied). RETRY_WAIT must be promoted by the
+        scheduler when ``retry_at`` has elapsed.
         """
         now = utc_now()
         with self.transaction() as conn:
@@ -777,7 +782,8 @@ class StateStore:
             ).fetchone()
             if not row:
                 return None
-            if row["state"] not in {"READY", "PENDING", "RETRY_WAIT"}:
+            # R3F-3: strict claim semantics — only READY or APPROVED.
+            if row["state"] not in {"READY", "APPROVED"}:
                 return None
             conn.execute(
                 "UPDATE tasks SET state=?, owner=?, started_at=?, "
@@ -789,6 +795,22 @@ class StateStore:
                 "SELECT * FROM tasks WHERE id=?", (task_id,)
             ).fetchone()
         return self._row_to_task(dict(claimed_row))  # type: ignore[arg-type]
+
+    def set_process(self, task_id: str, pid: int | None,
+                    log_path: str | None) -> None:
+        """R3F-3: persist pid/log_path for a claimed (RUNNING) task.
+
+        TaskExecutor.launch uses this after ``start()`` to record the
+        spawned subprocess pid and its log file path. If persistence
+        fails (e.g. DB write error), the caller MUST terminate the
+        just-launched process so no orphan is left behind — see
+        ``task_executor.launch_with_orphan_guard``.
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                "UPDATE tasks SET pid=?, log_path=?, updated_at=? WHERE id=?",
+                (pid, log_path, utc_now(), task_id),
+            )
 
     def transition(self, task_id: str, new_state: str,
                    expected: str | set[str] | None = None,
@@ -803,13 +825,19 @@ class StateStore:
     def transition_task(self, task_id: str, new_state: str,
                         result_source: str = "system",
                         fields: dict[str, Any] | None = None,
-                        expect_from: str | set[str] | None = None) -> dict[str, Any]:
+                        expect_from: str | set[str] | None = None,
+                        event_type: str | None = None) -> dict[str, Any]:
         """R2-aware task transition (fail-closed)."""
         # Normalise legacy aliases
         new_state = LEGACY_TASK_STATE_ALIASES.get(new_state, new_state)
 
         if new_state not in TASK_STATES:
             raise ValueError(f"invalid task state: {new_state!r}")
+
+        # R3F-3: legacy orchestrator code passes event_type= to request a
+        # custom event name. Default is TASK_TRANSITION for the transition
+        # itself; callers (e.g. Controller._fail) may override.
+        emit_event = event_type or "TASK_TRANSITION"
 
         # Human-triggered: restrict who can trigger what
         if result_source == "human":
@@ -864,7 +892,7 @@ class StateStore:
                 f"UPDATE tasks SET {assignments} WHERE id=?",
                 [*upd.values(), task_id],
             )
-            self._emit(conn, "TASK_TRANSITION", task_id, {
+            self._emit(conn, emit_event, task_id, {
                 "from": old_state, "to": new_state,
                 "result_source": result_source,
             })
@@ -1065,6 +1093,7 @@ class StateStore:
             "project_root": str(self.project_root),
             "project_state": self.get_project_state(),
             "task_counts": counts,
+            "counts": counts,  # legacy alias (R3F-3 back-compat with orchestrator tests)
             "gate_counts": gate_counts,
             "tasks": tasks,
             "gates": gates,

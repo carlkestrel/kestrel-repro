@@ -56,9 +56,33 @@ class ProcessManager:
         return self._read_exit_code(pid)
 
     @staticmethod
-    def _read_exit_code(pid: int) -> int:
-        # Exit status is unavailable after controller restart; recovery verifies artifacts.
-        return 0
+    def _read_exit_code(pid: int) -> int | None:
+        """Reap a process's exit code by signalling it.
+
+        Returns None when the exit code is genuinely unknown — e.g. when the
+        process was launched in a previous run (controller restart) and its
+        parent never reaped it. Callers MUST NOT treat None as 0; that would
+        silently mark a failed task as PASSED. The Controller surfaces None
+        via ``unknown_exit_code`` and the recovery path treats it as
+        INSUFFICIENT_EVIDENCE (R3F-3 task 7).
+        """
+        try:
+            # SIGCHLD-style reaping via os.waitpid (non-blocking WNOHANG).
+            pid_int = int(pid)
+            got_pid, status = os.waitpid(pid_int, os.WNOHANG)
+            if got_pid == 0:
+                # Still running — caller will see is_alive()=True and retry.
+                return None
+            if os.WIFEXITED(status):
+                return os.WEXITSTATUS(status)
+            if os.WIFSIGNALED(status):
+                return 128 + os.WTERMSIG(status)
+            return None  # unknown; do not coerce to 0
+        except ChildProcessError:
+            # Already reaped (e.g. by a sibling process). Genuinely unknown.
+            return None
+        except OSError:
+            return None
 
     @staticmethod
     def is_alive(pid: int | None) -> bool:

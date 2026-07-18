@@ -106,6 +106,7 @@ _REPROCTL_SUBCOMMANDS = {
 _LEGACY_MAPPED_TO_NEW = {
     "status": "startup",   # reproctl status → startup/cli.py
     "verify": "startup",   # reproctl verify → startup/cli.py
+    "watchdog": "startup", # reproctl watchdog → startup/cli.py
 }
 
 
@@ -128,6 +129,35 @@ def _dispatch_to_audit() -> Optional[int]:
               file=sys.stderr)
         return 10
     return audit_main()
+
+
+def _dispatch_startup_subcommand(args) -> Optional[int]:
+    """Forward startup subcommands to ``scripts/startup/cli.py``.
+
+    Used for ``start | doctor | resume | stop | watchdog | verify``.
+    """
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS_DIR))
+    # Build the startup argv: keep only --project / --log-level and pass them
+    # through so the startup CLI sees the same arguments. Skip --once unless
+    # explicitly true (the startup CLI doesn't accept --once False).
+    forwarded = [args.command]
+    v = getattr(args, "project", None)
+    if v not in (None, ""):
+        forwarded.extend(["--project", str(v)])
+    once = getattr(args, "once", None)
+    if once:
+        forwarded.append("--once")
+    v = getattr(args, "log_level", None)
+    if v not in (None, ""):
+        forwarded.extend(["--log-level", str(v)])
+    sys.argv = ["reproctl"] + forwarded
+    try:
+        from startup.cli import main as startup_main
+    except Exception as e:
+        print(f"[reproctl] could not import startup CLI: {e}", file=sys.stderr)
+        return 10
+    return startup_main(forwarded)
 
 
 def _dispatch_to_orchestrator() -> Optional[int]:
@@ -1822,6 +1852,13 @@ def build_parser() -> argparse.ArgumentParser:
     # integrity-check
     sub.add_parser("integrity-check", help="Verify schema files and core artifact integrity")
 
+    # watchdog — single-pass task / heartbeat inspection
+    p_wd = sub.add_parser("watchdog",
+                          help="Inspect running tasks and report heartbeat / log status")
+    p_wd.add_argument("--project", default="", help="project root path")
+    p_wd.add_argument("--once", action="store_true",
+                      help="single-pass inspection (default)")
+
     return parser
 
 
@@ -1859,8 +1896,12 @@ def main() -> None:
     cmd_fn = commands.get(args.command)
     if cmd_fn:
         cmd_fn(args)
-    else:
-        parser.print_help()
+        return
+    # Forward to startup CLI for unified commands (R3F-3)
+    if args.command in {"start", "doctor", "resume", "stop", "watchdog"}:
+        rc = _dispatch_startup_subcommand(args)
+        sys.exit(int(rc) if rc is not None else 0)
+    parser.print_help()
 
 
 if __name__ == "__main__":
