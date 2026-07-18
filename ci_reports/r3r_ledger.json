@@ -1,0 +1,137 @@
+{
+  "created_at": "2026-07-18T13:03:00Z",
+  "branch": "review/r3-20260718-a828023",
+  "head_sha": "4aa0ccefa87a336b281859fbe81cbade54fdaa66",
+  "base_sha": "a828023f537dfbfed4d7798066f3ca084d8072c9",
+  "honest_collection_count": 265,
+  "reported_collection_count_in_json": 403,
+  "overcount_source": "orchestrator(18) + core(120) + chaos(28) + non_chaos(237) = 403, but non_chaos includes orchestrator and core",
+  "issues": [
+    {
+      "id": "P0-1",
+      "title": "测试统计重复计算",
+      "status": "OPEN",
+      "verification": "pytest --collect-only returned 265 unique tests. JSON claimed 403. Confirmed double-count.",
+      "fix_plan": "Report unique_collected=265. targeted suites marked overlapping. No summing of overlapping suites."
+    },
+    {
+      "id": "P0-2",
+      "title": "证据未绑定真正被测代码",
+      "status": "OPEN",
+      "verification": "new_head_sha=e8178e8 in JSON but HEAD=4aa0cce. Evidence commits chase own SHA in infinite loop.",
+      "fix_plan": "review_subject_sha = code commit SHA. Evidence commit records subject SHA. No self-referential SHA in evidence."
+    },
+    {
+      "id": "P0-3",
+      "title": "CI-L1/L2/L3 真实失败",
+      "status": "OPEN",
+      "verification": "Pending full CI run. Known issues: nested f-strings (Python 3.12+ only, targets 3.10), multi-line \\ YAML continuation, torch index replaces PyPI, .execution/ 29 tracked files, Ruff errors.",
+      "fix_plan": "Python 3.10 compatible f-strings, | YAML blocks, separate pip installs, git rm --cached .execution/, Ruff fixes."
+    },
+    {
+      "id": "P0-4",
+      "title": "PlanSchema 无法进入 Controller",
+      "status": "OPEN",
+      "verification": "load_plan returns PlanSchema but controller.py treats self.plan as dict. AttributeError expected for canonical frontmatter plans.",
+      "fix_plan": "Add PlanSchema.to_runtime_dict(). Controller converts canonical result. Add YAML frontmatter E2E test."
+    },
+    {
+      "id": "P0-5",
+      "title": "non_evidentiary 被错误标记 PASSED",
+      "status": "OPEN",
+      "verification": "verifier.py line 88: returns (True, 'non-evidentiary') for non_evidentiary. Controller sets PASSED at line 212.",
+      "fix_plan": "Return NEEDS_HUMAN_WAIVER. Controller transitions to WAITING_APPROVAL. Only explicit human WAIVED completes."
+    },
+    {
+      "id": "P0-6",
+      "title": "过期审批被自动 WAIVED",
+      "status": "OPEN",
+      "verification": "approval_gate.py cleanup_expired() calls waive() at line 83. Machine replaces human decision.",
+      "fix_plan": "Change to EXPIRED state. EXPIRED tasks need explicit human re-approval. No auto-waive."
+    },
+    {
+      "id": "P0-7",
+      "title": "AuthorizationContract 未接入执行链",
+      "status": "OPEN",
+      "verification": "authorization.py exists but controller/scheduler/executor do not enforce it at claim/process launch.",
+      "fix_plan": "Add authorization_check() before claim and before process run. deny-by-default. E2E tests for each gate."
+    },
+    {
+      "id": "P0-8",
+      "title": "metrics_recompute 未实现",
+      "status": "OPEN",
+      "verification": "verifier.py _verify_impl has no metrics_recompute branch. Crashes on 'command' key.",
+      "fix_plan": "Implement confusion_matrix and predictions_labels recompute. mIoU formula. Tolerance comparison. Negative tests."
+    },
+    {
+      "id": "P0-9",
+      "title": "pause/resume 测试稳定挂起",
+      "status": "OPEN",
+      "verification": "test_13 times out. No bounded wait, unknown exit codes treated as 0.",
+      "fix_plan": "Bounded wait with poll_interval. Unknown exit code -> BLOCKED. 10x stability loop test."
+    },
+    {
+      "id": "P0-10",
+      "title": "SQLite lock 无有界处理",
+      "status": "OPEN",
+      "verification": "chaos test hangs >8s on locked SQLite. No timeout, no busy_timeout pragma.",
+      "fix_plan": "Add sqlite timeout=5s, PRAGMA busy_timeout, exponential backoff, SQLITE_BUSY_TIMEOUT structured error."
+    },
+    {
+      "id": "P0-11",
+      "title": "/repro-start 未实现统一自动流程",
+      "status": "OPEN",
+      "verification": "Current repro-start: requires --project --plan, defaults strict, only claims one task, no continuous exec, no auth contract.",
+      "fix_plan": "Rewrite as full guided flow: auto-detect, Chinese UI, 5 modes, centralized auth, one-shot confirm, auto-execute to terminal state, resume."
+    },
+    {
+      "id": "P0-12",
+      "title": "SQLite 不是唯一权威状态",
+      "status": "OPEN",
+      "verification": "state_machine.py reads/writes execution_state.json. task_graph.yaml maintained independently. StateStore not used for key decisions.",
+      "fix_plan": "Make state.sqlite3 the only authority. execution_state.json is read-only projection. E2E test for JSON tampering."
+    },
+    {
+      "id": "P1-1",
+      "title": "PR 描述与分支状态不一致",
+      "status": "OPEN",
+      "verification": "PR body says 237/258, R3-5..R3-7 pending. Current branch has R3F-678 PASS.",
+      "fix_plan": "Update PR body with current state."
+    },
+    {
+      "id": "P1-2",
+      "title": "测试修改 tracked performance 文件",
+      "status": "OPEN",
+      "verification": "Need to verify tests use tmp_path and not tracked files.",
+      "fix_plan": "Add test_suite_does_not_dirty_worktree test. Use tmp_path fixtures."
+    },
+    {
+      "id": "P1-3",
+      "title": ".execution/ 仍被 Git 跟踪",
+      "status": "OPEN",
+      "verification": "git ls-files .execution/ returns 29 files despite .gitignore entry.",
+      "fix_plan": "git rm -r --cached .execution/. Add CI check to prevent regression."
+    },
+    {
+      "id": "P1-4",
+      "title": "文档与实现冲突",
+      "status": "OPEN",
+      "verification": "Multiple discrepancies found during P0 survey.",
+      "fix_plan": "After fixing all P0s, update docs to match real code. No doc fabricated before implementation."
+    }
+  ],
+  "planned_test_files": [
+    "test_canonical_plan_controller_e2e.py",
+    "test_authorization_enforcement_e2e.py",
+    "test_non_evidentiary_waiver.py",
+    "test_metrics_recompute_verifier.py",
+    "test_pause_resume_stability.py",
+    "test_sqlite_busy_timeout.py",
+    "test_repro_start_guided_flow.py",
+    "test_single_state_authority_e2e.py",
+    "test_evidence_manifest_consistency.py",
+    "test_ci_commands.py",
+    "test_no_tracked_runtime_artifacts.py",
+    "test_test_suite_does_not_dirty_worktree.py"
+  ]
+}
