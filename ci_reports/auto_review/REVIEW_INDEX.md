@@ -130,4 +130,27 @@ This file tracks every R3F phase: commit, head SHA, test results, evidence, push
 ---
 
 ## R3F-4 — Plan / Mode / Authorization integration
-_tbd_
+
+| Field | Value |
+|---|---|
+| Phase | R3F-4 |
+| Status | **PASS** |
+| Local head SHA (start) | `83f0c9ad4bbdea26efcede82177b2a2c43a07bbb` |
+| Local head SHA (after commit) | `b0dce34aca52ab057f104da670681964bad0a912` |
+| Remote head SHA | _filled after push_ |
+| base SHA | `a828023f537dfbfed4d7798066f3ca084d8072c9` (untouched ✅) |
+| PR | https://github.com/carlkestrel/kestrel-repro/pull/1 (Draft ✅) |
+| Test commands | orchestrator (`--timeout=60`), core suite (`--timeout=120`), chaos (`--timeout=300`), all others (`--timeout=120`) |
+| Tests collected | 403 |
+| Tests passed | **400** |
+| Tests failed | 3 (all TEST_DEFECT, pre-existing) |
+| Orchestrator | **18/18 passed** ✅ |
+| Chaos | 25/28 passed (3 TEST_DEFECT) |
+| Raw evidence | `ci_reports/r3_repair/R3F_4_BASELINE.md`, `R3F_4_chaos_JUNIT.xml`, `R3F_4_other_JUNIT.xml` |
+| Key changes | (1) `TaskDef.non_evidentiary` field; (2) `validate_plan` respects opt-out; (3) `migrate_legacy_plan` normalizes schema_version and auto-sets non_evidentiary; (4) controller `load_plan` delegates to canonical `startup.plan_schema` with legacy fallback |
+| Rollback commit | `b0dce34aca52ab057f104da670681964bad0a912` (single-commit phase; reset to `83f0c9ad` to roll back) |
+| Pushed to `review/r3-20260718-a828023`? | ⏳ pending |
+| GitHub Actions URL | https://github.com/carlkestrel/kestrel-repro/pull/1 (still Draft) |
+| `LATEST_REVIEW_REQUEST.json` updated | ✅ |
+| Allow next phase? | yes |
+| External review status | NOT_REQUESTED |

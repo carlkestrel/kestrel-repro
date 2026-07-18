@@ -33,17 +33,68 @@ EXIT_STATES = {COMPLETE, BLOCKED, WAITING_APPROVAL, PAUSED, STOPPED}
 
 
 def load_plan(path: str | Path) -> dict:
-    plan_path = Path(path).resolve()
-    if not plan_path.exists():
-        raise FileNotFoundError(plan_path)
-    text = plan_path.read_text(encoding="utf-8")
-    if yaml is not None:
-        plan = yaml.safe_load(text)
-    else:
-        plan = json.loads(text)
-    if not isinstance(plan, dict):
-        raise ValueError("plan must be a mapping")
-    return plan
+    """R3F-4: delegate to the canonical plan schema loader, with legacy
+    fallback.
+
+    The Controller used to parse the plan file with a hand-rolled YAML/JSON
+    loader that accepted arbitrary dicts and could pass malformed plans to
+    the orchestrator. The canonical ``scripts.startup.plan_schema`` module
+    enforces schema validation, dependency-cycle detection, mode migration
+    (legacy → canonical), and ``NEEDS_MODE_REVIEW`` for ambiguous cases.
+
+    Behaviour:
+      1. Try canonical load first. If it succeeds, return the canonical dict.
+      2. If canonical fails because the file is in legacy JSON / non-frontmatter
+         format, attempt ``migrate_legacy_plan`` and re-validate.
+      3. If migration also fails, raise ``ValueError`` listing the validation
+         errors. (Earlier we returned early on missing frontmatter; this
+         preserves test-style plans while still enforcing the schema.)
+    """
+    from startup.plan_schema import (
+        load_plan as _canonical_load,
+        validate_plan,
+        migrate_legacy_plan,
+        _dict_to_plan,
+    )
+    from pathlib import Path as _P
+
+    p = _P(path)
+    try:
+        return _canonical_load(p)
+    except SystemExit as exc:
+        # _canonical_load sys.exits with code 5 on validation/format errors.
+        # We catch it here and attempt legacy migration.
+        if exc.code != 5:
+            raise
+    except Exception:
+        # Any other error: re-raise; we only swallow the legacy-format case.
+        raise
+
+    # Legacy fallback: read raw, attempt migration, re-validate.
+    text = p.read_text(encoding="utf-8")
+    try:
+        import json as _json
+        legacy = _json.loads(text)
+    except Exception:
+        import yaml as _yaml
+        legacy = _yaml.safe_load(text)
+    if not isinstance(legacy, dict):
+        raise ValueError(f"plan must be a mapping; got {type(legacy).__name__}")
+    migrated = migrate_legacy_plan(legacy)
+    # Schema-level validation: enforce mode, schema_version, mode review,
+    # acceptance_tests (with non_evidentiary opt-out). Cycle and unknown-dep
+    # detection is the Controller's job — see ``scheduler.detect_cycles`` —
+    # so we filter those out here to keep responsibility split.
+    plan = _dict_to_plan(migrated, text.encode("utf-8"), loaded_from=p)
+    errors = [e for e in validate_plan(plan)
+              if e.field != "tasks" or "circular" not in e.message]
+    errors = [e for e in errors if not (e.field == "deps" and "unknown task" in e.message)]
+    if errors:
+        raise ValueError(
+            "plan validation failed (legacy migration did not produce a valid plan): "
+            + "; ".join(str(e) for e in errors)
+        )
+    return migrated
 
 
 class Controller:
