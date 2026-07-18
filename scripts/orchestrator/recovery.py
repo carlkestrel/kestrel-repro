@@ -7,6 +7,7 @@ This module extends the base RecoveryManager with:
 - Last valid checkpoint detection
 - Recovery chain validation
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -20,6 +21,7 @@ def utc_now() -> str:
 
 class CheckpointIntegrityError(Exception):
     """Raised when checkpoint integrity check fails."""
+
     pass
 
 
@@ -54,23 +56,24 @@ class RecoveryManager:
                 # Verify checkpoint integrity
                 integrity = self.verify_checkpoint(checkpoint_path)
                 if not integrity["valid"]:
-                    checkpoint_issues.append({
-                        "task_id": task["id"],
-                        "checkpoint": str(checkpoint_path),
-                        "reason": integrity.get("reason", "unknown"),
-                    })
-                    # Still mark for verification but flag the issue
-                    self.store.record_event(
-                        "CHECKPOINT_INTEGRITY_WARNING", task["id"], integrity
+                    checkpoint_issues.append(
+                        {
+                            "task_id": task["id"],
+                            "checkpoint": str(checkpoint_path),
+                            "reason": integrity.get("reason", "unknown"),
+                        }
                     )
+                    # Still mark for verification but flag the issue
+                    self.store.record_event("CHECKPOINT_INTEGRITY_WARNING", task["id"], integrity)
 
-            checkpoint_exists = bool(
-                checkpoint and checkpoint_path and checkpoint_path.exists()
-            )
+            checkpoint_exists = bool(checkpoint and checkpoint_path and checkpoint_path.exists())
 
             self.store.transition(
-                task["id"], "VERIFYING", expected="RUNNING",
-                fields={"pid": None}, event_type="TASK_RECOVERED",
+                task["id"],
+                "VERIFYING",
+                expected="RUNNING",
+                fields={"pid": None},
+                event_type="TASK_RECOVERED",
             )
             verification_ready.append(task["id"])
 
@@ -87,9 +90,14 @@ class RecoveryManager:
                         (utc_now(), task["id"]),
                     )
                     self.store._record_event_tx(
-                        conn, "TASK_ORPHAN_CLEARED", task["id"],
-                        {"from": "VERIFYING", "to": "READY",
-                         "reason": "orphan_VERIFYING—no pid on resume"},
+                        conn,
+                        "TASK_ORPHAN_CLEARED",
+                        task["id"],
+                        {
+                            "from": "VERIFYING",
+                            "to": "READY",
+                            "reason": "orphan_VERIFYING—no pid on resume",
+                        },
                     )
 
         summary = {
@@ -106,7 +114,7 @@ class RecoveryManager:
     def verify_checkpoint(self, checkpoint_path: Path) -> dict:
         """
         Verify checkpoint integrity.
-        
+
         Checks:
         1. File exists and is readable
         2. File size is reasonable (not empty, not suspiciously small)
@@ -147,7 +155,11 @@ class RecoveryManager:
                 missing_keys = []
 
                 for key in expected_keys:
-                    if key in ckpt or any(key in k for k in ckpt.keys()) if isinstance(ckpt, dict) else False:
+                    if (
+                        key in ckpt or any(key in k for k in ckpt.keys())
+                        if isinstance(ckpt, dict)
+                        else False
+                    ):
                         found_keys.append(key)
                     else:
                         missing_keys.append(key)
@@ -172,7 +184,9 @@ class RecoveryManager:
                 try:
                     state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
                     result["details"]["type"] = "state_dict"
-                    result["details"]["num_params"] = len(state_dict) if isinstance(state_dict, dict) else 0
+                    result["details"]["num_params"] = (
+                        len(state_dict) if isinstance(state_dict, dict) else 0
+                    )
                     result["valid"] = True
                     result["reason"] = "state_dict loaded successfully"
                 except Exception as e2:
@@ -189,7 +203,7 @@ class RecoveryManager:
     def find_last_valid_checkpoint(self, checkpoints_dir: Path) -> Path | None:
         """
         Find the last valid checkpoint in a directory.
-        
+
         Checks for files matching common checkpoint patterns and returns
         the most recently modified valid checkpoint.
         """
@@ -242,12 +256,15 @@ class RecoveryManager:
 
                 # Build recovery command
                 if integrity["valid"]:
-                    recovery["recovery_command"] = self._build_recovery_command(task, checkpoint_path)
+                    recovery["recovery_command"] = self._build_recovery_command(
+                        task, checkpoint_path
+                    )
 
         # Check metric continuity
         run_id = task.get("run_id")
         if run_id:
             from .evidence_manager import EvidenceManager
+
             em = EvidenceManager(self.project_root)
             runs = em.list_runs(task_id=task["id"])
             if len(runs) > 1:
@@ -280,7 +297,7 @@ class RecoveryManager:
     def validate_metric_continuity(self, task_id: str) -> dict:
         """
         Validate that metrics before and after recovery are properly separated.
-        
+
         Returns:
             - ok: metrics are properly tagged and not mixed
             - mixed: metrics may be mixed across recovery boundaries
@@ -302,10 +319,7 @@ class RecoveryManager:
             manifest = run
             if manifest.get("status") == "RECOVERED":
                 # Check if recovery marker exists
-                if not any(
-                    "recovered_from" in str(r)
-                    for r in runs
-                ):
+                if not any("recovered_from" in str(r) for r in runs):
                     continuity_ok = False
                     issues.append(f"Run {run.get('run_id')} marked as RECOVERED but no source")
 
@@ -342,10 +356,12 @@ class RecoveryManager:
                         summary["with_valid_checkpoint"] += 1
                     else:
                         summary["with_invalid_checkpoint"] += 1
-                        summary["needs_attention"].append({
-                            "task_id": task["id"],
-                            "issue": "invalid_checkpoint",
-                        })
+                        summary["needs_attention"].append(
+                            {
+                                "task_id": task["id"],
+                                "issue": "invalid_checkpoint",
+                            }
+                        )
                 else:
                     summary["no_checkpoint"] += 1
 

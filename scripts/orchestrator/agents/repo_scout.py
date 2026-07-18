@@ -3,6 +3,7 @@ Repo Scout Agent - NORA-style specialist for GitHub repository discovery.
 
 This agent searches for and evaluates code repositories relevant to the target paper.
 """
+
 from __future__ import annotations
 
 import json
@@ -67,11 +68,14 @@ class RepoScoutAgent(SpecialistAgent):
 
         top_repo = evaluated[0] if evaluated else {}
 
-        self.prepare_handoff(context, {
-            "repositories": evaluated,
-            "top_repository": top_repo,
-            "query": search_query,
-        })
+        self.prepare_handoff(
+            context,
+            {
+                "repositories": evaluated,
+                "top_repository": top_repo,
+                "query": search_query,
+            },
+        )
 
         return AgentResult(
             agent_type=self.agent_type,
@@ -99,9 +103,13 @@ class RepoScoutAgent(SpecialistAgent):
 
         if paper_title:
             words = paper_title.split()
-            significant = [w for w in words if len(w) > 3 and w.lower() not in {
-                "with", "from", "using", "learning", "deep", "neural", "network"
-            }]
+            significant = [
+                w
+                for w in words
+                if len(w) > 3
+                and w.lower()
+                not in {"with", "from", "using", "learning", "deep", "neural", "network"}
+            ]
             parts.extend(significant[:5])
 
         parts.extend(keywords[:5])
@@ -115,7 +123,17 @@ class RepoScoutAgent(SpecialistAgent):
 
         try:
             result = subprocess.run(
-                ["gh", "api", "search/repositories", "-q", query, "-L", "10", "--jq", ".items[] | {name: .full_name, stars: .stargazers_count, description: .description, url: .html_url, language: .language, updated: .updated_at}"],
+                [
+                    "gh",
+                    "api",
+                    "search/repositories",
+                    "-q",
+                    query,
+                    "-L",
+                    "10",
+                    "--jq",
+                    ".items[] | {name: .full_name, stars: .stargazers_count, description: .description, url: .html_url, language: .language, updated: .updated_at}",
+                ],
                 capture_output=True,
                 text=True,
                 timeout=30,

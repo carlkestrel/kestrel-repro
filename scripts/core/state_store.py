@@ -19,6 +19,7 @@ Schema highlights:
   * Approval gate / gate / run / retry / heartbeat / event / evidence / authorization
     all live in the same DB and the same transaction system.
 """
+
 from __future__ import annotations
 
 import csv
@@ -37,18 +38,39 @@ from typing import Any
 
 # ─── Enums (R2 §6) ────────────────────────────────────────────────────
 
-PROJECT_STATES = frozenset({
-    "DETECTED", "INTERVIEWING", "PLANNED", "WAITING_CONFIRMATION",
-    "RUNNING", "WAITING_DECISION", "PAUSED", "BLOCKED",
-    "COMPLETED", "STOPPED",
-})
+PROJECT_STATES = frozenset(
+    {
+        "DETECTED",
+        "INTERVIEWING",
+        "PLANNED",
+        "WAITING_CONFIRMATION",
+        "RUNNING",
+        "WAITING_DECISION",
+        "PAUSED",
+        "BLOCKED",
+        "COMPLETED",
+        "STOPPED",
+    }
+)
 
-TASK_STATES = frozenset({
-    "PENDING", "READY", "WAITING_APPROVAL", "APPROVED",
-    "RUNNING", "VERIFYING", "PASSED", "FAILED",
-    "RETRY_WAIT", "BLOCKED", "REJECTED", "WAIVED", "EXPIRED",
-    "LEGACY_UNVERIFIED",
-})
+TASK_STATES = frozenset(
+    {
+        "PENDING",
+        "READY",
+        "WAITING_APPROVAL",
+        "APPROVED",
+        "RUNNING",
+        "VERIFYING",
+        "PASSED",
+        "FAILED",
+        "RETRY_WAIT",
+        "BLOCKED",
+        "REJECTED",
+        "WAIVED",
+        "EXPIRED",
+        "LEGACY_UNVERIFIED",
+    }
+)
 
 # Aliases for backward compatibility with orchestrator code that used
 # the original enums (PASS / FAIL). These are mapped to the R2 names.
@@ -66,19 +88,19 @@ HUMAN_TRANSITIONS: dict[str, set[str]] = {
 }
 
 TASK_TRANSITIONS: dict[str, set[str]] = {
-    "PENDING":           {"READY", "FAILED", "BLOCKED"},
-    "READY":             {"RUNNING", "WAITING_APPROVAL", "REJECTED", "FAILED", "BLOCKED"},
-    "WAITING_APPROVAL":  {"APPROVED", "REJECTED", "WAIVED", "EXPIRED"},
-    "APPROVED":          {"RUNNING"},
-    "RUNNING":           {"VERIFYING", "FAILED", "READY"},
-    "VERIFYING":         {"PASSED", "FAILED", "WAITING_APPROVAL"},
-    "FAILED":            {"RETRY_WAIT", "BLOCKED"},
-    "RETRY_WAIT":        {"READY"},
-    "PASSED":            set(),
-    "REJECTED":          set(),
-    "WAIVED":            set(),
-    "EXPIRED":           set(),
-    "BLOCKED":           {"READY"},
+    "PENDING": {"READY", "FAILED", "BLOCKED"},
+    "READY": {"RUNNING", "WAITING_APPROVAL", "REJECTED", "FAILED", "BLOCKED"},
+    "WAITING_APPROVAL": {"APPROVED", "REJECTED", "WAIVED", "EXPIRED"},
+    "APPROVED": {"RUNNING"},
+    "RUNNING": {"VERIFYING", "FAILED", "READY"},
+    "VERIFYING": {"PASSED", "FAILED", "WAITING_APPROVAL"},
+    "FAILED": {"RETRY_WAIT", "BLOCKED"},
+    "RETRY_WAIT": {"READY"},
+    "PASSED": set(),
+    "REJECTED": set(),
+    "WAIVED": set(),
+    "EXPIRED": set(),
+    "BLOCKED": {"READY"},
     "LEGACY_UNVERIFIED": {"PASSED", "FAILED", "BLOCKED"},
 }
 
@@ -89,6 +111,7 @@ VERIFIER_SOURCES = frozenset({"evidence_verifier", "acceptance", "system"})
 @dataclass
 class StateConflict(Exception):
     """Raised when SQLite state conflicts with a legacy state file."""
+
     sqlite_state: dict[str, Any]
     legacy_state: dict[str, Any]
     report_path: Path
@@ -119,6 +142,7 @@ def utc_now() -> str:
 
 # ─── Canonical DB path resolver ───────────────────────────────────────
 
+
 def canonical_db_path(project_root: str | Path) -> Path:
     """Return the canonical DB path for the given project root.
 
@@ -138,6 +162,7 @@ def canonical_repro_dir(project_root: str | Path) -> Path:
 
 
 # ─── StateStore class ─────────────────────────────────────────────────
+
 
 class StateStore:
     """R3-0 canonical SQLite-backed state store.
@@ -203,10 +228,7 @@ class StateStore:
 
     def _initialize(self) -> None:
         ddl = [
-            "CREATE TABLE IF NOT EXISTS metadata ("
-            "  key TEXT PRIMARY KEY,"
-            "  value TEXT NOT NULL"
-            ")",
+            "CREATE TABLE IF NOT EXISTS metadata (  key TEXT PRIMARY KEY,  value TEXT NOT NULL)",
             "CREATE TABLE IF NOT EXISTS project ("
             "  project_id TEXT PRIMARY KEY,"
             "  project_root TEXT NOT NULL,"
@@ -387,15 +409,17 @@ class StateStore:
 
     # ─── Event helpers ────────────────────────────────────────────────
 
-    def _emit(self, conn: sqlite3.Connection,
-               event_type: str,
-               task_id: str | None = None,
-               payload: dict[str, Any] | None = None) -> int:
+    def _emit(
+        self,
+        conn: sqlite3.Connection,
+        event_type: str,
+        task_id: str | None = None,
+        payload: dict[str, Any] | None = None,
+    ) -> int:
         seq = conn.execute(
             "INSERT INTO events(seq,timestamp,event_type,task_id,payload_json) "
             "VALUES(NULL,?,?,?,?)",
-            (utc_now(), event_type, task_id,
-             json.dumps(payload or {}, sort_keys=True)),
+            (utc_now(), event_type, task_id, json.dumps(payload or {}, sort_keys=True)),
         ).lastrowid
         return int(seq)
 
@@ -412,9 +436,7 @@ class StateStore:
 
     def get_metadata(self, key: str, default: Any = None) -> Any:
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT value FROM metadata WHERE key=?", (key,)
-            ).fetchone()
+            row = conn.execute("SELECT value FROM metadata WHERE key=?", (key,)).fetchone()
         if row is None:
             return default
         try:
@@ -436,8 +458,9 @@ class StateStore:
 
     # ─── Plan initialization (R3-1 legacy adapter) ───────────────────
 
-    def initialize_plan(self, plan: dict[str, Any], plan_path: str | Path,
-                        automation: str | None = None) -> None:
+    def initialize_plan(
+        self, plan: dict[str, Any], plan_path: str | Path, automation: str | None = None
+    ) -> None:
         """R3-1 legacy adapter: bridge Controller's old `initialize_plan` call
         to canonical R2 APIs.
 
@@ -461,26 +484,29 @@ class StateStore:
             source_sha = hashlib.sha256(source_bytes).hexdigest()
 
         # Compute canonical hash from plan dict (mirror plan_schema.py logic)
-        canonical = {k: v for k, v in plan.items()
-                     if k not in ("_source_sha", "schema_version_comment")}
-        canonical_bytes = json.dumps(
-            canonical, sort_keys=True, separators=(",", ":")
-        ).encode()
+        canonical = {
+            k: v for k, v in plan.items() if k not in ("_source_sha", "schema_version_comment")
+        }
+        canonical_bytes = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
         canonical_sha = hashlib.sha256(canonical_bytes).hexdigest()
 
         schema_version = str(plan.get("schema_version", "1.0"))
-        canonicalization_version = str(plan.get(
-            "canonicalization_version", CURRENT_CANONICALIZATION_VERSION
-        ))
+        canonicalization_version = str(
+            plan.get("canonicalization_version", CURRENT_CANONICALIZATION_VERSION)
+        )
         bound_hash = compute_authorization_bound_hash(
-            canonical_sha, schema_version, canonicalization_version,
+            canonical_sha,
+            schema_version,
+            canonicalization_version,
         )
 
         # Project init + plan record
         self.init_project(project_id, str(self.project_root))
         self.record_plan(
-            plan_id=plan_id, project_id=project_id,
-            canonical_hash=canonical_sha, source_hash=source_sha,
+            plan_id=plan_id,
+            project_id=project_id,
+            canonical_hash=canonical_sha,
+            source_hash=source_sha,
             schema_version=schema_version,
             authorization_bound_hash=bound_hash,
             canonicalization_version=canonicalization_version,
@@ -495,14 +521,16 @@ class StateStore:
                     task_defs.append(t)
                 else:
                     # Map dataclass TaskDef back to dict if needed
-                    task_defs.append({
-                        "id": getattr(t, "id", str(uuid.uuid4())),
-                        "name": getattr(t, "name", "task"),
-                        "gate": getattr(t, "gate", "default"),
-                        "deps": getattr(t, "deps", []),
-                        "command": getattr(t, "command", ""),
-                        "acceptance_tests": getattr(t, "acceptance_tests", []),
-                    })
+                    task_defs.append(
+                        {
+                            "id": getattr(t, "id", str(uuid.uuid4())),
+                            "name": getattr(t, "name", "task"),
+                            "gate": getattr(t, "gate", "default"),
+                            "deps": getattr(t, "deps", []),
+                            "command": getattr(t, "command", ""),
+                            "acceptance_tests": getattr(t, "acceptance_tests", []),
+                        }
+                    )
             self.create_tasks(plan_id=plan_id, task_defs=task_defs)
 
         # Persist automation level metadata
@@ -531,11 +559,16 @@ class StateStore:
 
     # ─── Plan ──────────────────────────────────────────────────────────
 
-    def record_plan(self, plan_id: str, project_id: str,
-                    canonical_hash: str, source_hash: str,
-                    schema_version: str,
-                    authorization_bound_hash: str = "",
-                    canonicalization_version: str = "1") -> None:
+    def record_plan(
+        self,
+        plan_id: str,
+        project_id: str,
+        canonical_hash: str,
+        source_hash: str,
+        schema_version: str,
+        authorization_bound_hash: str = "",
+        canonicalization_version: str = "1",
+    ) -> None:
         """Record a plan load. The authorization_bound_hash must include
         schema_version and canonicalization_version — see ADR-001.
         """
@@ -551,16 +584,27 @@ class StateStore:
                 "(plan_id,project_id,canonical_plan_hash,source_sha256,"
                 "authorization_bound_hash,schema_version,canonicalization_version,"
                 "loaded_at) VALUES(?,?,?,?,?,?,?,?)",
-                (plan_id, project_id, canonical_hash, source_hash,
-                 authorization_bound_hash, schema_version, canonicalization_version,
-                 now),
+                (
+                    plan_id,
+                    project_id,
+                    canonical_hash,
+                    source_hash,
+                    authorization_bound_hash,
+                    schema_version,
+                    canonicalization_version,
+                    now,
+                ),
             )
-            self._emit(conn, "PLAN_RECORDED", payload={
-                "plan_id": plan_id,
-                "canonical_hash": canonical_hash,
-                "authorization_bound_hash": authorization_bound_hash,
-                "schema_version": schema_version,
-            })
+            self._emit(
+                conn,
+                "PLAN_RECORDED",
+                payload={
+                    "plan_id": plan_id,
+                    "canonical_hash": canonical_hash,
+                    "authorization_bound_hash": authorization_bound_hash,
+                    "schema_version": schema_version,
+                },
+            )
         # Also store canonical_plan_hash in metadata so legacy conflict
         # detection keeps working.
         self.set_metadata("canonical_plan_hash", canonical_hash)
@@ -570,14 +614,20 @@ class StateStore:
 
     # ─── Authorization ─────────────────────────────────────────────────
 
-    def upsert_authorization(self, contract_id: str, project_id: str,
-                             plan_hash: str, git_commit: str,
-                             authorization_bound_hash: str,
-                             granted: list[str], denied: list[str],
-                             write_roots: list[str],
-                             policies: dict[str, str],
-                             budgets: dict[str, int],
-                             other: dict[str, Any]) -> None:
+    def upsert_authorization(
+        self,
+        contract_id: str,
+        project_id: str,
+        plan_hash: str,
+        git_commit: str,
+        authorization_bound_hash: str,
+        granted: list[str],
+        denied: list[str],
+        write_roots: list[str],
+        policies: dict[str, str],
+        budgets: dict[str, int],
+        other: dict[str, Any],
+    ) -> None:
         now = utc_now()
         with self.transaction() as conn:
             conn.execute(
@@ -592,9 +642,15 @@ class StateStore:
                 "  needs_reconfirmation,updated_at"
                 ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
-                    contract_id, project_id, plan_hash, authorization_bound_hash,
-                    git_commit, now, other.get("expires_at", ""),
-                    json.dumps(granted), json.dumps(denied),
+                    contract_id,
+                    project_id,
+                    plan_hash,
+                    authorization_bound_hash,
+                    git_commit,
+                    now,
+                    other.get("expires_at", ""),
+                    json.dumps(granted),
+                    json.dumps(denied),
                     json.dumps(write_roots),
                     policies.get("network", "deny"),
                     policies.get("clone", "deny"),
@@ -616,10 +672,14 @@ class StateStore:
                     now,
                 ),
             )
-            self._emit(conn, "AUTHORIZATION_UPSERTED", payload={
-                "contract_id": contract_id,
-                "authorization_bound_hash": authorization_bound_hash,
-            })
+            self._emit(
+                conn,
+                "AUTHORIZATION_UPSERTED",
+                payload={
+                    "contract_id": contract_id,
+                    "authorization_bound_hash": authorization_bound_hash,
+                },
+            )
 
     def get_authorization(self, contract_id: str) -> dict[str, Any] | None:
         with self._connect() as conn:
@@ -672,9 +732,14 @@ class StateStore:
                 (now,),
             )
             n = cur.rowcount
-            self._emit(conn, "AUTHORIZATIONS_NEEDS_RECONFIRM", payload={
-                "count": n, "reason": reason,
-            })
+            self._emit(
+                conn,
+                "AUTHORIZATIONS_NEEDS_RECONFIRM",
+                payload={
+                    "count": n,
+                    "reason": reason,
+                },
+            )
         return n
 
     # ─── Tasks ─────────────────────────────────────────────────────────
@@ -691,7 +756,10 @@ class StateStore:
                     "  resource_requirements_json,writes_json,non_evidentiary,state,attempts,updated_at"
                     ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
-                        t["id"], plan_id, t["name"], t["gate"],
+                        t["id"],
+                        plan_id,
+                        t["name"],
+                        t["gate"],
                         json.dumps(t.get("deps", [])),
                         json.dumps(t.get("command", "")),
                         int(t.get("shell", False)),
@@ -701,12 +769,13 @@ class StateStore:
                         json.dumps(t.get("resource_requirements", {})),
                         json.dumps(t.get("writes", [])),
                         int(bool(t.get("non_evidentiary", False))),
-                        "PENDING", 0, now,
+                        "PENDING",
+                        0,
+                        now,
                     ),
                 )
                 count += 1
-            self._emit(conn, "TASKS_CREATED",
-                       payload={"count": count, "plan_id": plan_id})
+            self._emit(conn, "TASKS_CREATED", payload={"count": count, "plan_id": plan_id})
         return count
 
     def list_tasks(self, statuses: set[str] | None = None) -> list[dict[str, Any]]:
@@ -727,9 +796,7 @@ class StateStore:
 
     def get_task(self, task_id: str) -> dict[str, Any] | None:
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT * FROM tasks WHERE id=?", (task_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         if not row:
             return None
         return self._row_to_task(dict(row))
@@ -797,13 +864,10 @@ class StateStore:
                 ("RUNNING", owner, now, now, task_id),
             )
             self._emit(conn, "TASK_CLAIMED", task_id, {"owner": owner})
-            claimed_row = conn.execute(
-                "SELECT * FROM tasks WHERE id=?", (task_id,)
-            ).fetchone()
+            claimed_row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         return self._row_to_task(dict(claimed_row))  # type: ignore[arg-type]
 
-    def set_process(self, task_id: str, pid: int | None,
-                    log_path: str | None) -> None:
+    def set_process(self, task_id: str, pid: int | None, log_path: str | None) -> None:
         """R3F-3: persist pid/log_path for a claimed (RUNNING) task.
 
         TaskExecutor.launch uses this after ``start()`` to record the
@@ -818,21 +882,23 @@ class StateStore:
                 (pid, log_path, utc_now(), task_id),
             )
 
-    def transition(self, task_id: str, new_state: str,
-                   expected: str | set[str] | None = None,
-                   **kwargs: Any) -> dict[str, Any]:
+    def transition(
+        self, task_id: str, new_state: str, expected: str | set[str] | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         """R3-1 legacy adapter: alias for `transition_task` that accepts
         ``expected=`` instead of ``expect_from=``.
         """
-        return self.transition_task(
-            task_id, new_state, expect_from=expected, **kwargs
-        )
+        return self.transition_task(task_id, new_state, expect_from=expected, **kwargs)
 
-    def transition_task(self, task_id: str, new_state: str,
-                        result_source: str = "system",
-                        fields: dict[str, Any] | None = None,
-                        expect_from: str | set[str] | None = None,
-                        event_type: str | None = None) -> dict[str, Any]:
+    def transition_task(
+        self,
+        task_id: str,
+        new_state: str,
+        result_source: str = "system",
+        fields: dict[str, Any] | None = None,
+        expect_from: str | set[str] | None = None,
+        event_type: str | None = None,
+    ) -> dict[str, Any]:
         """R2-aware task transition (fail-closed)."""
         # Normalise legacy aliases
         new_state = LEGACY_TASK_STATE_ALIASES.get(new_state, new_state)
@@ -850,9 +916,7 @@ class StateStore:
             if new_state == "PASSED":
                 raise InvalidTransition(task_id, "(unknown)", new_state)
             with self._connect() as conn:
-                row = conn.execute(
-                    "SELECT state FROM tasks WHERE id=?", (task_id,)
-                ).fetchone()
+                row = conn.execute("SELECT state FROM tasks WHERE id=?", (task_id,)).fetchone()
             if not row:
                 raise KeyError(task_id)
             from_state = row["state"]
@@ -867,9 +931,7 @@ class StateStore:
 
         now = utc_now()
         with self.transaction() as conn:
-            row = conn.execute(
-                "SELECT state FROM tasks WHERE id=?", (task_id,)
-            ).fetchone()
+            row = conn.execute("SELECT state FROM tasks WHERE id=?", (task_id,)).fetchone()
             if not row:
                 raise KeyError(task_id)
             old_state = row["state"]
@@ -885,11 +947,20 @@ class StateStore:
                 if new_state not in TASK_TRANSITIONS[old_state]:
                     raise InvalidTransition(task_id, old_state, new_state)
 
-            upd: dict[str, Any] = {"state": new_state, "updated_at": now,
-                                    "result_source": result_source}
+            upd: dict[str, Any] = {
+                "state": new_state,
+                "updated_at": now,
+                "result_source": result_source,
+            }
             if fields:
-                for k in ("pid", "log_path", "started_at", "finished_at",
-                          "failure_reason", "attempts"):
+                for k in (
+                    "pid",
+                    "log_path",
+                    "started_at",
+                    "finished_at",
+                    "failure_reason",
+                    "attempts",
+                ):
                     if k in fields:
                         upd[k] = fields[k]
 
@@ -898,29 +969,36 @@ class StateStore:
                 f"UPDATE tasks SET {assignments} WHERE id=?",
                 [*upd.values(), task_id],
             )
-            self._emit(conn, emit_event, task_id, {
-                "from": old_state, "to": new_state,
-                "result_source": result_source,
-            })
-            result_row = conn.execute(
-                "SELECT * FROM tasks WHERE id=?", (task_id,)
-            ).fetchone()
+            self._emit(
+                conn,
+                emit_event,
+                task_id,
+                {
+                    "from": old_state,
+                    "to": new_state,
+                    "result_source": result_source,
+                },
+            )
+            result_row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         return self._row_to_task(dict(result_row))  # type: ignore[arg-type]
 
     # ─── Gates ─────────────────────────────────────────────────────────
 
-    def upsert_gate(self, gate_name: str, plan_id: str,
-                    state: str = "LOCKED") -> None:
+    def upsert_gate(self, gate_name: str, plan_id: str, state: str = "LOCKED") -> None:
         now = utc_now()
         with self.transaction() as conn:
             conn.execute(
-                "INSERT OR REPLACE INTO gates"
-                "(gate_name,state,plan_id,updated_at) VALUES(?,?,?,?)",
+                "INSERT OR REPLACE INTO gates(gate_name,state,plan_id,updated_at) VALUES(?,?,?,?)",
                 (gate_name, state, plan_id, now),
             )
-            self._emit(conn, "GATE_UPSERTED", payload={
-                "gate": gate_name, "state": state,
-            })
+            self._emit(
+                conn,
+                "GATE_UPSERTED",
+                payload={
+                    "gate": gate_name,
+                    "state": state,
+                },
+            )
 
     def list_gates(self) -> list[dict[str, Any]]:
         with self._connect() as conn:
@@ -929,8 +1007,7 @@ class StateStore:
 
     # ─── Approvals ────────────────────────────────────────────────────
 
-    def create_approval(self, approval_id: str, task_id: str,
-                        expires_at: float | None) -> None:
+    def create_approval(self, approval_id: str, task_id: str, expires_at: float | None) -> None:
         with self.transaction() as conn:
             conn.execute(
                 "INSERT INTO approvals(approval_id,task_id,state,created_at,expires_at) "
@@ -941,12 +1018,16 @@ class StateStore:
                 "UPDATE tasks SET state='WAITING_APPROVAL',updated_at=? WHERE id=?",
                 (utc_now(), task_id),
             )
-            self._emit(conn, "APPROVAL_REQUESTED", task_id, {
-                "approval_id": approval_id,
-            })
+            self._emit(
+                conn,
+                "APPROVAL_REQUESTED",
+                task_id,
+                {
+                    "approval_id": approval_id,
+                },
+            )
 
-    def decide_approval(self, approval_id: str, decision: str,
-                        reason: str = "") -> None:
+    def decide_approval(self, approval_id: str, decision: str, reason: str = "") -> None:
         decision = decision.upper()
         if decision not in {"APPROVED", "REJECTED", "WAIVED", "EXPIRED"}:
             raise ValueError("decision must be APPROVED/REJECTED/WAIVED/EXPIRED")
@@ -965,9 +1046,15 @@ class StateStore:
                 "UPDATE tasks SET state=?,updated_at=? WHERE id=?",
                 (decision, utc_now(), task_id),
             )
-            self._emit(conn, f"APPROVAL_{decision}", task_id, {
-                "approval_id": approval_id, "reason": reason,
-            })
+            self._emit(
+                conn,
+                f"APPROVAL_{decision}",
+                task_id,
+                {
+                    "approval_id": approval_id,
+                    "reason": reason,
+                },
+            )
 
     def pending_approvals(self) -> list[dict[str, Any]]:
         with self._connect() as conn:
@@ -978,13 +1065,13 @@ class StateStore:
 
     # ─── Migration recording ──────────────────────────────────────────
 
-    def record_migration(self, legacy_path: str, sha256: str,
-                         tasks: int, gates: int,
-                         migration_id: str | None = None) -> None:
+    def record_migration(
+        self, legacy_path: str, sha256: str, tasks: int, gates: int, migration_id: str | None = None
+    ) -> None:
         if migration_id is None:
-            migration_id = hashlib.sha256(
-                f"{legacy_path}{sha256}{utc_now()}".encode()
-            ).hexdigest()[:16]
+            migration_id = hashlib.sha256(f"{legacy_path}{sha256}{utc_now()}".encode()).hexdigest()[
+                :16
+            ]
         now = utc_now()
         with self.transaction() as conn:
             conn.execute(
@@ -1000,10 +1087,14 @@ class StateStore:
                 "VALUES(?,?,?,'legacy_readonly')",
                 (legacy_path, sha256, now),
             )
-            self._emit(conn, "MIGRATION_DONE", payload={
-                "migration_id": migration_id,
-                "legacy_path": legacy_path,
-            })
+            self._emit(
+                conn,
+                "MIGRATION_DONE",
+                payload={
+                    "migration_id": migration_id,
+                    "legacy_path": legacy_path,
+                },
+            )
 
     # ─── Conflict detection ───────────────────────────────────────────
 
@@ -1019,11 +1110,13 @@ class StateStore:
 
         legacy_hash = legacy_state.get("plan_hash") or legacy_state.get("canonical_plan_hash")
         if sqlite_plan_hash and legacy_hash and sqlite_plan_hash != legacy_hash:
-            self._write_conflict_report({
-                "type": "plan_hash_mismatch",
-                "sqlite_hash": sqlite_plan_hash,
-                "legacy_hash": legacy_hash,
-            })
+            self._write_conflict_report(
+                {
+                    "type": "plan_hash_mismatch",
+                    "sqlite_hash": sqlite_plan_hash,
+                    "legacy_hash": legacy_hash,
+                }
+            )
             raise StateConflict(
                 sqlite_state={"canonical_plan_hash": sqlite_plan_hash},
                 legacy_state={"plan_hash": legacy_hash},
@@ -1034,11 +1127,13 @@ class StateStore:
         # A fresh SQLite DB (no plan) is the migration target.
         legacy_proj_state = legacy_state.get("project_state") or legacy_state.get("state", "")
         if legacy_proj_state and sqlite_plan_hash and legacy_proj_state != sqlite_project_state:
-            self._write_conflict_report({
-                "type": "project_state_mismatch",
-                "sqlite_state": sqlite_project_state,
-                "legacy_state": legacy_proj_state,
-            })
+            self._write_conflict_report(
+                {
+                    "type": "project_state_mismatch",
+                    "sqlite_state": sqlite_project_state,
+                    "legacy_state": legacy_proj_state,
+                }
+            )
             raise StateConflict(
                 sqlite_state={"state": sqlite_project_state},
                 legacy_state={"state": legacy_proj_state},
@@ -1049,11 +1144,17 @@ class StateStore:
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(timezone.utc).isoformat().replace(":", "-")
         report_path = self.reports_dir / f"state_conflict_{ts}.json"
-        report_path.write_text(json.dumps({
-            "generated_at": utc_now(),
-            "project_root": str(self.project_root),
-            **details,
-        }, indent=2), encoding="utf-8")
+        report_path.write_text(
+            json.dumps(
+                {
+                    "generated_at": utc_now(),
+                    "project_root": str(self.project_root),
+                    **details,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         return report_path
 
     # ─── Snapshots (export-only) ──────────────────────────────────────
@@ -1068,12 +1169,22 @@ class StateStore:
         self._atomic_write(json_path, json.dumps(summary, indent=2, sort_keys=True))
         try:
             import yaml as _y
+
             self._atomic_write(yaml_path, _y.safe_dump(summary, sort_keys=False))
         except ImportError:
             self._atomic_write(yaml_path, json.dumps(summary, indent=2))
 
-        fields = ["id", "name", "gate", "state", "attempts",
-                  "started_at", "finished_at", "failure_reason", "result_source"]
+        fields = [
+            "id",
+            "name",
+            "gate",
+            "state",
+            "attempts",
+            "started_at",
+            "finished_at",
+            "failure_reason",
+            "result_source",
+        ]
         tmp = csv_path.with_suffix(".tmp")
         with tmp.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=fields)
@@ -1110,9 +1221,9 @@ class StateStore:
 
     def heartbeat(self, owner: str, pid: int, detail: dict[str, Any] | None = None) -> None:
         import time
+
         stamp = time.time()
-        payload = {"owner": owner, "pid": pid, "timestamp": stamp,
-                   "detail": detail or {}}
+        payload = {"owner": owner, "pid": pid, "timestamp": stamp, "detail": detail or {}}
         with self.transaction() as conn:
             conn.execute(
                 "INSERT INTO heartbeats(owner,pid,timestamp,detail_json) VALUES(?,?,?,?) "
@@ -1126,28 +1237,41 @@ class StateStore:
 
     def get_heartbeat(self, owner: str = "controller") -> dict[str, Any] | None:
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT * FROM heartbeats WHERE owner=?", (owner,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM heartbeats WHERE owner=?", (owner,)).fetchone()
         if row is None:
             return None
-        return {"owner": row["owner"], "pid": row["pid"],
-                "timestamp": row["timestamp"],
-                "detail": json.loads(row["detail_json"])}
+        return {
+            "owner": row["owner"],
+            "pid": row["pid"],
+            "timestamp": row["timestamp"],
+            "detail": json.loads(row["detail_json"]),
+        }
 
     # ─── Run tracking ─────────────────────────────────────────────────
 
-    def create_run(self, run_id: str, task_id: str, attempt: int,
-                   pid: int | None = None, log_path: str | None = None) -> None:
+    def create_run(
+        self,
+        run_id: str,
+        task_id: str,
+        attempt: int,
+        pid: int | None = None,
+        log_path: str | None = None,
+    ) -> None:
         with self.transaction() as conn:
             conn.execute(
                 "INSERT INTO runs(run_id,task_id,attempt,started_at,pid,log_path) "
                 "VALUES(?,?,?,?,?,?)",
                 (run_id, task_id, attempt, utc_now(), pid, log_path),
             )
-            self._emit(conn, "RUN_CREATED", task_id, {
-                "run_id": run_id, "attempt": attempt,
-            })
+            self._emit(
+                conn,
+                "RUN_CREATED",
+                task_id,
+                {
+                    "run_id": run_id,
+                    "attempt": attempt,
+                },
+            )
 
     def finish_run(self, run_id: str, exit_code: int) -> None:
         with self.transaction() as conn:
@@ -1155,13 +1279,17 @@ class StateStore:
                 "UPDATE runs SET finished_at=?, exit_code=? WHERE run_id=?",
                 (utc_now(), exit_code, run_id),
             )
-            row = conn.execute(
-                "SELECT task_id FROM runs WHERE run_id=?", (run_id,)
-            ).fetchone()
+            row = conn.execute("SELECT task_id FROM runs WHERE run_id=?", (run_id,)).fetchone()
             task_id = row["task_id"] if row else None
-            self._emit(conn, "RUN_FINISHED", task_id, {
-                "run_id": run_id, "exit_code": exit_code,
-            })
+            self._emit(
+                conn,
+                "RUN_FINISHED",
+                task_id,
+                {
+                    "run_id": run_id,
+                    "exit_code": exit_code,
+                },
+            )
 
     # ─── Control state (R2 §6 + orchestrator compat) ──────────────────
 
@@ -1169,23 +1297,24 @@ class StateStore:
         if state not in {"RUNNING", "PAUSED", "STOPPED"}:
             raise ValueError(f"invalid control state: {state!r}")
         with self.transaction() as conn:
-            row = conn.execute(
-                "SELECT value FROM control_state WHERE key='global'"
-            ).fetchone()
+            row = conn.execute("SELECT value FROM control_state WHERE key='global'").fetchone()
             old = row["value"] if row else "RUNNING"
             conn.execute(
                 "INSERT OR REPLACE INTO control_state(key,value) VALUES('global',?)",
                 (state,),
             )
-            self._emit(conn, "CONTROL_STATE", payload={
-                "from": old, "to": state,
-            })
+            self._emit(
+                conn,
+                "CONTROL_STATE",
+                payload={
+                    "from": old,
+                    "to": state,
+                },
+            )
 
     def control_state(self) -> str:
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT value FROM control_state WHERE key='global'"
-            ).fetchone()
+            row = conn.execute("SELECT value FROM control_state WHERE key='global'").fetchone()
         return row["value"] if row else "RUNNING"
 
     # ─── Compatibility shim: orchestrator "events" ────────────────────
@@ -1196,21 +1325,29 @@ class StateStore:
                 "SELECT * FROM events WHERE seq>? ORDER BY seq LIMIT ?",
                 (after_seq, limit),
             ).fetchall()
-        return [{
-            "seq": row["seq"],
-            "timestamp": row["timestamp"],
-            "event_type": row["event_type"],
-            "task_id": row["task_id"],
-            "payload": json.loads(row["payload_json"]),
-        } for row in rows]
+        return [
+            {
+                "seq": row["seq"],
+                "timestamp": row["timestamp"],
+                "event_type": row["event_type"],
+                "task_id": row["task_id"],
+                "payload": json.loads(row["payload_json"]),
+            }
+            for row in rows
+        ]
 
-    def record_event(self, event_type: str, task_id: str | None = None,
-                     payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    def record_event(
+        self, event_type: str, task_id: str | None = None, payload: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         with self.transaction() as conn:
             seq = self._emit(conn, event_type, task_id, payload or {})
-        return {"seq": seq, "timestamp": utc_now(),
-                "event_type": event_type, "task_id": task_id,
-                "payload": payload or {}}
+        return {
+            "seq": seq,
+            "timestamp": utc_now(),
+            "event_type": event_type,
+            "task_id": task_id,
+            "payload": payload or {},
+        }
 
     # ─── Atomic write helper ──────────────────────────────────────────
 
@@ -1266,9 +1403,9 @@ def compute_authorization_bound_hash(
     return hashlib.sha256(canonical_bytes).hexdigest()
 
 
-def upgrade_schema_with_hash_reset(store: StateStore,
-                                   new_schema_version: str,
-                                   new_canonicalization_version: str = "2") -> int:
+def upgrade_schema_with_hash_reset(
+    store: StateStore, new_schema_version: str, new_canonicalization_version: str = "2"
+) -> int:
     """Apply a schema/canonicalization version upgrade.
 
     Steps:
@@ -1293,6 +1430,7 @@ def upgrade_schema_with_hash_reset(store: StateStore,
 
 
 # ─── Single-state-authority self-check ────────────────────────────────
+
 
 def find_active_state_dbs(project_root: str | Path) -> list[Path]:
     """Return paths to all *active* state.sqlite3 databases under the project.
@@ -1366,6 +1504,7 @@ def find_active_state_dbs(project_root: str | Path) -> list[Path]:
     if found and legacy_authoritative:
         # Local import to avoid circular-import risk between core and startup
         from scripts.startup.errors import StartupError
+
         raise StartupError(
             code="BLOCKED_STATE_CONFLICT",
             message=(
@@ -1375,8 +1514,10 @@ def find_active_state_dbs(project_root: str | Path) -> list[Path]:
                 f"{[str(p) for p in legacy_authoritative]}. "
                 "Run migration or remove legacy authoritative state before proceeding."
             ),
-            ctx={"sqlite_dbs": [str(p) for p in found],
-                 "legacy_jsons": [str(p) for p in legacy_authoritative]},
+            ctx={
+                "sqlite_dbs": [str(p) for p in found],
+                "legacy_jsons": [str(p) for p in legacy_authoritative],
+            },
         )
 
     return found
@@ -1397,13 +1538,21 @@ def assert_single_state_authority(project_root: str | Path) -> None:
 
 
 __all__ = [
-    "StateStore", "StateConflict", "InvalidTransition",
-    "PROJECT_STATES", "TASK_STATES", "TASK_TRANSITIONS",
-    "HUMAN_TRANSITIONS", "VERIFIER_SOURCES",
+    "StateStore",
+    "StateConflict",
+    "InvalidTransition",
+    "PROJECT_STATES",
+    "TASK_STATES",
+    "TASK_TRANSITIONS",
+    "HUMAN_TRANSITIONS",
+    "VERIFIER_SOURCES",
     "LEGACY_TASK_STATE_ALIASES",
     "utc_now",
-    "canonical_db_path", "canonical_repro_dir",
-    "compute_authorization_bound_hash", "upgrade_schema_with_hash_reset",
-    "find_active_state_dbs", "assert_single_state_authority",
+    "canonical_db_path",
+    "canonical_repro_dir",
+    "compute_authorization_bound_hash",
+    "upgrade_schema_with_hash_reset",
+    "find_active_state_dbs",
+    "assert_single_state_authority",
     "CURRENT_CANONICALIZATION_VERSION",
 ]

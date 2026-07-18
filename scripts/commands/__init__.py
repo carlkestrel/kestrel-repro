@@ -9,4 +9,5 @@ works both from an editable install and a wheel install.
 The module itself contains no runtime code; only a docstring is
 allowed so that the namespace is not empty.
 """
+
 __all__: list[str] = []

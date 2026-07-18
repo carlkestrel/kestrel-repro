@@ -8,6 +8,7 @@ This module extends the base Watchdog with:
 - Dataloader stall detection
 - Disk/memory pressure monitoring
 """
+
 from __future__ import annotations
 
 import re
@@ -18,6 +19,7 @@ from pathlib import Path
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -26,8 +28,13 @@ except ImportError:
 class Watchdog:
     """Enhanced watchdog with GPU monitoring, OOM detection, and training health."""
 
-    def __init__(self, store, process_manager, heartbeat_timeout: float = 30.0,
-                 project_root: Path | None = None):
+    def __init__(
+        self,
+        store,
+        process_manager,
+        heartbeat_timeout: float = 30.0,
+        project_root: Path | None = None,
+    ):
         self.store = store
         self.process_manager = process_manager
         self.heartbeat_timeout = heartbeat_timeout
@@ -185,9 +192,9 @@ class Watchdog:
                 if hasattr(torch.mps, "set_per_process_memory_fraction"):
                     # Get system memory for GPU context
                     import subprocess
+
                     result = subprocess.run(
-                        ["sysctl", "-n", "hw.memsize"],
-                        capture_output=True, text=True, timeout=5
+                        ["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=5
                     )
                     if result.returncode == 0:
                         total_mem_bytes = int(result.stdout.strip())
@@ -207,9 +214,16 @@ class Watchdog:
         """Get GPU temperature via nvidia-smi."""
         try:
             result = subprocess.run(
-                ["nvidia-smi", "--query-gpu=temperature.gpu,power.draw,utilization.gpu",
-                 "--format=csv,noheader,nounits", "-i", "0"],
-                capture_output=True, text=True, timeout=5
+                [
+                    "nvidia-smi",
+                    "--query-gpu=temperature.gpu,power.draw,utilization.gpu",
+                    "--format=csv,noheader,nounits",
+                    "-i",
+                    "0",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
                 parts = result.stdout.strip().split(",")
@@ -340,9 +354,7 @@ class Watchdog:
 
         try:
             # CPU/Memory via psutil-like output
-            result = subprocess.run(
-                ["free", "-b"], capture_output=True, text=True, timeout=5
-            )
+            result = subprocess.run(["free", "-b"], capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 lines = result.stdout.strip().split("\n")
                 if len(lines) >= 2:
@@ -358,6 +370,7 @@ class Watchdog:
         if self.project_root:
             try:
                 import shutil
+
                 usage = shutil.disk_usage(str(self.project_root))
                 info["disk_free_gb"] = round(usage.free / 1024**3, 1)
             except Exception:

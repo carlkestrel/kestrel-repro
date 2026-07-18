@@ -1,4 +1,5 @@
 """End-to-end and unit tests for the orchestrator package."""
+
 from __future__ import annotations
 
 import json
@@ -36,23 +37,30 @@ def _mkdirs(project: Path) -> Path:
     return project
 
 
-def _make_plan(tmp_path: Path, *, tasks, mode: str = "strict",
-               automation: str = "safe-auto",
-               mandatory: list[str] | None = None,
-               approvals_required: list[str] | None = None,
-               approval_wait_seconds: float = 1.5,
-               max_parallel_tasks: int = 4) -> Path:
+def _make_plan(
+    tmp_path: Path,
+    *,
+    tasks,
+    mode: str = "strict",
+    automation: str = "safe-auto",
+    mandatory: list[str] | None = None,
+    approvals_required: list[str] | None = None,
+    approval_wait_seconds: float = 1.5,
+    max_parallel_tasks: int = 4,
+) -> Path:
     mandatory = list(mandatory or [task["id"] for task in tasks])
     approvals_required = list(approvals_required or [])
     plan = {
-        "plan_id": f"plan-{tmp_path.name}-{int(time.time()*1000)}",
+        "plan_id": f"plan-{tmp_path.name}-{int(time.time() * 1000)}",
         "mode": mode,
         "automation": automation,
         "tasks": tasks,
         "approvals_required": approvals_required,
         "mandatory_task_ids": mandatory,
-        "budgets": {"max_parallel_tasks": max_parallel_tasks,
-                    "approval_wait_seconds": approval_wait_seconds},
+        "budgets": {
+            "max_parallel_tasks": max_parallel_tasks,
+            "approval_wait_seconds": approval_wait_seconds,
+        },
     }
     plan_path = tmp_path / "plan.yaml"
     plan_path.write_text(json.dumps(plan), encoding="utf-8")
@@ -65,6 +73,7 @@ def _shell_command(script: str) -> str:
 
 def shlex_quote(text: str) -> str:
     import shlex
+
     return shlex.quote(text)
 
 
@@ -75,8 +84,9 @@ def _task_command(steps: list[str], *, workdir: Path | None = None) -> str:
     return f"/bin/sh -c {shlex_quote(body)}"
 
 
-def _long_task(project: Path, task_id: str, *, seconds: float, checkpoint: str,
-               acceptance: str | None = None) -> str:
+def _long_task(
+    project: Path, task_id: str, *, seconds: float, checkpoint: str, acceptance: str | None = None
+) -> str:
     """Simulated long task that writes heartbeat, sleeps, then writes a checkpoint."""
     body = (
         f"echo START {task_id};"
@@ -103,10 +113,12 @@ def _wait_until(predicate, *, timeout: float = 10.0, step: float = 0.05) -> bool
     return predicate()
 
 
-def _run_controller(project: Path, plan_path: Path, *, automation: str = "safe-auto",
-                    resume: bool = False) -> dict:
-    controller = Controller(project_root=project, plan_path=plan_path,
-                             automation=automation, resume=resume)
+def _run_controller(
+    project: Path, plan_path: Path, *, automation: str = "safe-auto", resume: bool = False
+) -> dict:
+    controller = Controller(
+        project_root=project, plan_path=plan_path, automation=automation, resume=resume
+    )
     return controller.run()
 
 
@@ -118,13 +130,18 @@ def test_1_five_serial_tasks_complete(tmp_path: Path) -> None:
     tasks = []
     for index in range(1, 6):
         marker = project / "output" / f"step-{index}.txt"
-        tasks.append({
-            "id": f"task-{index}", "name": f"step {index}",
-            "gate": "read_only", "deps": [f"task-{index-1}"] if index > 1 else [],
-            "command": _task_command([f"echo {index} > {marker}"], workdir=project),
-            "timeout_min": 1, "acceptance_tests": [],
-            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-        })
+        tasks.append(
+            {
+                "id": f"task-{index}",
+                "name": f"step {index}",
+                "gate": "read_only",
+                "deps": [f"task-{index - 1}"] if index > 1 else [],
+                "command": _task_command([f"echo {index} > {marker}"], workdir=project),
+                "timeout_min": 1,
+                "acceptance_tests": [],
+                "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+            }
+        )
     plan_path = _make_plan(tmp_path, tasks=tasks)
     result = _run_controller(project, plan_path)
     assert result["status"] == COMPLETE, result
@@ -138,24 +155,38 @@ def test_2_independent_readonly_tasks_parallel(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     tasks = []
     for index in range(3):
-        tasks.append({
-            "id": f"ro-{index}", "name": f"parallel {index}",
-            "gate": "read_only", "deps": [],
-            "command": _task_command([
-                "sleep 0.5",
-                f"echo {index} > {project / 'output' / f'p-{index}.txt'}",
-            ], workdir=project),
-            "timeout_min": 5, "acceptance_tests": [],
+        tasks.append(
+            {
+                "id": f"ro-{index}",
+                "name": f"parallel {index}",
+                "gate": "read_only",
+                "deps": [],
+                "command": _task_command(
+                    [
+                        "sleep 0.5",
+                        f"echo {index} > {project / 'output' / f'p-{index}.txt'}",
+                    ],
+                    workdir=project,
+                ),
+                "timeout_min": 5,
+                "acceptance_tests": [],
+                "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+            }
+        )
+    tasks.append(
+        {
+            "id": "join",
+            "name": "join",
+            "gate": "safe",
+            "deps": [f"ro-{i}" for i in range(3)],
+            "command": _task_command(
+                [f"echo join > {project / 'output' / 'join.txt'}"], workdir=project
+            ),
+            "timeout_min": 5,
+            "acceptance_tests": [],
             "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-        })
-    tasks.append({
-        "id": "join", "name": "join", "gate": "safe",
-        "deps": [f"ro-{i}" for i in range(3)],
-        "command": _task_command([f"echo join > {project / 'output' / 'join.txt'}"],
-                                  workdir=project),
-        "timeout_min": 5, "acceptance_tests": [],
-        "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-    })
+        }
+    )
     plan_path = _make_plan(tmp_path, tasks=tasks)
     start = time.monotonic()
     result = _run_controller(project, plan_path)
@@ -171,17 +202,31 @@ def test_3_failure_auto_retries_once(tmp_path: Path) -> None:
     # The script writes a sentinel via a one-shot command file: first run misses it,
     # second run sees it and succeeds.
     one_shot = project / "output" / "trigger.txt"
-    command = _task_command([
-        f"if [ -f {one_shot} ]; then echo ok > {sentinel}; else touch {one_shot}; exit 7; fi"
-    ], workdir=project)
+    command = _task_command(
+        [f"if [ -f {one_shot} ]; then echo ok > {sentinel}; else touch {one_shot}; exit 7; fi"],
+        workdir=project,
+    )
     tasks = [
-        {"id": "setup", "name": "setup", "gate": "read_only", "deps": [],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "flaky", "name": "flaky", "gate": "safe", "deps": ["setup"],
-         "command": command, "timeout_min": 1,
-         "acceptance_tests": [],
-         "retry_policy": {"max_retries": 2, "delay_seconds": 0}},
+        {
+            "id": "setup",
+            "name": "setup",
+            "gate": "read_only",
+            "deps": [],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "flaky",
+            "name": "flaky",
+            "gate": "safe",
+            "deps": ["setup"],
+            "command": command,
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 2, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
     result = _run_controller(project, plan_path)
@@ -194,10 +239,16 @@ def test_3_failure_auto_retries_once(tmp_path: Path) -> None:
 def test_4_blocked_after_max_retries(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     tasks = [
-        {"id": "bad", "name": "bad", "gate": "safe", "deps": [],
-         "command": _failing_task(9), "timeout_min": 1,
-         "acceptance_tests": [],
-         "retry_policy": {"max_retries": 1, "delay_seconds": 0}},
+        {
+            "id": "bad",
+            "name": "bad",
+            "gate": "safe",
+            "deps": [],
+            "command": _failing_task(9),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 1, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
     result = _run_controller(project, plan_path)
@@ -209,23 +260,41 @@ def test_4_blocked_after_max_retries(tmp_path: Path) -> None:
 def test_5_require_approval_pauses(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     policy_path = tmp_path / "automation_policy.yaml"
-    policy_path.write_text(json.dumps({
-        "default": "AUTO_EXECUTE",
-        "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
-    }))
+    policy_path.write_text(
+        json.dumps(
+            {
+                "default": "AUTO_EXECUTE",
+                "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
+            }
+        )
+    )
     tasks = [
-        {"id": "warmup", "name": "warmup", "gate": "read_only", "deps": [],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "rewrite", "name": "rewrite", "gate": "modify_project_files",
-         "deps": ["warmup"], "writes": [".repro/notes.md"],
-         "command": _task_command(["echo data > .repro/notes.md"], workdir=project),
-         "timeout_min": 1, "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "warmup",
+            "name": "warmup",
+            "gate": "read_only",
+            "deps": [],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "rewrite",
+            "name": "rewrite",
+            "gate": "modify_project_files",
+            "deps": ["warmup"],
+            "writes": [".repro/notes.md"],
+            "command": _task_command(["echo data > .repro/notes.md"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
-    controller = Controller(project_root=project, plan_path=plan_path,
-                             automation="safe-auto", policy_path=policy_path)
+    controller = Controller(
+        project_root=project, plan_path=plan_path, automation="safe-auto", policy_path=policy_path
+    )
     # Run the loop on a thread so we can approve while it is alive.
     holder: dict = {}
     thread = threading.Thread(target=lambda: holder.update(result=controller.run()))
@@ -246,24 +315,41 @@ def test_5_require_approval_pauses(tmp_path: Path) -> None:
 def test_6_approve_resumes(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     policy_path = tmp_path / "automation_policy.yaml"
-    policy_path.write_text(json.dumps({
-        "default": "AUTO_EXECUTE",
-        "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
-    }))
+    policy_path.write_text(
+        json.dumps(
+            {
+                "default": "AUTO_EXECUTE",
+                "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
+            }
+        )
+    )
     tasks = [
-        {"id": "warmup", "name": "warmup", "gate": "read_only", "deps": [],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "rewrite", "name": "rewrite", "gate": "modify_project_files",
-         "deps": ["warmup"], "writes": [".repro/notes.md"],
-         "command": _task_command(["echo approved > .repro/notes.md"], workdir=project),
-         "timeout_min": 1,
-         "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "warmup",
+            "name": "warmup",
+            "gate": "read_only",
+            "deps": [],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "rewrite",
+            "name": "rewrite",
+            "gate": "modify_project_files",
+            "deps": ["warmup"],
+            "writes": [".repro/notes.md"],
+            "command": _task_command(["echo approved > .repro/notes.md"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
-    controller = Controller(project_root=project, plan_path=plan_path,
-                             automation="safe-auto", policy_path=policy_path)
+    controller = Controller(
+        project_root=project, plan_path=plan_path, automation="safe-auto", policy_path=policy_path
+    )
     holder: dict = {}
     thread = threading.Thread(target=lambda: holder.update(result=controller.run()))
     thread.start()
@@ -285,28 +371,51 @@ def test_6_approve_resumes(tmp_path: Path) -> None:
 def test_7_reject_skips_task(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     policy_path = tmp_path / "automation_policy.yaml"
-    policy_path.write_text(json.dumps({
-        "default": "AUTO_EXECUTE",
-        "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
-    }))
+    policy_path.write_text(
+        json.dumps(
+            {
+                "default": "AUTO_EXECUTE",
+                "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
+            }
+        )
+    )
     tasks = [
-        {"id": "warmup", "name": "warmup", "gate": "read_only", "deps": [],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "side", "name": "side", "gate": "modify_project_files",
-         "deps": ["warmup"], "writes": [".repro/notes.md"],
-         "command": _task_command(["echo nope > .repro/notes.md"], workdir=project),
-         "timeout_min": 1, "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "after", "name": "after", "gate": "safe",
-         "deps": ["warmup"],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "warmup",
+            "name": "warmup",
+            "gate": "read_only",
+            "deps": [],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "side",
+            "name": "side",
+            "gate": "modify_project_files",
+            "deps": ["warmup"],
+            "writes": [".repro/notes.md"],
+            "command": _task_command(["echo nope > .repro/notes.md"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "after",
+            "name": "after",
+            "gate": "safe",
+            "deps": ["warmup"],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks, mandatory=["warmup", "after"])
-    controller = Controller(project_root=project, plan_path=plan_path,
-                             automation="safe-auto", policy_path=policy_path)
+    controller = Controller(
+        project_root=project, plan_path=plan_path, automation="safe-auto", policy_path=policy_path
+    )
     holder: dict = {}
     thread = threading.Thread(target=lambda: holder.update(result=controller.run()))
     thread.start()
@@ -330,16 +439,24 @@ def test_8_long_task_auto_verify(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     checkpoint = project / "output" / "checkpoint.bin"
     acceptance = _task_command([f"test -s {checkpoint}"], workdir=project)
-    command = _long_task(project, "long", seconds=0.6, checkpoint="output/checkpoint.bin",
-                          acceptance=acceptance)
-    tasks = [{
-        "id": "long", "name": "long", "gate": "safe", "deps": [],
-        "command": command, "timeout_min": 1,
-        "acceptance_tests": [{"command": _task_command(
-            [f"test -s {checkpoint}"], workdir=project)}],
-        "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-        "checkpoint": "output/checkpoint.bin",
-    }]
+    command = _long_task(
+        project, "long", seconds=0.6, checkpoint="output/checkpoint.bin", acceptance=acceptance
+    )
+    tasks = [
+        {
+            "id": "long",
+            "name": "long",
+            "gate": "safe",
+            "deps": [],
+            "command": command,
+            "timeout_min": 1,
+            "acceptance_tests": [
+                {"command": _task_command([f"test -s {checkpoint}"], workdir=project)}
+            ],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+            "checkpoint": "output/checkpoint.bin",
+        }
+    ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
     start = time.monotonic()
     result = _run_controller(project, plan_path)
@@ -355,26 +472,36 @@ def test_8_long_task_auto_verify(tmp_path: Path) -> None:
 def test_9_recover_after_kill(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     sentinel = project / "output" / "checkpoint-recover.bin"
-    long_command = _long_task(project, "long", seconds=0.6,
-                                checkpoint="output/checkpoint-recover.bin")
-    tasks = [{
-        "id": "long", "name": "long", "gate": "safe", "deps": [],
-        "command": long_command, "timeout_min": 1,
-        "acceptance_tests": [{"command": _task_command(
-            [f"test -s {sentinel}"], workdir=project)}],
-        "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-        "checkpoint": "output/checkpoint-recover.bin",
-    }]
+    long_command = _long_task(
+        project, "long", seconds=0.6, checkpoint="output/checkpoint-recover.bin"
+    )
+    tasks = [
+        {
+            "id": "long",
+            "name": "long",
+            "gate": "safe",
+            "deps": [],
+            "command": long_command,
+            "timeout_min": 1,
+            "acceptance_tests": [
+                {"command": _task_command([f"test -s {sentinel}"], workdir=project)}
+            ],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+            "checkpoint": "output/checkpoint-recover.bin",
+        }
+    ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
 
     # First run is interrupted: we delete the controller heartbeat while the task
     # is mid-flight to mimic a kill -9 of the controller.
     interrupted = {}
+
     def _runner():
         controller = Controller(project_root=project, plan_path=plan_path)
         # Patch the heartbeat to point at the future so the recovery sees a stale
         # heartbeat, but we still want the recovery to spot the task.
         interrupted["controller"] = controller
+
         # Kill the heartbeat before run() completes.
         def _kill_heartbeat():
             time.sleep(0.2)
@@ -382,8 +509,10 @@ def test_9_recover_after_kill(tmp_path: Path) -> None:
                 controller.store.heartbeat_path.unlink()
             except FileNotFoundError:
                 pass
+
         threading.Thread(target=_kill_heartbeat, daemon=True).start()
         interrupted["result"] = controller.run()
+
     thread = threading.Thread(target=_runner)
     thread.start()
     thread.join(timeout=20)
@@ -404,13 +533,26 @@ def test_10_passed_task_not_re_run(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     sentinel = project / "output" / "never-twice.txt"
     tasks = [
-        {"id": "once", "name": "once", "gate": "safe", "deps": [],
-         "command": _task_command([f"echo first > {sentinel}"], workdir=project),
-         "timeout_min": 1, "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "tail", "name": "tail", "gate": "safe", "deps": ["once"],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "once",
+            "name": "once",
+            "gate": "safe",
+            "deps": [],
+            "command": _task_command([f"echo first > {sentinel}"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "tail",
+            "name": "tail",
+            "gate": "safe",
+            "deps": ["once"],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
     first = _run_controller(project, plan_path)
@@ -427,12 +569,26 @@ def test_10_passed_task_not_re_run(tmp_path: Path) -> None:
 def test_11_cycle_dependency_blocked(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     tasks = [
-        {"id": "a", "name": "a", "gate": "safe", "deps": ["b"],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "b", "name": "b", "gate": "safe", "deps": ["a"],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "a",
+            "name": "a",
+            "gate": "safe",
+            "deps": ["b"],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "b",
+            "name": "b",
+            "gate": "safe",
+            "deps": ["a"],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
     result = _run_controller(project, plan_path)
@@ -443,14 +599,26 @@ def test_11_cycle_dependency_blocked(tmp_path: Path) -> None:
 def test_12_no_ready_exits_blocked(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     tasks = [
-        {"id": "root-fail", "name": "root-fail", "gate": "safe", "deps": [],
-         "command": _failing_task(1), "timeout_min": 1,
-         "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "leaf", "name": "leaf", "gate": "safe", "deps": ["root-fail"],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "root-fail",
+            "name": "root-fail",
+            "gate": "safe",
+            "deps": [],
+            "command": _failing_task(1),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "leaf",
+            "name": "leaf",
+            "gate": "safe",
+            "deps": ["root-fail"],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks, mandatory=["root-fail"])
     start = time.monotonic()
@@ -463,16 +631,26 @@ def test_12_no_ready_exits_blocked(tmp_path: Path) -> None:
 def test_13_pause_continue_stop(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     tasks = [
-        {"id": "slow-1", "name": "slow-1", "gate": "safe", "deps": [],
-         "command": _long_task(project, "slow-1", seconds=0.8,
-                                checkpoint="output/slow-1.bin"),
-         "timeout_min": 5, "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "slow-2", "name": "slow-2", "gate": "safe", "deps": ["slow-1"],
-         "command": _long_task(project, "slow-2", seconds=0.8,
-                                checkpoint="output/slow-2.bin"),
-         "timeout_min": 5, "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "slow-1",
+            "name": "slow-1",
+            "gate": "safe",
+            "deps": [],
+            "command": _long_task(project, "slow-1", seconds=0.8, checkpoint="output/slow-1.bin"),
+            "timeout_min": 5,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "slow-2",
+            "name": "slow-2",
+            "gate": "safe",
+            "deps": ["slow-1"],
+            "command": _long_task(project, "slow-2", seconds=0.8, checkpoint="output/slow-2.bin"),
+            "timeout_min": 5,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks)
     controller = Controller(project_root=project, plan_path=plan_path)
@@ -482,8 +660,9 @@ def test_13_pause_continue_stop(tmp_path: Path) -> None:
     try:
         # Wait until the first task is RUNNING
         store = StateStore(project)
-        assert _wait_until(lambda: any(task["status"] == "RUNNING" for task in
-                                       store.list_tasks()), timeout=10)
+        assert _wait_until(
+            lambda: any(task["status"] == "RUNNING" for task in store.list_tasks()), timeout=10
+        )
         store.set_control_state("PAUSED")
         # The loop should exit with PAUSED on the next tick
         thread.join(timeout=10)
@@ -501,18 +680,31 @@ def test_13_pause_continue_stop(tmp_path: Path) -> None:
     assert (project / "output" / "slow-2.bin").exists()
 
     # Stop path
-    tasks2 = [{
-        "id": "block", "name": "block", "gate": "safe", "deps": [],
-        "command": _long_task(project, "block", seconds=4.0, checkpoint="output/block.bin"),
-        "timeout_min": 10, "acceptance_tests": [],
-        "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-    }]
+    tasks2 = [
+        {
+            "id": "block",
+            "name": "block",
+            "gate": "safe",
+            "deps": [],
+            "command": _long_task(project, "block", seconds=4.0, checkpoint="output/block.bin"),
+            "timeout_min": 10,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        }
+    ]
     plan2 = tmp_path / "plan2.yaml"
-    plan2.write_text(json.dumps({
-        "plan_id": "stop-demo", "mode": "strict",
-        "tasks": tasks2, "approvals_required": [],
-        "mandatory_task_ids": ["block"], "budgets": {"max_parallel_tasks": 1},
-    }))
+    plan2.write_text(
+        json.dumps(
+            {
+                "plan_id": "stop-demo",
+                "mode": "strict",
+                "tasks": tasks2,
+                "approvals_required": [],
+                "mandatory_task_ids": ["block"],
+                "budgets": {"max_parallel_tasks": 1},
+            }
+        )
+    )
     controller3 = Controller(project_root=project, plan_path=plan2, resume=True)
     holder2: dict = {}
     thread2 = threading.Thread(target=lambda: holder2.update(result=controller3.run()))
@@ -529,15 +721,26 @@ def test_13_pause_continue_stop(tmp_path: Path) -> None:
 def test_14_final_acceptance_failure_blocks(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     tasks = [
-        {"id": "passing", "name": "passing", "gate": "safe", "deps": [],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "lying", "name": "lying", "gate": "safe", "deps": ["passing"],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [{
-             "command": _task_command(["exit 3"], workdir=project)
-         }],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "passing",
+            "name": "passing",
+            "gate": "safe",
+            "deps": [],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "lying",
+            "name": "lying",
+            "gate": "safe",
+            "deps": ["passing"],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [{"command": _task_command(["exit 3"], workdir=project)}],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks, mandatory=["passing", "lying"])
     result = _run_controller(project, plan_path)
@@ -549,23 +752,41 @@ def test_14_final_acceptance_failure_blocks(tmp_path: Path) -> None:
 def test_15_policy_change_takes_effect(tmp_path: Path) -> None:
     project = _mkdirs(tmp_path / "proj")
     policy_path = tmp_path / "automation_policy.yaml"
-    policy_path.write_text(json.dumps({
-        "default": "AUTO_EXECUTE",
-        "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
-    }))
+    policy_path.write_text(
+        json.dumps(
+            {
+                "default": "AUTO_EXECUTE",
+                "gates": {"modify_project_files": "REQUIRE_APPROVAL"},
+            }
+        )
+    )
     tasks = [
-        {"id": "warmup", "name": "warmup", "gate": "read_only", "deps": [],
-         "command": _task_command(["true"], workdir=project), "timeout_min": 1,
-         "acceptance_tests": [], "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
-        {"id": "edit", "name": "edit", "gate": "modify_project_files",
-         "deps": ["warmup"], "writes": [".repro/edit.md"],
-         "command": _task_command(["echo hi > .repro/edit.md"], workdir=project),
-         "timeout_min": 1, "acceptance_tests": [],
-         "retry_policy": {"max_retries": 0, "delay_seconds": 0}},
+        {
+            "id": "warmup",
+            "name": "warmup",
+            "gate": "read_only",
+            "deps": [],
+            "command": _task_command(["true"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
+        {
+            "id": "edit",
+            "name": "edit",
+            "gate": "modify_project_files",
+            "deps": ["warmup"],
+            "writes": [".repro/edit.md"],
+            "command": _task_command(["echo hi > .repro/edit.md"], workdir=project),
+            "timeout_min": 1,
+            "acceptance_tests": [],
+            "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+        },
     ]
     plan_path = _make_plan(tmp_path, tasks=tasks, mandatory=["warmup", "edit"])
-    controller = Controller(project_root=project, plan_path=plan_path,
-                             automation="safe-auto", policy_path=policy_path)
+    controller = Controller(
+        project_root=project, plan_path=plan_path, automation="safe-auto", policy_path=policy_path
+    )
     holder: dict = {}
     thread = threading.Thread(target=lambda: holder.update(result=controller.run()))
     thread.start()
@@ -573,10 +794,14 @@ def test_15_policy_change_takes_effect(tmp_path: Path) -> None:
         store = StateStore(project)
         assert _wait_until(lambda: store.pending_approvals(), timeout=10)
         # Without restarting, mutate the policy file to AUTO_EXECUTE.
-        policy_path.write_text(json.dumps({
-            "default": "AUTO_EXECUTE",
-            "gates": {"modify_project_files": "AUTO_EXECUTE"},
-        }))
+        policy_path.write_text(
+            json.dumps(
+                {
+                    "default": "AUTO_EXECUTE",
+                    "gates": {"modify_project_files": "AUTO_EXECUTE"},
+                }
+            )
+        )
         # Approve the pending request so the controller moves forward.
         approval_id = store.pending_approvals()[0]["approval_id"]
         time.sleep(0.2)
@@ -595,8 +820,12 @@ def test_15_policy_change_takes_effect(tmp_path: Path) -> None:
 
 def _plan_for_daemon(project: Path) -> dict:
     return {
-        "id": "ok", "name": "ok", "gate": "read_only", "deps": [],
-        "command": _task_command(["true"], workdir=project), "timeout_min": 1,
+        "id": "ok",
+        "name": "ok",
+        "gate": "read_only",
+        "deps": [],
+        "command": _task_command(["true"], workdir=project),
+        "timeout_min": 1,
         "acceptance_tests": [],
         "retry_policy": {"max_retries": 0, "delay_seconds": 0},
     }
@@ -629,15 +858,20 @@ def test_16_daemon_start_on_fresh_project(tmp_path: Path) -> None:
     plan_path = _make_plan(tmp_path, tasks=[_plan_for_daemon(project)])
     repo_root = PLUGIN_ROOT
     cmd = [
-        sys.executable, str(repo_root / "scripts" / "reproctl.py"),
-        "daemon", "start",
-        "--project", str(project),
-        "--plan", str(plan_path),
-        "--automation", "safe-auto",
-        "--mode", "strict",
+        sys.executable,
+        str(repo_root / "scripts" / "reproctl.py"),
+        "daemon",
+        "start",
+        "--project",
+        str(project),
+        "--plan",
+        str(plan_path),
+        "--automation",
+        "safe-auto",
+        "--mode",
+        "strict",
     ]
-    proc = _subprocess.run(cmd, cwd=str(project), capture_output=True, text=True,
-                            timeout=30)
+    proc = _subprocess.run(cmd, cwd=str(project), capture_output=True, text=True, timeout=30)
     assert proc.returncode in (0, 10), proc.stderr + "\n" + proc.stdout
     assert _daemon_log_path(project).exists(), "daemon log file must be created"
     pid = json.loads(proc.stdout)["pid"]
@@ -652,9 +886,17 @@ def test_16_daemon_start_on_fresh_project(tmp_path: Path) -> None:
     # Stop the daemon and ensure everything is cleaned up.
     stop = _subprocess.run(
         [
-            sys.executable, str(repo_root / "scripts" / "reproctl.py"),
-            "daemon", "stop", "--project", str(project),
-        ], cwd=str(project), capture_output=True, text=True, timeout=15,
+            sys.executable,
+            str(repo_root / "scripts" / "reproctl.py"),
+            "daemon",
+            "stop",
+            "--project",
+            str(project),
+        ],
+        cwd=str(project),
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert stop.returncode == 0, stop.stderr
     # The child must be terminated — pid file is removed on clean stop.
@@ -679,14 +921,19 @@ def test_17_daemon_child_arg_recognized(tmp_path: Path) -> None:
     The parent passes ``--daemon-child`` so the argv must NOT trip argparse.
     """
     from orchestrator.cli import build_parser
+
     parser = build_parser()
     # Simulate the exact argv the daemon-spawned re-exec would produce.
     argv = [
         "run",
-        "--project", str(tmp_path),
-        "--plan", str(tmp_path / "plan.yaml"),
-        "--automation", "safe-auto",
-        "--mode", "strict",
+        "--project",
+        str(tmp_path),
+        "--plan",
+        str(tmp_path / "plan.yaml"),
+        "--automation",
+        "safe-auto",
+        "--mode",
+        "strict",
         "--daemon-child",
     ]
     args = parser.parse_args(argv)
@@ -694,25 +941,42 @@ def test_17_daemon_child_arg_recognized(tmp_path: Path) -> None:
     assert args.daemon_child is True
     # End-to-end: actually run the same argv the daemon-spawned re-exec uses
     # via reproctl.py to confirm the dispatch + argparse chain accepts it.
-    plan_path = _make_plan(tmp_path, tasks=[{
-        "id": "ok", "name": "ok", "gate": "read_only", "deps": [],
-        "command": _task_command(["true"], workdir=tmp_path),
-        "timeout_min": 1, "acceptance_tests": [],
-        "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-    }])
+    plan_path = _make_plan(
+        tmp_path,
+        tasks=[
+            {
+                "id": "ok",
+                "name": "ok",
+                "gate": "read_only",
+                "deps": [],
+                "command": _task_command(["true"], workdir=tmp_path),
+                "timeout_min": 1,
+                "acceptance_tests": [],
+                "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+            }
+        ],
+    )
     (tmp_path / ".repro").mkdir(exist_ok=True)
     import subprocess as _subprocess
+
     proc = _subprocess.run(
-        [sys.executable, str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
-         "run",
-         "--project", str(tmp_path),
-         "--plan", str(plan_path),
-         "--daemon-child"],
-        cwd=str(PLUGIN_ROOT), capture_output=True, text=True, timeout=15,
+        [
+            sys.executable,
+            str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
+            "run",
+            "--project",
+            str(tmp_path),
+            "--plan",
+            str(plan_path),
+            "--daemon-child",
+        ],
+        cwd=str(PLUGIN_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert proc.returncode != 2, (
-        "argparse rejected --daemon-child:\nstdout=" + proc.stdout +
-        "\nstderr=" + proc.stderr
+        "argparse rejected --daemon-child:\nstdout=" + proc.stdout + "\nstderr=" + proc.stderr
     )
 
 
@@ -730,21 +994,45 @@ def test_18_daemon_stop_terminates_orphan_workers(tmp_path: Path) -> None:
     project = tmp_path / "orphan_proj"
     project.mkdir()
     (project / ".repro").mkdir()
-    plan_path = _make_plan(project, tasks=[{
-        "id": "t3_train", "name": "t3_train", "gate": "safe", "deps": [],
-        "command": _long_task(project, "t3_train", seconds=10.0,
-                                checkpoint="output/t3_train.bin"),
-        "timeout_min": 5, "acceptance_tests": [],
-        "retry_policy": {"max_retries": 0, "delay_seconds": 0},
-    }])
+    plan_path = _make_plan(
+        project,
+        tasks=[
+            {
+                "id": "t3_train",
+                "name": "t3_train",
+                "gate": "safe",
+                "deps": [],
+                "command": _long_task(
+                    project, "t3_train", seconds=10.0, checkpoint="output/t3_train.bin"
+                ),
+                "timeout_min": 5,
+                "acceptance_tests": [],
+                "retry_policy": {"max_retries": 0, "delay_seconds": 0},
+            }
+        ],
+    )
     repo_root = PLUGIN_ROOT
     cli = str(repo_root / "scripts" / "reproctl.py")
 
     start = _subprocess.run(
-        [sys.executable, cli, "daemon", "start",
-         "--project", str(project), "--plan", str(plan_path),
-         "--automation", "safe-auto", "--mode", "strict"],
-        cwd=str(project), capture_output=True, text=True, timeout=30,
+        [
+            sys.executable,
+            cli,
+            "daemon",
+            "start",
+            "--project",
+            str(project),
+            "--plan",
+            str(plan_path),
+            "--automation",
+            "safe-auto",
+            "--mode",
+            "strict",
+        ],
+        cwd=str(project),
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     assert start.returncode in (0, 10), start.stdout + start.stderr
     daemon_pid = json.loads(start.stdout)["pid"]
@@ -752,24 +1040,26 @@ def test_18_daemon_stop_terminates_orphan_workers(tmp_path: Path) -> None:
         store = StateStore(project)
         # Wait until the worker task is RUNNING.
         assert _wait_until(
-            lambda: any(task["status"] == "RUNNING"
-                        for task in store.list_tasks()),
+            lambda: any(task["status"] == "RUNNING" for task in store.list_tasks()),
             timeout=10,
         ), "worker task never reached RUNNING"
-        worker_task = next(task for task in store.list_tasks()
-                            if task["status"] == "RUNNING")
+        worker_task = next(task for task in store.list_tasks() if task["status"] == "RUNNING")
         worker_pid = int(worker_task["pid"])
         # Sanity: the worker is a different session than the controller.
         assert worker_pid and worker_pid != daemon_pid
 
         stop = _subprocess.run(
             [sys.executable, cli, "daemon", "stop", "--project", str(project)],
-            cwd=str(project), capture_output=True, text=True, timeout=15,
+            cwd=str(project),
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         assert stop.returncode == 0, stop.stdout + stop.stderr
         body = json.loads(stop.stdout)
-        assert any(wr.get("terminated") for wr in body.get("workers", [])), \
+        assert any(wr.get("terminated") for wr in body.get("workers", [])), (
             f"daemon stop did not report any terminated worker: {body}"
+        )
 
         # The worker must be reaped (with up to 3 s for SIGTERM grace).
         deadline = time.monotonic() + 4.0
@@ -798,9 +1088,11 @@ def test_18_daemon_stop_terminates_orphan_workers(tmp_path: Path) -> None:
         # Final safety net in case any of the above fails: reap whatever is left.
         try:
             _subprocess.run(
-                [sys.executable, cli, "daemon", "stop",
-                 "--project", str(project)],
-                cwd=str(project), capture_output=True, text=True, timeout=10,
+                [sys.executable, cli, "daemon", "stop", "--project", str(project)],
+                cwd=str(project),
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
         except Exception:
             pass

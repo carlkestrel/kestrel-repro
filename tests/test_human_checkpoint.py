@@ -1,4 +1,5 @@
 """Test the 12-item human checkpoint (P3_T02 surface)."""
+
 import importlib.util
 import sys
 from pathlib import Path
@@ -50,7 +51,20 @@ def test_twelve_items_listed():
     """The 12-item list is exposed and non-empty."""
     assert len(m.HUMAN_CHECKPOINT_ITEMS) == 12
     items_text = " ".join(m.HUMAN_CHECKPOINT_ITEMS).lower()
-    for kw in ["synthesize","split","metric","oom","loss","batch","amp","checkpoint","cherry","extend","budget","cannot"]:
+    for kw in [
+        "synthesize",
+        "split",
+        "metric",
+        "oom",
+        "loss",
+        "batch",
+        "amp",
+        "checkpoint",
+        "cherry",
+        "extend",
+        "budget",
+        "cannot",
+    ]:
         assert kw in items_text, f"missing: {kw}"
 
 

@@ -1,4 +1,5 @@
 """Tests for metrics_recompute acceptance test type."""
+
 from __future__ import annotations
 
 import json
@@ -27,13 +28,18 @@ def verifier(tmp_path):
         {
             "plan_id": "metrics-test",
             "mode": "strict",
-            "tasks": [{
-                "id": "t1", "name": "t1", "gate": "safe",
-                "deps": [], "command": "echo t1",
-                "timeout_min": 1,
-                "acceptance_tests": [],
-                "retry_policy": {"max_retries": 0},
-            }],
+            "tasks": [
+                {
+                    "id": "t1",
+                    "name": "t1",
+                    "gate": "safe",
+                    "deps": [],
+                    "command": "echo t1",
+                    "timeout_min": 1,
+                    "acceptance_tests": [],
+                    "retry_policy": {"max_retries": 0},
+                }
+            ],
             "mandatory_task_ids": ["t1"],
             "budgets": {},
         },
@@ -57,11 +63,13 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[10, 0], [0, 10]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "metric": "mIoU",
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "metric": "mIoU",
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -74,12 +82,14 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[5, 5], [5, 5]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "expected": 0.9,
-                "tolerance": 0.01,
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "expected": 0.9,
+                    "tolerance": 0.01,
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -92,12 +102,14 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[10, 0], [0, 10]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "expected": 1.0,
-                "tolerance": 0.001,
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "expected": 1.0,
+                    "tolerance": 0.001,
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -108,11 +120,13 @@ class TestMetricsRecompute:
         proj, store, v = verifier
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": str(proj / "output" / "nonexistent.json"),
-                "metric": "mIoU",
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": str(proj / "output" / "nonexistent.json"),
+                    "metric": "mIoU",
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -127,11 +141,13 @@ class TestMetricsRecompute:
         bad.write_text("{ not valid json }", encoding="utf-8")
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": str(bad.resolve()),
-                "metric": "mIoU",
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": str(bad.resolve()),
+                    "metric": "mIoU",
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -144,11 +160,13 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[1, 2, 3], [4, 5, 6]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "metric": "mIoU",
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "metric": "mIoU",
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -161,11 +179,13 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[10, -1], [0, 10]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "metric": "mIoU",
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "metric": "mIoU",
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -175,15 +195,16 @@ class TestMetricsRecompute:
     def test_multiclass_miou(self, verifier):
         """3-class confusion matrix: mIoU computed correctly."""
         proj, store, v = verifier
-        cm_path = _write_cm(proj, "confmat.json",
-                            [[10, 0, 0], [0, 8, 2], [0, 1, 9]])
+        cm_path = _write_cm(proj, "confmat.json", [[10, 0, 0], [0, 8, 2], [0, 1, 9]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "metric": "mIoU",
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "metric": "mIoU",
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -196,12 +217,14 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[5, 0], [0, 5]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "expected": 1.0,
-                "tolerance": 0.0,
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "expected": 1.0,
+                    "tolerance": 0.0,
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -213,12 +236,14 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[10, 0], [0, 10]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "expected": 0.999,
-                "tolerance": 0.0009,  # diff = 0.001 > 0.0009 → FAIL
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "expected": 0.999,
+                    "tolerance": 0.0009,  # diff = 0.001 > 0.0009 → FAIL
+                }
+            ],
             "non_evidentiary": False,
         }
         ok, detail = v.verify(task)
@@ -230,17 +255,19 @@ class TestMetricsRecompute:
         cm_path = _write_cm(proj, "confmat.json", [[10, 0], [0, 10]])
         task = {
             "id": "t1",
-            "acceptance_tests": [{
-                "type": "metrics_recompute",
-                "path": cm_path,
-                "expected": 1.0,
-                "tolerance": 0.01,
-            }],
+            "acceptance_tests": [
+                {
+                    "type": "metrics_recompute",
+                    "path": cm_path,
+                    "expected": 1.0,
+                    "tolerance": 0.01,
+                }
+            ],
             "non_evidentiary": False,
         }
         seq_before = store.events()[-1]["seq"] if store.events() else 0
         v.verify(task)
-        events = [e for e in store.events(after_seq=seq_before)]
+        events = list(store.events(after_seq=seq_before))
         assert any(e["event_type"] == "ACCEPTANCE_RESULT" for e in events)
         result_event = next(e for e in events if e["event_type"] == "ACCEPTANCE_RESULT")
         assert "miou" in result_event["payload"]

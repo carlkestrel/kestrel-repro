@@ -42,6 +42,7 @@ def load_run(path: Path) -> dict:
     elif path.suffix == ".csv":
         # Simple CSV loader for metric files
         import csv
+
         rows = []
         with open(path) as f:
             reader = csv.DictReader(f)
@@ -136,8 +137,7 @@ def compare_metrics(a_data: dict, b_data: dict, tolerance: float = 0.5) -> dict:
     return result
 
 
-def run_comparison(run_a_path: Path, run_b_path: Path,
-                   tolerance: float = 0.5) -> ComparisonResult:
+def run_comparison(run_a_path: Path, run_b_path: Path, tolerance: float = 0.5) -> ComparisonResult:
     """Compare two runs and return a structured result."""
 
     a_data = load_run(run_a_path)
@@ -162,11 +162,13 @@ def run_comparison(run_a_path: Path, run_b_path: Path,
 
     # NaN check
     comparison.nan_in_a = sum(
-        1 for r in a_data.get("rows", [])
+        1
+        for r in a_data.get("rows", [])
         if "loss" in r and (r["loss"] == "nan" or r["loss"] == "NaN")
     )
     comparison.nan_in_b = sum(
-        1 for r in b_data.get("rows", [])
+        1
+        for r in b_data.get("rows", [])
         if "loss" in r and (r["loss"] == "nan" or r["loss"] == "NaN")
     )
 
@@ -181,10 +183,10 @@ def run_comparison(run_a_path: Path, run_b_path: Path,
 
     # Overall status and recommendation
     all_parity = (
-        comparison.loss_parity and
-        comparison.metric_parity and
-        comparison.nan_in_a == 0 and
-        comparison.nan_in_b == 0
+        comparison.loss_parity
+        and comparison.metric_parity
+        and comparison.nan_in_a == 0
+        and comparison.nan_in_b == 0
     )
 
     if all_parity:

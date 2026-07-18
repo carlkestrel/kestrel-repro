@@ -3,6 +3,7 @@ Metric Auditor Agent - NORA-style specialist for data and metric auditing.
 
 This agent validates metrics, checks numerical parity, and ensures reproducibility.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -48,11 +49,14 @@ class MetricAuditorAgent(SpecialistAgent):
 
         parity_criteria = self._define_parity_criteria(metric_targets)
 
-        self.prepare_handoff(context, {
-            "metric_targets": metric_targets,
-            "data_contracts": data_contracts,
-            "parity_criteria": parity_criteria,
-        })
+        self.prepare_handoff(
+            context,
+            {
+                "metric_targets": metric_targets,
+                "data_contracts": data_contracts,
+                "parity_criteria": parity_criteria,
+            },
+        )
 
         return AgentResult(
             agent_type=self.agent_type,
@@ -84,22 +88,28 @@ class MetricAuditorAgent(SpecialistAgent):
 
         for req in requirements:
             if req.get("type") == "metric_target":
-                targets.append({
-                    "metric": req.get("metric", "unknown"),
-                    "target": req.get("target", 0.0),
-                    "threshold": req.get("threshold", 0.0),
-                    "unit": req.get("unit", ""),
-                    "direction": "higher_is_better" if req.get("target", 0) > 0 else "lower_is_better",
-                })
+                targets.append(
+                    {
+                        "metric": req.get("metric", "unknown"),
+                        "target": req.get("target", 0.0),
+                        "threshold": req.get("threshold", 0.0),
+                        "unit": req.get("unit", ""),
+                        "direction": "higher_is_better"
+                        if req.get("target", 0) > 0
+                        else "lower_is_better",
+                    }
+                )
 
         if not targets:
-            targets.append({
-                "metric": "accuracy",
-                "target": 90.0,
-                "threshold": 85.0,
-                "unit": "%",
-                "direction": "higher_is_better",
-            })
+            targets.append(
+                {
+                    "metric": "accuracy",
+                    "target": 90.0,
+                    "threshold": 85.0,
+                    "unit": "%",
+                    "direction": "higher_is_better",
+                }
+            )
 
         return targets
 
@@ -109,29 +119,33 @@ class MetricAuditorAgent(SpecialistAgent):
 
         for req in requirements:
             if req.get("type") == "dataset":
-                contracts.append({
-                    "contract_type": "dataset",
-                    "description": req.get("description", "Dataset requirement"),
-                    "required": req.get("required", True),
-                    "validation_checks": [
-                        "download_verification",
-                        "checksum_validation",
-                        "format_verification",
-                        "split_integrity",
-                    ],
-                })
+                contracts.append(
+                    {
+                        "contract_type": "dataset",
+                        "description": req.get("description", "Dataset requirement"),
+                        "required": req.get("required", True),
+                        "validation_checks": [
+                            "download_verification",
+                            "checksum_validation",
+                            "format_verification",
+                            "split_integrity",
+                        ],
+                    }
+                )
 
-        contracts.append({
-            "contract_type": "environment",
-            "description": "Environment reproducibility contract",
-            "required": True,
-            "validation_checks": [
-                "python_version",
-                "package_versions",
-                "cuda_version",
-                "random_seeds",
-            ],
-        })
+        contracts.append(
+            {
+                "contract_type": "environment",
+                "description": "Environment reproducibility contract",
+                "required": True,
+                "validation_checks": [
+                    "python_version",
+                    "package_versions",
+                    "cuda_version",
+                    "random_seeds",
+                ],
+            }
+        )
 
         return contracts
 
@@ -143,13 +157,15 @@ class MetricAuditorAgent(SpecialistAgent):
             metric = target["metric"]
             tolerance = self._get_tolerance(metric)
 
-            criteria.append({
-                "metric": metric,
-                "tolerance": tolerance,
-                "relative_tolerance": tolerance / 100 if target["unit"] == "%" else 0.01,
-                "absolute_tolerance": 1e-4,
-                "method": "relative_and_absolute",
-            })
+            criteria.append(
+                {
+                    "metric": metric,
+                    "tolerance": tolerance,
+                    "relative_tolerance": tolerance / 100 if target["unit"] == "%" else 0.01,
+                    "absolute_tolerance": 1e-4,
+                    "method": "relative_and_absolute",
+                }
+            )
 
         return criteria
 

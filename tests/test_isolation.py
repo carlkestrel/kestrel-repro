@@ -5,13 +5,12 @@ R3R-8: Test isolation:
 2. No .sqlite3 files in scripts/ directory
 3. Running the test suite does not dirty the git worktree
 """
+
 from __future__ import annotations
 
 import subprocess
 import sys
 from pathlib import Path
-
-import pytest
 
 THIS = Path(__file__).resolve()
 PLUGIN_ROOT = THIS.parents[1]
@@ -31,11 +30,7 @@ class TestNoTrackedRuntimeArtifacts:
             capture_output=True,
             text=True,
         )
-        tracked = [
-            line.strip()
-            for line in result.stdout.strip().splitlines()
-            if line.strip()
-        ]
+        tracked = [line.strip() for line in result.stdout.strip().splitlines() if line.strip()]
         assert tracked == [], (
             f".execution/ has {len(tracked)} tracked file(s): {tracked}. "
             "These must be gitignored, not committed. "
@@ -64,11 +59,7 @@ class TestNoTrackedRuntimeArtifacts:
             capture_output=True,
             text=True,
         )
-        tracked = [
-            line.strip()
-            for line in result.stdout.strip().splitlines()
-            if line.strip()
-        ]
+        tracked = [line.strip() for line in result.stdout.strip().splitlines() if line.strip()]
         assert tracked == [], (
             f".repro/execution/ has {len(tracked)} tracked file(s): {tracked}. "
             "This directory must be .gitignored."
@@ -90,7 +81,7 @@ class TestSuiteDoesNotDirtyWorktree:
             capture_output=True,
             text=True,
         )
-        all_dirty = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+        all_dirty = [ln.strip() for ln in result.stdout.strip().splitlines() if ln.strip()]
 
         # Filter to only files that represent test isolation violations:
         # - Runtime SQLite files anywhere in scripts/
@@ -125,12 +116,15 @@ class TestSuiteDoesNotDirtyWorktree:
         # Run just the new unit test suites (fast ~5s total)
         result = subprocess.run(
             [
-                sys.executable, "-m", "pytest",
+                sys.executable,
+                "-m",
+                "pytest",
                 "tests/test_non_evidentiary_waiver.py",
                 "tests/test_authorization_enforcement_e2e.py",
                 "tests/test_metrics_recompute_verifier.py",
                 "--timeout=60",
-                "-p", "no:cacheprovider",
+                "-p",
+                "no:cacheprovider",
                 "-q",
             ],
             cwd=str(PLUGIN_ROOT),
@@ -145,15 +139,18 @@ class TestSuiteDoesNotDirtyWorktree:
             capture_output=True,
             text=True,
         )
-        dirty = [l.strip() for l in status.stdout.strip().splitlines() if l.strip()]
+        dirty = [ln.strip() for ln in status.stdout.strip().splitlines() if ln.strip()]
 
         # Only fail on actual isolation violations (runtime files in scripts/,
         # tracked .execution/, or .sqlite3 anywhere not in .repro/)
         violations = [
-            f for f in dirty
-            if ".sqlite3" in f or
-            ".execution/" in f or
-            (f.startswith("A  ") and "scripts/" in f and not f.startswith("A  scripts/commands/"))
+            f
+            for f in dirty
+            if ".sqlite3" in f
+            or ".execution/" in f
+            or (
+                f.startswith("A  ") and "scripts/" in f and not f.startswith("A  scripts/commands/")
+            )
         ]
         assert violations == [], (
             f"Test isolation violations: {violations}. "

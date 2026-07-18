@@ -2,7 +2,7 @@
 
 > Baseline: `test-baseline`
 > Candidate: `test-candidate`
-> Timestamp: 2026-07-18T13:37:50.409761+00:00
+> Timestamp: 2026-07-18T14:53:35.424843+00:00
 
 ## Tolerances
 
@@ -17,9 +17,9 @@
 
 | Check | Value | Within Tolerance? |
 |---|---|---|
-| Model output (L2) | 2.69e-07 | ✅ |
-| Loss relative diff | 1.30e-07 | ✅ |
-| Gradient L2 | 1.87e-07 | ✅ |
+| Model output (L2) | 3.96e-07 | ✅ |
+| Loss relative diff | 1.26e-07 | ✅ |
+| Gradient L2 | 1.27e-07 | ✅ |
 | NaN count | 0 | ✅ |
 | Inf count | 0 | ✅ |
 | Gradient vanishing | False | ✅ |

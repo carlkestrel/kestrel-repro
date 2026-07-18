@@ -3,6 +3,7 @@
 Monitors GPU temperature, GPU memory, CPU RAM, disk space, and system
 health. Enforces hardware limits and prevents GPU damage.
 """
+
 from __future__ import annotations
 
 import os
@@ -14,6 +15,7 @@ from pathlib import Path
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -24,6 +26,7 @@ from . import constants as _C
 @dataclass
 class HardwareSnapshot:
     """Point-in-time snapshot of all hardware metrics."""
+
     timestamp_utc: str
     gpu_available: bool = False
     gpu_count: int = 0
@@ -85,6 +88,7 @@ class HardwareSnapshot:
 @dataclass
 class HardwarePolicy:
     """Hardware safety limits. Read from OSTAR config."""
+
     gpu_warn_temp_c: int = _C.DEFAULT_GPU_WARN_TEMP_C
     gpu_critical_temp_c: int = _C.DEFAULT_GPU_CRITICAL_TEMP_C
     disk_reserve_gb: float = _C.DEFAULT_DISK_RESERVE_GB
@@ -96,7 +100,7 @@ class HardwareMonitor:
     """System-wide hardware monitoring with GPU safety enforcement."""
 
     _GPU_VENDOR_TEMP_MAX = {
-        "nvidia": 83,   # conservative; NVIDIA Fermi+ max is 83°C below Boost 3.0
+        "nvidia": 83,  # conservative; NVIDIA Fermi+ max is 83°C below Boost 3.0
         "amd": 90,
     }
     _CACHE_TTL = 5.0  # seconds
@@ -145,9 +149,7 @@ class HardwareMonitor:
                 f"GPU critical temp {max_temp}°C >= {self.policy.gpu_critical_temp_c}°C"
             )
         elif max_temp >= self.policy.gpu_warn_temp_c:
-            violations.append(
-                f"GPU warn temp {max_temp}°C >= {self.policy.gpu_warn_temp_c}°C"
-            )
+            violations.append(f"GPU warn temp {max_temp}°C >= {self.policy.gpu_warn_temp_c}°C")
 
         # Disk space
         if snap.disk_free_gb < self.policy.disk_reserve_gb:
@@ -222,9 +224,9 @@ class HardwareMonitor:
             return
         try:
             for i in range(torch.cuda.device_count()):
-                mem_alloc = torch.cuda.memory_allocated(i) / (1024 ** 3)
-                mem_resv = torch.cuda.memory_reserved(i) / (1024 ** 3)
-                mem_total = torch.cuda.get_device_properties(i).total_memory / (1024 ** 3)
+                mem_alloc = torch.cuda.memory_allocated(i) / (1024**3)
+                mem_resv = torch.cuda.memory_reserved(i) / (1024**3)
+                mem_total = torch.cuda.get_device_properties(i).total_memory / (1024**3)
                 self._gpu_cache[i] = {
                     "allocated_gb": round(mem_alloc, 3),
                     "reserved_gb": round(mem_resv, 3),
@@ -255,10 +257,14 @@ class HardwareMonitor:
         """Query nvidia-smi for temperature, power, utilization. Returns None on failure."""
         try:
             result = subprocess.run(
-                ["nvidia-smi",
-                 "--query-gpu=index,temperature.gpu,power.draw,utilization.gpu",
-                 "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, timeout=5,
+                [
+                    "nvidia-smi",
+                    "--query-gpu=index,temperature.gpu,power.draw,utilization.gpu",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode != 0:
                 return None
@@ -295,16 +301,14 @@ class HardwareMonitor:
             used_kb = total_kb - available_kb
             if total_kb:
                 snap.cpu_memory_used_pct = round(used_kb / total_kb * 100, 1)
-            snap.cpu_memory_total_gb = round(total_kb / (1024 ** 2), 2)
-            snap.cpu_memory_available_gb = round(available_kb / (1024 ** 2), 2)
+            snap.cpu_memory_total_gb = round(total_kb / (1024**2), 2)
+            snap.cpu_memory_available_gb = round(available_kb / (1024**2), 2)
 
             # Swap
             swap_total_kb = mem.get("SwapTotal", 0)
             swap_free_kb = mem.get("SwapFree", 0)
             if swap_total_kb:
-                snap.swap_used_pct = round(
-                    (swap_total_kb - swap_free_kb) / swap_total_kb * 100, 1
-                )
+                snap.swap_used_pct = round((swap_total_kb - swap_free_kb) / swap_total_kb * 100, 1)
         except Exception:
             pass
 
@@ -313,9 +317,10 @@ class HardwareMonitor:
             return
         try:
             import shutil as _shutil
+
             usage = _shutil.disk_usage(str(self.project_root))
-            snap.disk_free_gb = round(usage.free / (1024 ** 3), 2)
-            snap.disk_total_gb = round(usage.total / (1024 ** 3), 2)
+            snap.disk_free_gb = round(usage.free / (1024**3), 2)
+            snap.disk_total_gb = round(usage.total / (1024**3), 2)
             if usage.total:
                 snap.disk_used_pct = round(usage.used / usage.total * 100, 1)
         except Exception:
@@ -333,7 +338,10 @@ class HardwareMonitor:
         # Open file handles
         try:
             result = subprocess.run(
-                ["ls", "/proc/self/fd"], capture_output=True, text=True, timeout=2,
+                ["ls", "/proc/self/fd"],
+                capture_output=True,
+                text=True,
+                timeout=2,
             )
             if result.returncode == 0:
                 snap.open_file_handles = len(result.stdout.splitlines())
@@ -344,7 +352,9 @@ class HardwareMonitor:
         try:
             result = subprocess.run(
                 ["pgrep", "-c", "-P", str(os.getpid())],
-                capture_output=True, text=True, timeout=2,
+                capture_output=True,
+                text=True,
+                timeout=2,
             )
             if result.returncode == 0:
                 snap.child_processes = int(result.stdout.strip())
@@ -368,13 +378,9 @@ class HardwareMonitor:
             )
 
         if snap.cpu_memory_used_pct > 95:
-            snap.warnings.append(
-                f"CPU RAM critical: {snap.cpu_memory_used_pct:.1f}% used"
-            )
+            snap.warnings.append(f"CPU RAM critical: {snap.cpu_memory_used_pct:.1f}% used")
         elif snap.cpu_memory_used_pct > 85:
-            snap.warnings.append(
-                f"CPU RAM high: {snap.cpu_memory_used_pct:.1f}% used"
-            )
+            snap.warnings.append(f"CPU RAM high: {snap.cpu_memory_used_pct:.1f}% used")
 
         if snap.swap_used_pct > 50:
             snap.warnings.append(f"Swap usage {snap.swap_used_pct:.1f}%")

@@ -45,12 +45,18 @@ AUTO_PROCEED_ENV = "AUTO_PROCEED"
 class PolicyEngine:
     """Reload-on-every-decision policy evaluator with NORA AUTO_PROCEED support."""
 
-    def __init__(self, project_root: str | Path,
-                 policy_path: str | Path | None = None,
-                 automation: str = "safe-auto"):
+    def __init__(
+        self,
+        project_root: str | Path,
+        policy_path: str | Path | None = None,
+        automation: str = "safe-auto",
+    ):
         self.project_root = Path(project_root).resolve()
-        self.policy_path = (Path(policy_path).resolve() if policy_path else
-                            self.project_root / "automation_policy.yaml")
+        self.policy_path = (
+            Path(policy_path).resolve()
+            if policy_path
+            else self.project_root / "automation_policy.yaml"
+        )
         self.automation = automation
         self._nora_config: dict[str, Any] = {}
 
@@ -64,9 +70,11 @@ class PolicyEngine:
         # Load NORA config
         self._nora_config = loaded.get("nora", DEFAULT_POLICY["nora"])
 
-        merged = {"default": loaded.get("default", DEFAULT_POLICY["default"]),
-                  "gates": {**DEFAULT_POLICY["gates"], **loaded.get("gates", {})},
-                  "nora": {**DEFAULT_POLICY["nora"], **self._nora_config}}
+        merged = {
+            "default": loaded.get("default", DEFAULT_POLICY["default"]),
+            "gates": {**DEFAULT_POLICY["gates"], **loaded.get("gates", {})},
+            "nora": {**DEFAULT_POLICY["nora"], **self._nora_config},
+        }
         return merged
 
     def is_auto_proceed_enabled(self) -> bool:

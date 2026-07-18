@@ -1,4 +1,5 @@
 """Stop: graceful shutdown that saves state and clears the lock."""
+
 from __future__ import annotations
 
 import json
@@ -17,8 +18,7 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def run(*, project_root: Path, plan_path: Path | None = None,
-          force: bool = False) -> dict:
+def run(*, project_root: Path, plan_path: Path | None = None, force: bool = False) -> dict:
     """Save state, send graceful stop to managed children, clear lock.
 
     R3F-8: ``force=True`` sends SIGKILL after SIGTERM for unresponsive processes.

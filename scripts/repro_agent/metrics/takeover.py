@@ -3,6 +3,7 @@ Project Takeover Module
 
 Scans existing projects and builds metric registry from available evidence.
 """
+
 from __future__ import annotations
 
 import json
@@ -19,7 +20,7 @@ from .models import (
 class TakeoverScanner:
     """
     Scans existing projects for metric evidence.
-    
+
     Performs read-only scan of:
     - README
     - Paper metadata
@@ -72,12 +73,14 @@ class TakeoverScanner:
 
                 for doi in dois:
                     is_wrong = doi in WRONG_DOIS
-                    self.findings.append({
-                        "type": "DOI",
-                        "value": doi,
-                        "file": str(path),
-                        "is_wrong": is_wrong,
-                    })
+                    self.findings.append(
+                        {
+                            "type": "DOI",
+                            "value": doi,
+                            "file": str(path),
+                            "is_wrong": is_wrong,
+                        }
+                    )
 
                 # Check for paper title
                 for key in ["title", "Title", "TITLE"]:
@@ -106,6 +109,7 @@ class TakeoverScanner:
 
                 if path.suffix == ".yaml":
                     import yaml
+
                     with open(path) as f:
                         data = yaml.safe_load(f)
                 elif path.suffix == ".json":
@@ -119,12 +123,14 @@ class TakeoverScanner:
                 # Validate DOI
                 doi = data.get("doi") or data.get("DOI")
                 if doi:
-                    self.findings.append({
-                        "type": "DOI",
-                        "value": doi,
-                        "file": str(path),
-                        "is_wrong": doi in WRONG_DOIS,
-                    })
+                    self.findings.append(
+                        {
+                            "type": "DOI",
+                            "value": doi,
+                            "file": str(path),
+                            "is_wrong": doi in WRONG_DOIS,
+                        }
+                    )
 
     def _scan_configs(self) -> None:
         """Scan config files for metric definitions."""
@@ -145,6 +151,7 @@ class TakeoverScanner:
                     try:
                         if path.suffix in {".yaml", ".yml"}:
                             import yaml
+
                             with open(path) as f:
                                 data = yaml.safe_load(f)
                         else:
@@ -154,18 +161,26 @@ class TakeoverScanner:
                         # Look for metric-related keys
                         if isinstance(data, dict):
                             metric_keys = [
-                                "metric", "metrics", "evaluation", "eval",
-                                "miou", "mIoU", "accuracy", "IoU",
+                                "metric",
+                                "metrics",
+                                "evaluation",
+                                "eval",
+                                "miou",
+                                "mIoU",
+                                "accuracy",
+                                "IoU",
                             ]
 
                             for key in metric_keys:
                                 if key in data:
-                                    self.findings.append({
-                                        "type": "CONFIG_METRIC",
-                                        "key": key,
-                                        "value": data[key],
-                                        "file": str(path),
-                                    })
+                                    self.findings.append(
+                                        {
+                                            "type": "CONFIG_METRIC",
+                                            "key": key,
+                                            "value": data[key],
+                                            "file": str(path),
+                                        }
+                                    )
                     except Exception:
                         pass
 
@@ -187,16 +202,20 @@ class TakeoverScanner:
                         content = path.read_text(errors="ignore")
 
                         # Look for metric patterns
-                        metric_pattern = r"(mIoU|mIoU_ch|mAcc|IoU|accuracy|precision|recall|F1)[:\s=]+([0-9.]+)"
+                        metric_pattern = (
+                            r"(mIoU|mIoU_ch|mAcc|IoU|accuracy|precision|recall|F1)[:\s=]+([0-9.]+)"
+                        )
                         matches = re.findall(metric_pattern, content)
 
                         for metric_name, value in matches:
-                            self.findings.append({
-                                "type": "TRAIN_LOG_METRIC",
-                                "metric": metric_name,
-                                "value": float(value),
-                                "file": str(path),
-                            })
+                            self.findings.append(
+                                {
+                                    "type": "TRAIN_LOG_METRIC",
+                                    "metric": metric_name,
+                                    "value": float(value),
+                                    "file": str(path),
+                                }
+                            )
                     except Exception:
                         pass
 
@@ -219,12 +238,14 @@ class TakeoverScanner:
                         matches = re.findall(metric_pattern, content)
 
                         for metric_name, value in matches:
-                            self.findings.append({
-                                "type": "EVAL_LOG_METRIC",
-                                "metric": metric_name,
-                                "value": float(value),
-                                "file": str(path),
-                            })
+                            self.findings.append(
+                                {
+                                    "type": "EVAL_LOG_METRIC",
+                                    "metric": metric_name,
+                                    "value": float(value),
+                                    "file": str(path),
+                                }
+                            )
                     except Exception:
                         pass
 
@@ -242,12 +263,14 @@ class TakeoverScanner:
 
             for path in checkpoint_dir.rglob("*"):
                 if path.suffix in {".pth", ".pt", ".ckpt"}:
-                    self.findings.append({
-                        "type": "CHECKPOINT",
-                        "path": str(path),
-                        "size_mb": path.stat().st_size / (1024 * 1024),
-                        "modified": path.stat().st_mtime,
-                    })
+                    self.findings.append(
+                        {
+                            "type": "CHECKPOINT",
+                            "path": str(path),
+                            "size_mb": path.stat().st_size / (1024 * 1024),
+                            "modified": path.stat().st_mtime,
+                        }
+                    )
 
     def _scan_confusion_matrices(self) -> None:
         """Scan for confusion matrix files."""
@@ -263,11 +286,13 @@ class TakeoverScanner:
             for path in self.project_root.glob(pattern):
                 if path.is_file():
                     self.scanned_files.append(str(path))
-                    self.findings.append({
-                        "type": "CONFUSION_MATRIX",
-                        "path": str(path),
-                        "size_bytes": path.stat().st_size,
-                    })
+                    self.findings.append(
+                        {
+                            "type": "CONFUSION_MATRIX",
+                            "path": str(path),
+                            "size_bytes": path.stat().st_size,
+                        }
+                    )
 
     def _scan_predictions(self) -> None:
         """Scan for prediction files."""
@@ -280,11 +305,13 @@ class TakeoverScanner:
         for pattern in pred_patterns:
             for path in self.project_root.glob(pattern):
                 if path.is_file():
-                    self.findings.append({
-                        "type": "PREDICTION",
-                        "path": str(path),
-                        "size_mb": path.stat().st_size / (1024 * 1024),
-                    })
+                    self.findings.append(
+                        {
+                            "type": "PREDICTION",
+                            "path": str(path),
+                            "size_mb": path.stat().st_size / (1024 * 1024),
+                        }
+                    )
 
     def _scan_reports(self) -> None:
         """Scan for existing reports."""
@@ -299,11 +326,13 @@ class TakeoverScanner:
             for path in self.project_root.glob(pattern):
                 if path.is_file():
                     self.scanned_files.append(str(path))
-                    self.findings.append({
-                        "type": "REPORT",
-                        "path": str(path),
-                        "size_kb": path.stat().st_size / 1024,
-                    })
+                    self.findings.append(
+                        {
+                            "type": "REPORT",
+                            "path": str(path),
+                            "size_kb": path.stat().st_size / 1024,
+                        }
+                    )
 
     def _scan_git_diff(self) -> None:
         """Scan git diff for code changes."""

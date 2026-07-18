@@ -4,6 +4,7 @@ Siamese KPConv Golden Test
 Built-in golden fixture to validate mIoU_ch calculation for Siamese KPConv.
 This test cannot be deleted and validates the metric protocol auditor.
 """
+
 from __future__ import annotations
 
 import json
@@ -28,7 +29,7 @@ from .recompute import MetricRecomputer
 class SiamKPConvGoldenTest:
     """
     Golden test for Siamese KPConv mIoU_ch calculation.
-    
+
     This test validates:
     1. mIoU_ch is mean of classes 1-6 (excluding Unchanged)
     2. All-class mIoU is NOT equal to 80.12
@@ -74,8 +75,9 @@ class SiamKPConvGoldenTest:
     def _test_miou_ch_calculation(self) -> None:
         """Test that mIoU_ch = mean of classes 1-6 ≈ 80.12"""
         # Compute mIoU_ch from paper targets
-        change_ious = [SiamKPConv_PAPER_TARGETS[SiamKPConv_CLASS_NAMES[c]]
-                      for c in SiamKPConv_CHANGE_CLASSES]
+        change_ious = [
+            SiamKPConv_PAPER_TARGETS[SiamKPConv_CLASS_NAMES[c]] for c in SiamKPConv_CHANGE_CLASSES
+        ]
         computed_miou_ch = sum(change_ious) / len(change_ious)
 
         # Check against target
@@ -93,17 +95,19 @@ class SiamKPConvGoldenTest:
         if diff <= tolerance:
             self.passed.append("miou_ch_calculation")
         else:
-            self.failed.append(f"miou_ch_calculation: computed={computed_miou_ch:.4f}, target={SiamKPConv_MIOU_CH_TARGET:.4f}")
+            self.failed.append(
+                f"miou_ch_calculation: computed={computed_miou_ch:.4f}, target={SiamKPConv_MIOU_CH_TARGET:.4f}"
+            )
 
     def _test_miou_vs_miou_ch(self) -> None:
         """Test that all-class mIoU is NOT equal to mIoU_ch"""
         # Compute all-class mIoU (classes 0-6)
-        all_ious = [SiamKPConv_PAPER_TARGETS[name]
-                   for name in SiamKPConv_CLASS_NAMES]
+        all_ious = [SiamKPConv_PAPER_TARGETS[name] for name in SiamKPConv_CLASS_NAMES]
         all_miou = sum(all_ious) / len(all_ious)
 
-        change_ious = [SiamKPConv_PAPER_TARGETS[SiamKPConv_CLASS_NAMES[c]]
-                      for c in SiamKPConv_CHANGE_CLASSES]
+        change_ious = [
+            SiamKPConv_PAPER_TARGETS[SiamKPConv_CLASS_NAMES[c]] for c in SiamKPConv_CHANGE_CLASSES
+        ]
         miou_ch = sum(change_ious) / len(change_ious)
 
         # They should NOT be equal
@@ -203,7 +207,7 @@ class SiamKPConvGoldenTest:
     def test_confusion_matrix_recomputation(self, confusion_matrix_path: Path) -> dict:
         """
         Test recomputation from confusion matrix.
-        
+
         This validates that the MetricRecomputer can correctly compute mIoU_ch
         from a non-normalized confusion matrix.
         """
@@ -223,8 +227,7 @@ class SiamKPConvGoldenTest:
 
         # Recompute metrics
         results = MetricRecomputer.recompute_from_confusion_matrix(
-            cm,
-            class_names=SiamKPConv_CLASS_NAMES
+            cm, class_names=SiamKPConv_CLASS_NAMES
         )
 
         # Validate mIoU_ch calculation
@@ -245,7 +248,8 @@ class SiamKPConvGoldenTest:
             "per_class_iou": results.get("per_class_iou", {}),
             "mean_accuracy": results.get("mean_accuracy", {}),
             "protocol_validation": {
-                "miou_ch_excludes_class_0": SiamKPConv_CHANGE_CLASSES == list(range(1, len(SiamKPConv_CLASS_NAMES))),
+                "miou_ch_excludes_class_0": SiamKPConv_CHANGE_CLASSES
+                == list(range(1, len(SiamKPConv_CLASS_NAMES))),
                 "change_classes_count": len(SiamKPConv_CHANGE_CLASSES),
             },
         }
@@ -257,11 +261,11 @@ class SiamKPConvGoldenTest:
     ) -> dict:
         """
         Test if local protocol matches expected Siamese KPConv protocol.
-        
+
         Args:
             local_protocol: Protocol fingerprint from local experiment
             expected_protocol: Expected protocol (if None, use paper defaults)
-        
+
         Returns:
             Protocol compatibility result
         """
@@ -299,7 +303,7 @@ class SiamKPConvGoldenTest:
     ) -> dict:
         """
         Validate that unknown numbers (23.74, 19.38, 17.85, 23.77) are properly marked.
-        
+
         These numbers must be marked UNVERIFIED if no source is provided.
         """
         unverified_targets = [23.74, 19.38, 17.85, 23.77]
@@ -308,18 +312,20 @@ class SiamKPConvGoldenTest:
         for num in numbers:
             for target in unverified_targets:
                 if abs(num - target) < 0.1:
-                    found.append({
-                        "number": num,
-                        "possible_target": target,
-                        "status": "UNVERIFIED",
-                        "reason": f"{target} has no verifiable source in paper",
-                        "context": context,
-                    })
+                    found.append(
+                        {
+                            "number": num,
+                            "possible_target": target,
+                            "status": "UNVERIFIED",
+                            "reason": f"{target} has no verifiable source in paper",
+                            "context": context,
+                        }
+                    )
 
         return {
             "unverified_found": found,
-            "all_marked_unverified": len(found) == len([n for n in numbers
-                                                       if any(abs(n-t) < 0.1 for t in unverified_targets)]),
+            "all_marked_unverified": len(found)
+            == len([n for n in numbers if any(abs(n - t) < 0.1 for t in unverified_targets)]),
             "action_required": "Mark these numbers as UNVERIFIED in reports",
         }
 
@@ -339,6 +345,7 @@ class SiamKPConvGoldenTest:
     def _get_timestamp(self) -> str:
         """Get current timestamp."""
         from datetime import datetime, timezone
+
         return datetime.now(timezone.utc).isoformat()
 
     def save_results(self, output_path: Path) -> None:
@@ -361,7 +368,9 @@ class SiamKPConvGoldenTest:
             std = SiamKPConv_PAPER_TARGET_STD[name]
             lines.append(f"| {name} | {iou:.2f} | {std:.2f} |")
 
-        lines.append(f"| **mIoU_ch** | **{SiamKPConv_MIOU_CH_TARGET:.2f}** | {SiamKPConv_MIOU_CH_STD:.2f} |")
+        lines.append(
+            f"| **mIoU_ch** | **{SiamKPConv_MIOU_CH_TARGET:.2f}** | {SiamKPConv_MIOU_CH_STD:.2f} |"
+        )
         lines.append(f"| **mAcc** | **{SiamKPConv_MACC_TARGET:.2f}** | {SiamKPConv_MACC_STD:.2f} |")
 
         return "\n".join(lines)

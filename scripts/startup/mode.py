@@ -11,6 +11,7 @@ Usage::
     from scripts.startup.mode import parse_mode, NEEDS_MODE_REVIEW
     result = parse_mode("strict_repro")   # returns ModeTriple or NEEDS_MODE_REVIEW
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -33,6 +34,7 @@ NEEDS_MODE_REVIEW = "__NEEDS_MODE_REVIEW__"
 @dataclass(frozen=True, slots=True)
 class ModeTriple:
     """Canonical three-dimensional mode representation."""
+
     research_purpose: str
     execution_track: str
     automation_level: str
@@ -64,33 +66,33 @@ class ModeTriple:
 # Values = ModeTriple or NEEDS_MODE_REVIEW
 _LEGACY_MAP: dict[str, ModeTriple | str] = {
     # ── strict_repro variants ──────────────────────────────────────────
-    "strict_repro":        ModeTriple("reproduce", "strict",  "gated-autopilot"),
-    "strict_repro_manual": ModeTriple("reproduce", "strict",  "manual"),
+    "strict_repro": ModeTriple("reproduce", "strict", "gated-autopilot"),
+    "strict_repro_manual": ModeTriple("reproduce", "strict", "manual"),
     # ── optimized / fast variants ──────────────────────────────────────
-    "optimized_repro_safe": ModeTriple("reproduce", "fast",   "gated-autopilot"),
-    "experimental_fast":    ModeTriple("reproduce", "fast",   "gated-autopilot"),
-    "optimized":           ModeTriple("reproduce", "fast",   "manual"),
-    "optimized_manual":    ModeTriple("reproduce", "fast",   "manual"),
+    "optimized_repro_safe": ModeTriple("reproduce", "fast", "gated-autopilot"),
+    "experimental_fast": ModeTriple("reproduce", "fast", "gated-autopilot"),
+    "optimized": ModeTriple("reproduce", "fast", "manual"),
+    "optimized_manual": ModeTriple("reproduce", "fast", "manual"),
     # ── strict (purpose-agnostic) ────────────────────────────────────
-    "strict":              ModeTriple("reproduce", "strict",  "manual"),
-    "strict_gated":       ModeTriple("reproduce", "strict",  "gated-autopilot"),
+    "strict": ModeTriple("reproduce", "strict", "manual"),
+    "strict_gated": ModeTriple("reproduce", "strict", "gated-autopilot"),
     # ── reproduce ─────────────────────────────────────────────────────
-    "reproduce":           ModeTriple("reproduce", "strict",  "gated-autopilot"),
-    "reproduce_strict_gated":  ModeTriple("reproduce", "strict", "gated-autopilot"),
+    "reproduce": ModeTriple("reproduce", "strict", "gated-autopilot"),
+    "reproduce_strict_gated": ModeTriple("reproduce", "strict", "gated-autopilot"),
     "reproduce_strict_manual": ModeTriple("reproduce", "strict", "manual"),
-    "reproduce_fast_gated":    ModeTriple("reproduce", "fast",   "gated-autopilot"),
+    "reproduce_fast_gated": ModeTriple("reproduce", "fast", "gated-autopilot"),
     # ── audit ─────────────────────────────────────────────────────────
-    "diagnose":            ModeTriple("audit",     "strict",  "gated-autopilot"),
-    "audit_smoke":        ModeTriple("audit",     "smoke",   "gated-autopilot"),
-    "audit_fast":         ModeTriple("audit",     "fast",    "gated-autopilot"),
-    "audit_manual":       ModeTriple("audit",     "strict",  "manual"),
+    "diagnose": ModeTriple("audit", "strict", "gated-autopilot"),
+    "audit_smoke": ModeTriple("audit", "smoke", "gated-autopilot"),
+    "audit_fast": ModeTriple("audit", "fast", "gated-autopilot"),
+    "audit_manual": ModeTriple("audit", "strict", "manual"),
     # ── extend ────────────────────────────────────────────────────────
-    "evolve":             ModeTriple("extend",    "fast",    "gated-autopilot"),
-    "extend":             ModeTriple("extend",    "fast",    "gated-autopilot"),
-    "extend_strict":     ModeTriple("extend",    "strict",  "gated-autopilot"),
+    "evolve": ModeTriple("extend", "fast", "gated-autopilot"),
+    "extend": ModeTriple("extend", "fast", "gated-autopilot"),
+    "extend_strict": ModeTriple("extend", "strict", "gated-autopilot"),
     # ── takeover ─────────────────────────────────────────────────────
-    "takeover":           ModeTriple("takeover",  "strict",  "gated-autopilot"),
-    "takeover_fast":     ModeTriple("takeover",  "fast",    "gated-autopilot"),
+    "takeover": ModeTriple("takeover", "strict", "gated-autopilot"),
+    "takeover_fast": ModeTriple("takeover", "fast", "gated-autopilot"),
 }
 
 
@@ -122,9 +124,11 @@ def parse_mode(mode_raw: str | None) -> ModeTriple | str:
         purpose = mode_raw.get("research_purpose", "")
         track = mode_raw.get("execution_track", "")
         automation = mode_raw.get("automation_level", "")
-        if (purpose in RESEARCH_PURPOSE
-                and track in EXECUTION_TRACK
-                and automation in AUTOMATION_LEVEL):
+        if (
+            purpose in RESEARCH_PURPOSE
+            and track in EXECUTION_TRACK
+            and automation in AUTOMATION_LEVEL
+        ):
             return ModeTriple(purpose, track, automation)
         return NEEDS_MODE_REVIEW
 
@@ -168,8 +172,15 @@ def describe_mode(mode_raw: str | None) -> str:
 
 
 __all__ = [
-    "ModeTriple", "NEEDS_MODE_REVIEW",
-    "ResearchPurpose", "ExecutionTrack", "AutomationLevel",
-    "RESEARCH_PURPOSE", "EXECUTION_TRACK", "AUTOMATION_LEVEL",
-    "parse_mode", "is_needs_review", "describe_mode",
+    "ModeTriple",
+    "NEEDS_MODE_REVIEW",
+    "ResearchPurpose",
+    "ExecutionTrack",
+    "AutomationLevel",
+    "RESEARCH_PURPOSE",
+    "EXECUTION_TRACK",
+    "AUTOMATION_LEVEL",
+    "parse_mode",
+    "is_needs_review",
+    "describe_mode",
 ]

@@ -7,6 +7,7 @@ This module defines the core data models for the metric protocol auditor:
 - MetricObservation: Observed metric value
 - MetricSource: Source of metric information
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -22,13 +23,12 @@ def utc_now() -> str:
 
 def compute_hash(obj: Any) -> str:
     """Compute deterministic hash of any JSON-serializable object."""
-    return hashlib.sha256(
-        json.dumps(obj, sort_keys=True, default=str).encode()
-    ).hexdigest()[:16]
+    return hashlib.sha256(json.dumps(obj, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
 
 class SourceRole(str, Enum):
     """Role of a metric source in the evidence chain."""
+
     TARGET_VALUE = "TARGET_VALUE"
     FORMULA_DEFINITION = "FORMULA_DEFINITION"
     DATASET_PROTOCOL = "DATASET_PROTOCOL"
@@ -40,6 +40,7 @@ class SourceRole(str, Enum):
 
 class MetricStatus(str, Enum):
     """Status of a metric."""
+
     MISSING = "MISSING"
     DISCOVERED = "DISCOVERED"
     UNVERIFIED = "UNVERIFIED"
@@ -58,6 +59,7 @@ class MetricStatus(str, Enum):
 
 class TaskType(str, Enum):
     """Type of ML task."""
+
     CLASSIFICATION = "classification"
     SEGMENTATION = "segmentation"
     OBJECT_DETECTION = "object_detection"
@@ -70,43 +72,49 @@ class TaskType(str, Enum):
 
 class Direction(str, Enum):
     """Optimization direction."""
+
     MAXIMIZE = "maximize"
     MINIMIZE = "minimize"
 
 
 class Unit(str, Enum):
     """Unit of measurement."""
+
     FRACTION = "fraction"  # 0-1
-    PERCENT = "percent"   # 0-100
-    SCALAR = "scalar"     # arbitrary
+    PERCENT = "percent"  # 0-100
+    SCALAR = "scalar"  # arbitrary
 
 
 class ClassAggregation(str, Enum):
     """Class-level aggregation method."""
-    MACRO = "macro"        # mean over classes
-    MICRO = "micro"        # aggregate TP/FP/FN then compute
-    WEIGHTED = "weighted" # weighted by class frequency
-    NONE = "none"          # per-class only
+
+    MACRO = "macro"  # mean over classes
+    MICRO = "micro"  # aggregate TP/FP/FN then compute
+    WEIGHTED = "weighted"  # weighted by class frequency
+    NONE = "none"  # per-class only
 
 
 class SampleAggregation(str, Enum):
     """Sample-level aggregation method."""
-    GLOBAL = "global"       # accumulate all samples
-    PER_BATCH = "per_batch" # average over batches
-    PER_TILE = "per_tile"   # average over tiles
-    PER_SCENE = "per_scene" # average over scenes
+
+    GLOBAL = "global"  # accumulate all samples
+    PER_BATCH = "per_batch"  # average over batches
+    PER_TILE = "per_tile"  # average over tiles
+    PER_SCENE = "per_scene"  # average over scenes
     PER_CLOUD_PAIR = "per_cloud_pair"  # average over cloud pairs
 
 
 class AbsentClassPolicy(str, Enum):
     """Policy for handling absent classes."""
+
     IGNORE = "ignore"  # skip in aggregation
-    ZERO = "zero"      # treat as IoU=0
-    ERROR = "error"    # raise error
+    ZERO = "zero"  # treat as IoU=0
+    ERROR = "error"  # raise error
 
 
 class PredictionLevel(str, Enum):
     """Level of prediction."""
+
     POINT = "point"
     VOXEL = "voxel"
     PIXEL = "pixel"
@@ -117,6 +125,7 @@ class PredictionLevel(str, Enum):
 
 class EvaluationScope(str, Enum):
     """Scope of evaluation."""
+
     BATCH = "batch"
     CROP = "crop"
     TILE = "tile"
@@ -128,6 +137,7 @@ class EvaluationScope(str, Enum):
 
 class ProjectVerdict(str, Enum):
     """Overall project verdict."""
+
     NO_METRIC_EVIDENCE = "NO_METRIC_EVIDENCE"
     ENGINEERING_ONLY = "ENGINEERING_ONLY"
     METRICS_UNVERIFIED = "METRICS_UNVERIFIED"
@@ -142,6 +152,7 @@ class ProjectVerdict(str, Enum):
 
 class ConflictType(str, Enum):
     """Type of metric conflict."""
+
     SAME_VALUE_DIFFERENT_NAMES = "SAME_VALUE_DIFFERENT_NAMES"
     SAME_NAME_DIFFERENT_FORMULA = "SAME_NAME_DIFFERENT_FORMULA"
     REPORT_INCONSISTENT_WITH_RAW = "REPORT_INCONSISTENT_WITH_RAW"
@@ -160,6 +171,7 @@ class ConflictType(str, Enum):
 
 class ProtocolCompatibility(str, Enum):
     """Protocol compatibility level."""
+
     EXACT_MATCH = "EXACT_MATCH"
     COMPARABLE_WITH_DECLARED_DEVIATION = "COMPARABLE_WITH_DECLARED_DEVIATION"
     PROTOCOL_MISMATCH = "PROTOCOL_MISMATCH"
@@ -167,6 +179,7 @@ class ProtocolCompatibility(str, Enum):
 
 class DatasetVersion(str, Enum):
     """Dataset version."""
+
     V1 = "V1"
     V2 = "V2"
     V3 = "V3"
@@ -175,6 +188,7 @@ class DatasetVersion(str, Enum):
 
 class DataSubset(str, Enum):
     """Data subset type."""
+
     LOW_DENSITY_LIDAR = "low_density_LiDAR"
     MULTI_SENSOR = "multi_sensor"
     FULL_DENSITY = "full_density"
@@ -185,6 +199,7 @@ class DataSubset(str, Enum):
 
 class SplitName(str, Enum):
     """Standard split names."""
+
     TRAIN = "train"
     VAL = "val"
     VALIDATION = "validation"
@@ -196,6 +211,7 @@ class SplitName(str, Enum):
 # ──────────────────────────────────────────────────────────────────────────────
 # Core Data Models
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class MetricDefinition:
     """Definition of a metric."""
@@ -275,7 +291,7 @@ class MetricDefinition:
 class MetricProtocolFingerprint:
     """
     Protocol fingerprint for metric comparison.
-    
+
     This is the canonical representation of a metric's protocol,
     used to determine if two metrics can be compared.
     """
@@ -348,7 +364,7 @@ class MetricProtocolFingerprint:
     def is_compatible_with(self, other: MetricProtocolFingerprint) -> ProtocolCompatibility:
         """
         Check if this protocol is compatible with another.
-        
+
         Returns EXACT_MATCH, COMPARABLE_WITH_DECLARED_DEVIATION, or PROTOCOL_MISMATCH.
         """
         mismatches = []
@@ -422,7 +438,9 @@ class MetricProtocolFingerprint:
             "metric_id": self.metric_id,
             "formula_hash": self.formula_hash,
             "class_aggregation": self.class_aggregation.value if self.class_aggregation else None,
-            "sample_aggregation": self.sample_aggregation.value if self.sample_aggregation else None,
+            "sample_aggregation": self.sample_aggregation.value
+            if self.sample_aggregation
+            else None,
             "checkpoint_selector": self.checkpoint_selector,
             "checkpoint_epoch": self.checkpoint_epoch,
             "seed_policy": self.seed_policy,
@@ -436,7 +454,9 @@ class MetricProtocolFingerprint:
             paper_id=d.get("paper_id"),
             task_type=TaskType(d["task_type"]) if d.get("task_type") else None,
             dataset_name=d.get("dataset_name"),
-            dataset_version=DatasetVersion(d["dataset_version"]) if d.get("dataset_version") else None,
+            dataset_version=DatasetVersion(d["dataset_version"])
+            if d.get("dataset_version")
+            else None,
             dataset_subset=DataSubset(d["dataset_subset"]) if d.get("dataset_subset") else None,
             split_name=SplitName(d["split_name"]) if d.get("split_name") else None,
             split_manifest_hash=d.get("split_manifest_hash"),
@@ -445,8 +465,12 @@ class MetricProtocolFingerprint:
             included_classes=d.get("included_classes"),
             excluded_classes=d.get("excluded_classes"),
             ignore_index=d.get("ignore_index"),
-            prediction_level=PredictionLevel(d["prediction_level"]) if d.get("prediction_level") else None,
-            evaluation_scope=EvaluationScope(d["evaluation_scope"]) if d.get("evaluation_scope") else None,
+            prediction_level=PredictionLevel(d["prediction_level"])
+            if d.get("prediction_level")
+            else None,
+            evaluation_scope=EvaluationScope(d["evaluation_scope"])
+            if d.get("evaluation_scope")
+            else None,
             full_resolution=d.get("full_resolution"),
             full_pc=d.get("full_pc"),
             voting_runs=d.get("voting_runs"),
@@ -454,8 +478,12 @@ class MetricProtocolFingerprint:
             postprocessing=d.get("postprocessing"),
             metric_id=d.get("metric_id"),
             formula_hash=d.get("formula_hash"),
-            class_aggregation=ClassAggregation(d["class_aggregation"]) if d.get("class_aggregation") else None,
-            sample_aggregation=SampleAggregation(d["sample_aggregation"]) if d.get("sample_aggregation") else None,
+            class_aggregation=ClassAggregation(d["class_aggregation"])
+            if d.get("class_aggregation")
+            else None,
+            sample_aggregation=SampleAggregation(d["sample_aggregation"])
+            if d.get("sample_aggregation")
+            else None,
             checkpoint_selector=d.get("checkpoint_selector"),
             checkpoint_epoch=d.get("checkpoint_epoch"),
             seed_policy=d.get("seed_policy"),
@@ -559,7 +587,9 @@ class MetricObservation:
             "metric_id": self.metric_id,
             "value": self.value,
             "unit": self.unit.value,
-            "protocol_fingerprint": self.protocol_fingerprint.to_dict() if self.protocol_fingerprint else None,
+            "protocol_fingerprint": self.protocol_fingerprint.to_dict()
+            if self.protocol_fingerprint
+            else None,
             "source_id": self.source_id,
             "raw_evidence_paths": self.raw_evidence_paths,
             "computed_at": self.computed_at,

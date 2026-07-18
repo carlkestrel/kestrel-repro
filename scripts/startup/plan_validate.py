@@ -1,4 +1,5 @@
 """Plan validation: frontmatter, task-graph integrity, missing acceptance."""
+
 from __future__ import annotations
 
 import hashlib
@@ -13,9 +14,7 @@ except ImportError:
 
 EXIT_INVALID_PLAN = 5
 
-_FRONT_MATTER_RE = re.compile(
-    r"\A---\s*\n(?P<fm>.*?)\n---\s*(?:\n|$)", re.DOTALL
-)
+_FRONT_MATTER_RE = re.compile(r"\A---\s*\n(?P<fm>.*?)\n---\s*(?:\n|$)", re.DOTALL)
 
 
 def _split_front_matter(text: str) -> tuple[dict, str]:
@@ -23,7 +22,7 @@ def _split_front_matter(text: str) -> tuple[dict, str]:
     if not m:
         return {}, text
     fm_text = m.group("fm")
-    body = text[m.end():]
+    body = text[m.end() :]
     if yaml is not None:
         try:
             data = yaml.safe_load(fm_text) or {}
@@ -34,8 +33,7 @@ def _split_front_matter(text: str) -> tuple[dict, str]:
         try:
             data = _mini_yaml(fm_text)
         except ValueError as e:
-            print(f"[startup] plan frontmatter parse error: {e}",
-                  file=sys.stderr)
+            print(f"[startup] plan frontmatter parse error: {e}", file=sys.stderr)
             sys.exit(EXIT_INVALID_PLAN)
     if not isinstance(data, dict):
         print("[startup] plan frontmatter must be a YAML mapping", file=sys.stderr)
@@ -55,7 +53,7 @@ def _mini_yaml(text: str) -> dict:
         k = k.strip()
         v = v.strip()
         if v.lower() in ("true", "false"):
-            out[k] = (v.lower() == "true")
+            out[k] = v.lower() == "true"
         elif v.lower() in ("null", "~", ""):
             out[k] = None
         else:
@@ -123,18 +121,15 @@ def validate(plan_path: Path) -> str:
     text = plan_path.read_text(encoding="utf-8")
     fm, body = _split_front_matter(text)
     if not fm:
-        print("[startup] plan missing YAML frontmatter (--- ... ---)",
-              file=sys.stderr)
+        print("[startup] plan missing YAML frontmatter (--- ... ---)", file=sys.stderr)
         sys.exit(EXIT_INVALID_PLAN)
     if "name" not in fm or not str(fm.get("name", "")).strip():
-        print("[startup] plan frontmatter requires a non-empty `name`",
-              file=sys.stderr)
+        print("[startup] plan frontmatter requires a non-empty `name`", file=sys.stderr)
         sys.exit(EXIT_INVALID_PLAN)
 
     tasks = fm.get("tasks") or []
     if not isinstance(tasks, list):
-        print("[startup] plan frontmatter `tasks` must be a list",
-              file=sys.stderr)
+        print("[startup] plan frontmatter `tasks` must be a list", file=sys.stderr)
         sys.exit(EXIT_INVALID_PLAN)
 
     if _detect_cycles(tasks):

@@ -41,12 +41,11 @@ def upgrade_to_1_0_0(store: Any, backup_dir: Path) -> dict:
         for key, value in {
             "schema_version": SCHEMA_VERSION,
             "plugin_version": store.get_metadata("plugin_version", _DEFAULT_PLUGIN_VERSION),
-            "project_id": store.get_metadata("project_id", str(
-                hashlib.sha256(str(store.project_root).encode()).hexdigest()[:16])),
+            "project_id": store.get_metadata(
+                "project_id", str(hashlib.sha256(str(store.project_root).encode()).hexdigest()[:16])
+            ),
         }.items():
-            existing = conn.execute(
-                "SELECT value FROM metadata WHERE key=?", (key,)
-            ).fetchone()
+            existing = conn.execute("SELECT value FROM metadata WHERE key=?", (key,)).fetchone()
             if not existing:
                 conn.execute(
                     "INSERT INTO metadata(key,value) VALUES(?,?)",
@@ -54,8 +53,7 @@ def upgrade_to_1_0_0(store: Any, backup_dir: Path) -> dict:
                 )
                 changes.append(f"added {key}={value}")
             elif key == "schema_version" and json.loads(existing[0]) != SCHEMA_VERSION:
-                conn.execute("UPDATE metadata SET value=? WHERE key=?",
-                           (json.dumps(value), key))
+                conn.execute("UPDATE metadata SET value=? WHERE key=?", (json.dumps(value), key))
                 changes.append(f"upgraded {key} to {value}")
 
     plan_path_str = store.get_metadata("plan_path", "")
@@ -66,19 +64,19 @@ def upgrade_to_1_0_0(store: Any, backup_dir: Path) -> dict:
         except Exception:
             plan_hash = "unknown"
     with store.transaction() as conn:
-        existing = conn.execute(
-            "SELECT value FROM metadata WHERE key='plan_hash'"
-        ).fetchone()
+        existing = conn.execute("SELECT value FROM metadata WHERE key='plan_hash'").fetchone()
         if not existing:
-            conn.execute("INSERT INTO metadata(key,value) VALUES(?,?)",
-                        ("plan_hash", json.dumps(plan_hash)))
+            conn.execute(
+                "INSERT INTO metadata(key,value) VALUES(?,?)", ("plan_hash", json.dumps(plan_hash))
+            )
             changes.append(f"added plan_hash={plan_hash}")
 
     return {"changes": changes, "from_version": "pre-1.0", "to_version": SCHEMA_VERSION}
 
 
-def migrate(store: Any, target: str | None = None, dry_run: bool = False,
-            backup: bool = True) -> dict:
+def migrate(
+    store: Any, target: str | None = None, dry_run: bool = False, backup: bool = True
+) -> dict:
     """Run migrations.
 
     Args:
@@ -99,13 +97,14 @@ def migrate(store: Any, target: str | None = None, dry_run: bool = False,
             "changes": [],
         }
 
-    if current["schema_version"] != "unknown" and \
-       _version_tuple(current["schema_version"]) < _version_tuple(MIN_SUPPORTED_VERSION):
+    if current["schema_version"] != "unknown" and _version_tuple(
+        current["schema_version"]
+    ) < _version_tuple(MIN_SUPPORTED_VERSION):
         return {
             "status": "blocked",
             "current": current,
             "reason": f"schema_version {current['schema_version']} is older than "
-                     f"minimum supported {MIN_SUPPORTED_VERSION}",
+            f"minimum supported {MIN_SUPPORTED_VERSION}",
         }
 
     backup_path = None
@@ -167,24 +166,27 @@ def _create_backup(store: Any) -> Path:
     }
     for f in backup_dir.iterdir():
         if f.is_file():
-            manifest["files"].append({
-                "name": f.name,
-                "size": f.stat().st_size,
-                "sha256": hashlib.sha256(f.read_bytes()).hexdigest(),
-            })
-    (backup_dir / "backup_manifest.json").write_text(
-        json.dumps(manifest, indent=2))
+            manifest["files"].append(
+                {
+                    "name": f.name,
+                    "size": f.stat().st_size,
+                    "sha256": hashlib.sha256(f.read_bytes()).hexdigest(),
+                }
+            )
+    (backup_dir / "backup_manifest.json").write_text(json.dumps(manifest, indent=2))
     return backup_dir
 
 
 def _simulate_migration(store: Any, current: dict, target: str | None) -> list[dict]:
     """Return what would change without actually changing."""
-    return [{
-        "from": current["schema_version"],
-        "to": SCHEMA_VERSION,
-        "operation": "upgrade_to_1_0_0",
-        "description": "Add schema_version, plugin_version, plan_hash, project_id to metadata"
-    }]
+    return [
+        {
+            "from": current["schema_version"],
+            "to": SCHEMA_VERSION,
+            "operation": "upgrade_to_1_0_0",
+            "description": "Add schema_version, plugin_version, plan_hash, project_id to metadata",
+        }
+    ]
 
 
 def rollback(backup_dir: Path, store: Any) -> dict:
@@ -222,9 +224,11 @@ def list_backups(store: Any) -> list[dict]:
                 m = json.loads(manifest_path.read_text())
                 backups.append(m)
             else:
-                backups.append({
-                    "backup_id": d.name,
-                    "created_at": str(d.stat().st_mtime),
-                    "files": [f.name for f in d.iterdir() if f.is_file()],
-                })
+                backups.append(
+                    {
+                        "backup_id": d.name,
+                        "created_at": str(d.stat().st_mtime),
+                        "files": [f.name for f in d.iterdir() if f.is_file()],
+                    }
+                )
     return backups

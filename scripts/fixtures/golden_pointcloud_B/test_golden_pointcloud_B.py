@@ -32,14 +32,24 @@ def test_golden_pointcloud_B_full_chain():
 
         # Run the chain
         result = subprocess.run(
-            [sys.executable, str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
-             "run",
-             "--project", str(project / "golden_pointcloud_B"),
-             "--plan", str(plan_path),
-             "--mode", "strict",
-             "--automation", "safe-auto",
-             "--until", "blocked-or-complete"],
-            capture_output=True, text=True, timeout=300,
+            [
+                sys.executable,
+                str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
+                "run",
+                "--project",
+                str(project / "golden_pointcloud_B"),
+                "--plan",
+                str(plan_path),
+                "--mode",
+                "strict",
+                "--automation",
+                "safe-auto",
+                "--until",
+                "blocked-or-complete",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
 
         assert result.returncode == 0, (
@@ -54,10 +64,9 @@ def test_golden_pointcloud_B_full_chain():
 
         # Check no RUNNING tasks
         import sqlite3
+
         conn = sqlite3.connect(f"file:{state_db}?mode=ro", uri=True)
-        running = conn.execute(
-            "SELECT COUNT(*) FROM tasks WHERE status='RUNNING'"
-        ).fetchone()[0]
+        running = conn.execute("SELECT COUNT(*) FROM tasks WHERE status='RUNNING'").fetchone()[0]
         conn.close()
         assert running == 0, f"Still have {running} RUNNING tasks after completion"
 
@@ -82,14 +91,24 @@ def test_golden_pointcloud_B_model_loads():
         plan_path = project / "golden_pointcloud_B" / "plan.yaml"
 
         result = subprocess.run(
-            [sys.executable, str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
-             "run",
-             "--project", str(project / "golden_pointcloud_B"),
-             "--plan", str(plan_path),
-             "--mode", "strict",
-             "--automation", "safe-auto",
-             "--until", "blocked-or-complete"],
-            capture_output=True, text=True, timeout=300,
+            [
+                sys.executable,
+                str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
+                "run",
+                "--project",
+                str(project / "golden_pointcloud_B"),
+                "--plan",
+                str(plan_path),
+                "--mode",
+                "strict",
+                "--automation",
+                "safe-auto",
+                "--until",
+                "blocked-or-complete",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
 
         # Verify model loads
@@ -98,14 +117,17 @@ def test_golden_pointcloud_B_model_loads():
 
         # Try to load the model
         load_result = subprocess.run(
-            [sys.executable, "-c",
-             f"import torch; m=torch.load('{ckpt}'); print('loaded:', type(m))"],
-            capture_output=True, text=True, timeout=30,
+            [
+                sys.executable,
+                "-c",
+                f"import torch; m=torch.load('{ckpt}'); print('loaded:', type(m))",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=project / "golden_pointcloud_B",
         )
-        assert load_result.returncode == 0, (
-            f"Failed to load model: {load_result.stderr}"
-        )
+        assert load_result.returncode == 0, f"Failed to load model: {load_result.stderr}"
         assert "loaded:" in load_result.stdout
 
 
@@ -120,14 +142,24 @@ def test_golden_pointcloud_B_evidence_chain():
         plan_path = project / "golden_pointcloud_B" / "plan.yaml"
 
         result = subprocess.run(
-            [sys.executable, str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
-             "run",
-             "--project", str(project / "golden_pointcloud_B"),
-             "--plan", str(plan_path),
-             "--mode", "strict",
-             "--automation", "safe-auto",
-             "--until", "blocked-or-complete"],
-            capture_output=True, text=True, timeout=300,
+            [
+                sys.executable,
+                str(PLUGIN_ROOT / "scripts" / "reproctl.py"),
+                "run",
+                "--project",
+                str(project / "golden_pointcloud_B"),
+                "--plan",
+                str(plan_path),
+                "--mode",
+                "strict",
+                "--automation",
+                "safe-auto",
+                "--until",
+                "blocked-or-complete",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
 
         # Check events exist
@@ -135,13 +167,14 @@ def test_golden_pointcloud_B_evidence_chain():
         assert state_db.exists(), "state.sqlite3 not created"
 
         import sqlite3
+
         conn = sqlite3.connect(f"file:{state_db}?mode=ro", uri=True)
 
         # All 6 tasks should have PASSED events
         for task_id in ["P1_init", "P2_env", "P3_data", "P4_train", "P5_verify", "P6_audit"]:
             passed_count = conn.execute(
                 "SELECT COUNT(*) FROM events WHERE event_type='TASK_PASSED' AND task_id=?",
-                (task_id,)
+                (task_id,),
             ).fetchone()[0]
             assert passed_count >= 1, f"{task_id} should have at least one TASK_PASSED event"
 

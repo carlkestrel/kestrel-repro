@@ -12,6 +12,7 @@ Each node defines:
   - output_fields (what it produces)
   - acceptance criteria (how to judge PASSED/FAILED)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -25,7 +26,7 @@ class ValidationNode:
     description: str = ""
     capability_ids: list[str] = field(default_factory=list)
     module: str = ""
-    callable: str = ""          # "module.submodule:function" or ""
+    callable: str = ""  # "module.submodule:function" or ""
     timeout_seconds: int = 300
     requires_gpu: bool = False
     requires_real_data: bool = False
@@ -45,7 +46,7 @@ VAL_000 = ValidationNode(
     name="BOOTSTRAP",
     version="0.1.0",
     description="Confirm project root, create audit directory, check disk space, "
-                "check git status, create audit_id.",
+    "check git status, create audit_id.",
     capability_ids=["CVO"],
     module="cvo.bootstrap",
     callable="cvo.bootstrap:run",
@@ -70,7 +71,7 @@ VAL_010 = ValidationNode(
     name="REPOSITORY_INVENTORY",
     version="0.1.0",
     description="Scan source, config, test, CLI, Cursor, and documentation files. "
-                "Generate repository_inventory.json.",
+    "Generate repository_inventory.json.",
     capability_ids=["CVO"],
     module="cvo.inventory",
     callable="cvo.inventory:run",
@@ -81,7 +82,7 @@ VAL_010 = ValidationNode(
     input_fields=["audit_manifest.json"],
     output_fields=["repository_inventory.json"],
     acceptance="JSON has keys: python_files, config_files, test_files, cli_files, "
-               "cursor_files, total_line_count > 0",
+    "cursor_files, total_line_count > 0",
 )
 
 VAL_020 = ValidationNode(
@@ -89,7 +90,7 @@ VAL_020 = ValidationNode(
     name="ARTIFACT_INVENTORY",
     version="0.1.0",
     description="Scan logs, checkpoints, PLY, CSV, confusion matrix, and HTML report "
-                "files. Record path, size, time, hash. Do NOT load large files into GPU.",
+    "files. Record path, size, time, hash. Do NOT load large files into GPU.",
     capability_ids=["CVO"],
     module="cvo.artifact_inventory",
     callable="cvo.artifact_inventory:run",
@@ -100,7 +101,7 @@ VAL_020 = ValidationNode(
     input_fields=["audit_manifest.json"],
     output_fields=["artifact_inventory.json"],
     acceptance="JSON has key 'artifacts' (list), each entry has path, size_bytes, "
-               "mtime, sha256 (computed without loading into GPU)",
+    "mtime, sha256 (computed without loading into GPU)",
 )
 
 
@@ -111,7 +112,7 @@ VAL_100 = ValidationNode(
     name="PROTOCOL_AUDIT",
     version="0.1.0",
     description="Check paper protocol registration, batch_size=10 locking, "
-                "strict vs fast isolation, protocol_diff.md generation.",
+    "strict vs fast isolation, protocol_diff.md generation.",
     capability_ids=["Protocol Registry", "Training Mode Controller"],
     module="cvo.protocol_audit",
     callable="cvo.protocol_audit:run",
@@ -122,7 +123,7 @@ VAL_100 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["protocol_audit.md", "protocol_diff.md"],
     acceptance="protocol_audit.md exists with sections for: paper registration, "
-               "batch_size locking, mode isolation, protocol_diff",
+    "batch_size locking, mode isolation, protocol_diff",
 )
 
 VAL_110 = ValidationNode(
@@ -130,8 +131,8 @@ VAL_110 = ValidationNode(
     name="DATA_CONTRACT_AUDIT",
     version="0.1.0",
     description="Check PLY element names, x/y/z/label_ch fields, label_ch embedded "
-                "vs separate file, pointCloud0/1 requirements, dtype, label range, "
-                "class mapping, split, file count and hashes.",
+    "vs separate file, pointCloud0/1 requirements, dtype, label range, "
+    "class mapping, split, file count and hashes.",
     capability_ids=["Data Contract Auditor"],
     module="cvo.data_contract_audit",
     callable="cvo.data_contract_audit:run",
@@ -142,7 +143,7 @@ VAL_110 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["data_contract.md", "data_contract.json"],
     acceptance="data_contract.json has keys: ply_element, has_xyz, has_label_ch, "
-               "label_dtype, class_mapping, train_files, val_files, test_files",
+    "label_dtype, class_mapping, train_files, val_files, test_files",
 )
 
 VAL_120 = ValidationNode(
@@ -150,8 +151,8 @@ VAL_120 = ValidationNode(
     name="METRIC_STATIC_AUDIT",
     version="0.1.0",
     description="Check mIoU_ch implementation, whether Unchanged (class 0) is excluded, "
-                "patch/cylinder/full-PC/full-resolution/voting distinction, "
-                "checkpoint selection metric, historical metric口径.",
+    "patch/cylinder/full-PC/full-resolution/voting distinction, "
+    "checkpoint selection metric, historical metric口径.",
     capability_ids=["Metric Protocol Auditor"],
     module="cvo.metric_static_audit",
     callable="cvo.metric_static_audit:run",
@@ -162,7 +163,7 @@ VAL_120 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["metric_static_audit.md", "metric_protocol_audit.md"],
     acceptance="metric_protocol_audit.md exists; miou_ch computation excludes class 0; "
-               "full-PC vs patch distinction is documented; metric names do not conflict",
+    "full-PC vs patch distinction is documented; metric names do not conflict",
 )
 
 VAL_130 = ValidationNode(
@@ -170,8 +171,8 @@ VAL_130 = ValidationNode(
     name="MODE_CONTROLLER_AUDIT",
     version="0.1.0",
     description="Check four modes (SMOKE_CHECK, FAST_EXPLORATION, STRICT_CONFIRMATION, "
-                "STATISTICAL_REPRODUCTION) and AUTO. Check mode gating, "
-                "mode switching reasons are logged.",
+    "STATISTICAL_REPRODUCTION) and AUTO. Check mode gating, "
+    "mode switching reasons are logged.",
     capability_ids=["Training Mode Controller"],
     module="cvo.mode_controller_audit",
     callable="cvo.mode_controller_audit:run",
@@ -182,7 +183,7 @@ VAL_130 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["mode_controller_audit.md"],
     acceptance="mode_controller_audit.md lists all 5 modes; each has entry point; "
-               "mode gating exists; mode_switches are logged",
+    "mode gating exists; mode_switches are logged",
 )
 
 VAL_140 = ValidationNode(
@@ -190,8 +191,8 @@ VAL_140 = ValidationNode(
     name="STUB_HARDCODE_SCAN",
     version="0.1.0",
     description="Scan all Python files for stub, mock, dummy, random, simulate, "
-                "hardcode patterns. Requires human context analysis — "
-                "not keyword-only judgment.",
+    "hardcode patterns. Requires human context analysis — "
+    "not keyword-only judgment.",
     capability_ids=["Real Smoke Test"],
     module="cvo.stub_scan",
     callable="cvo.stub_scan:run",
@@ -202,7 +203,7 @@ VAL_140 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["stub_and_hardcode_scan.md"],
     acceptance="stub_and_hardcode_scan.md lists findings with file, line, category, "
-               "context snippet, human_verdict_required flag",
+    "context snippet, human_verdict_required flag",
 )
 
 VAL_150 = ValidationNode(
@@ -210,7 +211,7 @@ VAL_150 = ValidationNode(
     name="EVIDENCE_CHAIN_AUDIT",
     version="0.1.0",
     description="Check run_id, resolved config, raw metrics, runs_manifest.csv, "
-                "chart traceability, no simulation/hardcode in charts.",
+    "chart traceability, no simulation/hardcode in charts.",
     capability_ids=["Evidence and Provenance Manager"],
     module="cvo.evidence_chain_audit",
     callable="cvo.evidence_chain_audit:run",
@@ -221,7 +222,7 @@ VAL_150 = ValidationNode(
     input_fields=["artifact_inventory.json"],
     output_fields=["evidence_chain_audit.md"],
     acceptance="evidence_chain_audit.md exists; all artifacts belong to same run_id; "
-               "charts trace to raw data; no hardcoded metrics in charts",
+    "charts trace to raw data; no hardcoded metrics in charts",
 )
 
 VAL_160 = ValidationNode(
@@ -229,8 +230,8 @@ VAL_160 = ValidationNode(
     name="SCHEDULER_AUDIT",
     version="0.1.0",
     description="Check heartbeat, retry, pause, resume, atomic state write, "
-                "OOM handling, crash recovery, agent restart recovery, "
-                "checkpoint recovery, passed tasks not re-executed.",
+    "OOM handling, crash recovery, agent restart recovery, "
+    "checkpoint recovery, passed tasks not re-executed.",
     capability_ids=["Durable Scheduler"],
     module="cvo.scheduler_audit",
     callable="cvo.scheduler_audit:run",
@@ -248,7 +249,7 @@ VAL_170 = ValidationNode(
     name="CLI_CURSOR_AUDIT",
     version="0.1.0",
     description="Check CLI and Cursor share the same backend. "
-                "List reproctl commands. Verify commands/repro-audit.md exists.",
+    "List reproctl commands. Verify commands/repro-audit.md exists.",
     capability_ids=["Cursor, CLI and Reporting"],
     module="cvo.cli_cursor_audit",
     callable="cvo.cli_cursor_audit:run",
@@ -259,7 +260,7 @@ VAL_170 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["cli_cursor_audit.md"],
     acceptance="cli_cursor_audit.md lists all reproctl subcommands; "
-               "Cursor commands exist; both call the same backend module",
+    "Cursor commands exist; both call the same backend module",
 )
 
 VAL_180 = ValidationNode(
@@ -267,8 +268,8 @@ VAL_180 = ValidationNode(
     name="CI_AUDIT",
     version="0.1.0",
     description="Check unit tests, integration tests, regression tests. "
-                "Verify tests cover config parsing, metric calculation, "
-                "stub detection, mode switching, checkpoint recovery.",
+    "Verify tests cover config parsing, metric calculation, "
+    "stub detection, mode switching, checkpoint recovery.",
     capability_ids=["CI and Regression Tests"],
     module="cvo.ci_audit",
     callable="cvo.ci_audit:run",
@@ -279,7 +280,7 @@ VAL_180 = ValidationNode(
     input_fields=["repository_inventory.json"],
     output_fields=["ci_audit.md"],
     acceptance="ci_audit.md lists test files and coverage per area; "
-               "CI does NOT auto-trigger full training",
+    "CI does NOT auto-trigger full training",
 )
 
 
@@ -290,7 +291,7 @@ VAL_200 = ValidationNode(
     name="CONFIG_DRY_RUN",
     version="0.1.0",
     description="Parse configuration, output resolved config. "
-                "Do not load full data or start training.",
+    "Do not load full data or start training.",
     capability_ids=["Protocol Registry"],
     module="cvo.config_dry_run",
     callable="cvo.config_dry_run:run",
@@ -301,7 +302,7 @@ VAL_200 = ValidationNode(
     input_fields=["repository_inventory.json", "protocol_audit.md"],
     output_fields=["resolved_config.json"],
     acceptance="resolved_config.json exists and is valid JSON; "
-               "no training started; no full data loaded",
+    "no training started; no full data loaded",
 )
 
 VAL_210 = ValidationNode(
@@ -309,8 +310,8 @@ VAL_210 = ValidationNode(
     name="METRIC_KNOWN_CASE",
     version="0.1.0",
     description="Use a hand-crafted confusion matrix with known expected IoU values. "
-                "Verify class IoU and mIoU_ch recomputation. "
-                "Expected values are pre-written in the test.",
+    "Verify class IoU and mIoU_ch recomputation. "
+    "Expected values are pre-written in the test.",
     capability_ids=["Metric Protocol Auditor"],
     module="cvo.metric_known_case",
     callable="cvo.metric_known_case:run",
@@ -321,7 +322,7 @@ VAL_210 = ValidationNode(
     input_fields=["metric_protocol_audit.md"],
     output_fields=["metric_known_case_result.json"],
     acceptance="Known-case IoU values match within 1e-6; mIoU_ch excludes class 0; "
-               "result JSON has exact_match=true",
+    "result JSON has exact_match=true",
 )
 
 VAL_220 = ValidationNode(
@@ -329,7 +330,7 @@ VAL_220 = ValidationNode(
     name="CLI_INTEGRATION",
     version="0.1.0",
     description="Test reproctl --help, reproctl status, invalid mode, dry-run. "
-                "Do not start long training.",
+    "Do not start long training.",
     capability_ids=["Cursor, CLI and Reporting"],
     module="cvo.cli_integration",
     callable="cvo.cli_integration:run",
@@ -339,8 +340,7 @@ VAL_220 = ValidationNode(
     depends_on=["VAL-130", "VAL-160", "VAL-170"],
     input_fields=["cli_cursor_audit.md"],
     output_fields=["cli_integration_result.json"],
-    acceptance="All CLI commands respond; invalid mode returns error; "
-               "no training process started",
+    acceptance="All CLI commands respond; invalid mode returns error; no training process started",
 )
 
 VAL_230 = ValidationNode(
@@ -348,7 +348,7 @@ VAL_230 = ValidationNode(
     name="SCHEDULER_RECOVERY",
     version="0.1.0",
     description="Start a temporary short task, interrupt it, recover, "
-                "verify already-passed nodes are not re-run.",
+    "verify already-passed nodes are not re-run.",
     capability_ids=["Durable Scheduler"],
     module="cvo.scheduler_recovery",
     callable="cvo.scheduler_recovery:run",
@@ -359,7 +359,7 @@ VAL_230 = ValidationNode(
     input_fields=["scheduler_audit.md"],
     output_fields=["scheduler_recovery_result.json"],
     acceptance="Interrupted task resumes from checkpoint; passed nodes not re-run; "
-               "result JSON has recovery_success=true",
+    "result JSON has recovery_success=true",
 )
 
 VAL_240 = ValidationNode(
@@ -367,7 +367,7 @@ VAL_240 = ValidationNode(
     name="CHECKPOINT_IO",
     version="0.1.0",
     description="Create minimal test checkpoint, verify save/load integrity. "
-                "Do not overwrite real checkpoints.",
+    "Do not overwrite real checkpoints.",
     capability_ids=["Evidence and Provenance Manager"],
     module="cvo.checkpoint_io",
     callable="cvo.checkpoint_io:run",
@@ -377,8 +377,7 @@ VAL_240 = ValidationNode(
     depends_on=["VAL-010"],
     input_fields=["repository_inventory.json"],
     output_fields=["checkpoint_io_result.json"],
-    acceptance="Checkpoint saves and loads correctly; state matches; "
-               "real checkpoints not modified",
+    acceptance="Checkpoint saves and loads correctly; state matches; real checkpoints not modified",
 )
 
 
@@ -389,7 +388,7 @@ VAL_300 = ValidationNode(
     name="REAL_DATA_PREFLIGHT",
     version="0.1.0",
     description="Verify real data path, extract one batch, check fields, labels, "
-                "shape, point count. Do NOT train.",
+    "shape, point count. Do NOT train.",
     capability_ids=["Real Smoke Test"],
     module="cvo.real_data_preflight",
     callable="cvo.real_data_preflight:run",
@@ -400,7 +399,7 @@ VAL_300 = ValidationNode(
     input_fields=["data_contract.json", "resolved_config.json"],
     output_fields=["real_data_preflight_result.json"],
     acceptance="Data path accessible; batch fields (xyz, label_ch) correct; "
-               "no training started; result JSON has preflight_ok=true",
+    "no training started; result JSON has preflight_ok=true",
     deterministically_fails=True,
 )
 
@@ -409,7 +408,7 @@ VAL_310 = ValidationNode(
     name="REAL_BATCH_FORWARD",
     version="0.1.0",
     description="Real SiamKPConv, real DataLoader, one batch forward and loss. "
-                "Verify NaN/Inf detection.",
+    "Verify NaN/Inf detection.",
     capability_ids=["Real Smoke Test"],
     module="cvo.real_batch_forward",
     callable="cvo.real_batch_forward:run",
@@ -420,7 +419,7 @@ VAL_310 = ValidationNode(
     input_fields=["real_data_preflight_result.json"],
     output_fields=["real_batch_forward_result.json"],
     acceptance="Forward pass completes; loss is finite (no NaN/Inf); "
-               "result JSON has forward_ok=true, loss_is_finite=true",
+    "result JSON has forward_ok=true, loss_is_finite=true",
     deterministically_fails=True,
 )
 
@@ -429,7 +428,7 @@ VAL_320 = ValidationNode(
     name="REAL_BATCH_BACKWARD",
     version="0.1.0",
     description="backward() + gradient check + optimizer.step() + memory stats. "
-                "Depends on VAL-310.",
+    "Depends on VAL-310.",
     capability_ids=["Real Smoke Test"],
     module="cvo.real_batch_backward",
     callable="cvo.real_batch_backward:run",
@@ -440,7 +439,7 @@ VAL_320 = ValidationNode(
     input_fields=["real_batch_forward_result.json"],
     output_fields=["real_batch_backward_result.json"],
     acceptance="backward completes; gradients are non-zero; optimizer steps; "
-               "no OOM; result JSON has backward_ok=true, gradients_nonzero=true",
+    "no OOM; result JSON has backward_ok=true, gradients_nonzero=true",
     deterministically_fails=True,
 )
 
@@ -449,7 +448,7 @@ VAL_330 = ValidationNode(
     name="REAL_BATCH_EVAL",
     version="0.1.0",
     description="Real prediction, confusion matrix, class IoU, mIoU_ch. "
-                "Verify metrics can be recomputed from confusion matrix.",
+    "Verify metrics can be recomputed from confusion matrix.",
     capability_ids=["Real Smoke Test", "Metric Protocol Auditor"],
     module="cvo.real_batch_eval",
     callable="cvo.real_batch_eval:run",
@@ -460,7 +459,7 @@ VAL_330 = ValidationNode(
     input_fields=["real_batch_forward_result.json"],
     output_fields=["real_batch_eval_result.json", "confmat.json"],
     acceptance="confmat.json exists (non-normalized); mIoU_ch recomputes correctly; "
-               "result JSON has eval_ok=true, miou_recomputable=true",
+    "result JSON has eval_ok=true, miou_recomputable=true",
     deterministically_fails=True,
 )
 
@@ -469,7 +468,7 @@ VAL_340 = ValidationNode(
     name="SMOKE_100_STEPS",
     version="0.1.0",
     description="Up to 100 steps. Save lightweight state every 10 steps. "
-                "Check loss trajectory, NaN, Inf, OOM, throughput.",
+    "Check loss trajectory, NaN, Inf, OOM, throughput.",
     capability_ids=["Real Smoke Test", "Performance and Batch Tuner"],
     module="cvo.smoke_100_steps",
     callable="cvo.smoke_100_steps:run",
@@ -480,8 +479,8 @@ VAL_340 = ValidationNode(
     input_fields=["real_batch_backward_result.json", "real_batch_eval_result.json"],
     output_fields=["smoke_100_steps_result.json"],
     acceptance="100 steps complete (or hit early stop on OOM/NaN); "
-               "no NaN in loss; no OOM crashes; result JSON has steps_completed, "
-               "loss_finite, oom_count, steps_per_second",
+    "no NaN in loss; no OOM crashes; result JSON has steps_completed, "
+    "loss_finite, oom_count, steps_per_second",
     deterministically_fails=True,
 )
 
@@ -500,7 +499,7 @@ VAL_350 = ValidationNode(
     input_fields=["smoke_100_steps_result.json"],
     output_fields=["smoke_epoch_1_result.json", "checkpoint_epoch_1.pt"],
     acceptance="Epoch 1 completes; checkpoint saves; metrics CSV generated; "
-               "result JSON has epoch_completed=true",
+    "result JSON has epoch_completed=true",
     deterministically_fails=True,
 )
 
@@ -519,7 +518,7 @@ VAL_351 = ValidationNode(
     input_fields=["smoke_epoch_1_result.json", "checkpoint_epoch_1.pt"],
     output_fields=["smoke_epoch_2_result.json", "checkpoint_epoch_2.pt"],
     acceptance="Resume from checkpoint succeeds; epoch 2 completes; "
-               "metrics continue from epoch 1; result JSON has resume_ok=true",
+    "metrics continue from epoch 1; result JSON has resume_ok=true",
     deterministically_fails=True,
 )
 
@@ -538,7 +537,7 @@ VAL_352 = ValidationNode(
     input_fields=["smoke_epoch_2_result.json"],
     output_fields=["smoke_epoch_3_result.json"],
     acceptance="Third epoch completes; loss trajectory consistent; "
-               "result JSON has epoch_completed=true",
+    "result JSON has epoch_completed=true",
     deterministically_fails=True,
     retryable=True,
 )
@@ -550,8 +549,7 @@ VAL_400 = ValidationNode(
     node_id="VAL-400",
     name="PERFORMANCE_PREFLIGHT",
     version="0.1.0",
-    description="Confirm GPU info, build batch candidate list. "
-                "Do NOT directly run all candidates.",
+    description="Confirm GPU info, build batch candidate list. Do NOT directly run all candidates.",
     capability_ids=["Performance and Batch Tuner"],
     module="cvo.perf_preflight",
     callable="cvo.perf_preflight:run",
@@ -562,7 +560,7 @@ VAL_400 = ValidationNode(
     input_fields=["real_batch_backward_result.json"],
     output_fields=["perf_preflight_result.json", "batch_candidates.json"],
     acceptance="GPU info captured; batch candidates list is non-empty; "
-               "no actual batch probing started yet",
+    "no actual batch probing started yet",
 )
 
 # Individual batch candidates — VAL-410-BS{n}
@@ -574,7 +572,7 @@ for bs in _BS_CANDIDATES:
         name=f"PERF_BATCH_SEARCH_BS{bs}",
         version="0.1.0",
         description=f"Run forward+backward+optimizer.step with batch_size={bs}. "
-                    f"OOM only marks this candidate failed. Independent subprocess.",
+        f"OOM only marks this candidate failed. Independent subprocess.",
         capability_ids=["Performance and Batch Tuner"],
         module="cvo.perf_batch_trial",
         callable="cvo.perf_batch_trial:run",
@@ -585,7 +583,7 @@ for bs in _BS_CANDIDATES:
         input_fields=["perf_preflight_result.json"],
         output_fields=[f"trial_bs{bs}.json"],
         acceptance=f"trial_bs{bs}.json exists with status (ok/oom/error) and "
-                   f"step_time_mean_s; result is isolated from other batch candidates",
+        f"step_time_mean_s; result is isolated from other batch candidates",
         deterministically_fails=False,
     )
     VAL_BATCH_NODES.append(node)
@@ -595,7 +593,7 @@ VAL_420 = ValidationNode(
     name="PERFORMANCE_AGGREGATE",
     version="0.1.0",
     description="Aggregate all batch candidates. Output paper_batch, max_feasible_batch, "
-                "best_throughput_batch, recommended_batch. No model execution.",
+    "best_throughput_batch, recommended_batch. No model execution.",
     capability_ids=["Performance and Batch Tuner"],
     module="cvo.perf_aggregate",
     callable="cvo.perf_aggregate:run",
@@ -606,8 +604,8 @@ VAL_420 = ValidationNode(
     input_fields=[f"trial_bs{bs}.json" for bs in _BS_CANDIDATES],
     output_fields=["perf_aggregate_result.json", "perf_aggregate.md"],
     acceptance="perf_aggregate_result.json has paper_batch, max_feasible_batch, "
-               "best_throughput_batch, recommended_batch; "
-               "recommended_batch is best_throughput, not max batch",
+    "best_throughput_batch, recommended_batch; "
+    "recommended_batch is best_throughput, not max batch",
 )
 
 
@@ -618,7 +616,7 @@ VAL_500 = ValidationNode(
     name="CAPABILITY_AGGREGATE",
     version="0.1.0",
     description="Aggregate all node statuses. Update capability_matrix.csv. "
-                "Do not re-run completed tests.",
+    "Do not re-run completed tests.",
     capability_ids=["CVO"],
     module="cvo.capability_aggregate",
     callable="cvo.capability_aggregate:run",
@@ -626,17 +624,35 @@ VAL_500 = ValidationNode(
     requires_gpu=False,
     requires_real_data=False,
     depends_on=[
-        "VAL-100", "VAL-110", "VAL-120", "VAL-130", "VAL-140",
-        "VAL-150", "VAL-160", "VAL-170", "VAL-180",
-        "VAL-200", "VAL-210", "VAL-220", "VAL-230", "VAL-240",
-        "VAL-300", "VAL-310", "VAL-320", "VAL-330", "VAL-340",
-        "VAL-350", "VAL-351", "VAL-352",
-        "VAL-400", "VAL-420",
+        "VAL-100",
+        "VAL-110",
+        "VAL-120",
+        "VAL-130",
+        "VAL-140",
+        "VAL-150",
+        "VAL-160",
+        "VAL-170",
+        "VAL-180",
+        "VAL-200",
+        "VAL-210",
+        "VAL-220",
+        "VAL-230",
+        "VAL-240",
+        "VAL-300",
+        "VAL-310",
+        "VAL-320",
+        "VAL-330",
+        "VAL-340",
+        "VAL-350",
+        "VAL-351",
+        "VAL-352",
+        "VAL-400",
+        "VAL-420",
     ],
     input_fields=["nodes/*.json"],
     output_fields=["capability_matrix.csv", "capability_manifest.json"],
     acceptance="capability_matrix.csv exists with all 90+ rows; "
-               "each row has capability_id, status, verification_level, evidence_files",
+    "each row has capability_id, status, verification_level, evidence_files",
 )
 
 VAL_510 = ValidationNode(
@@ -644,7 +660,7 @@ VAL_510 = ValidationNode(
     name="GAP_CLASSIFICATION",
     version="0.1.0",
     description="Classify all capabilities into MISSING, PARTIAL, STUB, BROKEN, BLOCKED. "
-                "Assign P0/P1/P2/P3 severity.",
+    "Assign P0/P1/P2/P3 severity.",
     capability_ids=["CVO"],
     module="cvo.gap_classification",
     callable="cvo.gap_classification:run",
@@ -655,7 +671,7 @@ VAL_510 = ValidationNode(
     input_fields=["capability_matrix.csv"],
     output_fields=["missing_features.md", "partial_features.md"],
     acceptance="missing_features.md has P0/P1/P2/P3 sections; "
-               "partial_features.md lists incomplete features",
+    "partial_features.md lists incomplete features",
 )
 
 VAL_520 = ValidationNode(
@@ -663,7 +679,7 @@ VAL_520 = ValidationNode(
     name="READINESS_GATE",
     version="0.1.0",
     description="Determine if FAST or STRICT training can be started. "
-                "List blocking items explicitly.",
+    "List blocking items explicitly.",
     capability_ids=["CVO"],
     module="cvo.readiness_gate",
     callable="cvo.readiness_gate:run",
@@ -674,7 +690,7 @@ VAL_520 = ValidationNode(
     input_fields=["missing_features.md", "partial_features.md"],
     output_fields=["readiness_gate_result.json"],
     acceptance="readiness_gate_result.json has can_start_fast, can_start_strict, "
-               "blocking_items list; explicit GO/NO-GO decision",
+    "blocking_items list; explicit GO/NO-GO decision",
 )
 
 VAL_530 = ValidationNode(
@@ -682,7 +698,7 @@ VAL_530 = ValidationNode(
     name="FINAL_REPORT",
     version="0.1.0",
     description="Generate final Chinese Markdown + JSON + CSV + HTML report. "
-                "Report reads only previous node evidence.",
+    "Report reads only previous node evidence.",
     capability_ids=["CVO"],
     module="cvo.final_report",
     callable="cvo.final_report:run",
@@ -698,7 +714,7 @@ VAL_530 = ValidationNode(
         "verification_summary.html",
     ],
     acceptance="final_report.md exists with all sections; final_report.json has "
-               "summary statistics; verification_summary.html is renderable",
+    "summary statistics; verification_summary.html is renderable",
 )
 
 
@@ -706,21 +722,43 @@ VAL_530 = ValidationNode(
 
 ALL_NODES: list[ValidationNode] = [
     # Stage A
-    VAL_000, VAL_010, VAL_020,
+    VAL_000,
+    VAL_010,
+    VAL_020,
     # Stage B
-    VAL_100, VAL_110, VAL_120, VAL_130, VAL_140,
-    VAL_150, VAL_160, VAL_170, VAL_180,
+    VAL_100,
+    VAL_110,
+    VAL_120,
+    VAL_130,
+    VAL_140,
+    VAL_150,
+    VAL_160,
+    VAL_170,
+    VAL_180,
     # Stage C
-    VAL_200, VAL_210, VAL_220, VAL_230, VAL_240,
+    VAL_200,
+    VAL_210,
+    VAL_220,
+    VAL_230,
+    VAL_240,
     # Stage D
-    VAL_300, VAL_310, VAL_320, VAL_330, VAL_340,
-    VAL_350, VAL_351, VAL_352,
+    VAL_300,
+    VAL_310,
+    VAL_320,
+    VAL_330,
+    VAL_340,
+    VAL_350,
+    VAL_351,
+    VAL_352,
     # Stage E
     VAL_400,
     *VAL_BATCH_NODES,
     VAL_420,
     # Stage F
-    VAL_500, VAL_510, VAL_520, VAL_530,
+    VAL_500,
+    VAL_510,
+    VAL_520,
+    VAL_530,
 ]
 
 NODE_MAP: dict[str, ValidationNode] = {n.node_id: n for n in ALL_NODES}
@@ -737,11 +775,19 @@ STAGE_LABELS: dict[str, str] = {
 
 STAGE_NODES: dict[str, list[str]] = {
     "A": ["VAL-000", "VAL-010", "VAL-020"],
-    "B": ["VAL-100", "VAL-110", "VAL-120", "VAL-130", "VAL-140",
-           "VAL-150", "VAL-160", "VAL-170", "VAL-180"],
+    "B": [
+        "VAL-100",
+        "VAL-110",
+        "VAL-120",
+        "VAL-130",
+        "VAL-140",
+        "VAL-150",
+        "VAL-160",
+        "VAL-170",
+        "VAL-180",
+    ],
     "C": ["VAL-200", "VAL-210", "VAL-220", "VAL-230", "VAL-240"],
-    "D": ["VAL-300", "VAL-310", "VAL-320", "VAL-330", "VAL-340",
-           "VAL-350", "VAL-351", "VAL-352"],
+    "D": ["VAL-300", "VAL-310", "VAL-320", "VAL-330", "VAL-340", "VAL-350", "VAL-351", "VAL-352"],
     "E": ["VAL-400"] + [f"VAL-410-BS{bs}" for bs in _BS_CANDIDATES] + ["VAL-420"],
     "F": ["VAL-500", "VAL-510", "VAL-520", "VAL-530"],
 }
@@ -760,6 +806,7 @@ def get_next_ready() -> list[ValidationNode]:
     """Return all nodes whose dependencies are satisfied and are not yet PASSED."""
     # Import state lazily to avoid circular imports
     from cvo.state import CVOStateStore
+
     try:
         store = CVOStateStore()
     except Exception:
@@ -770,10 +817,7 @@ def get_next_ready() -> list[ValidationNode]:
         status = store.get_status(node.node_id)
         if status in ("PASSED", "RUNNING", "PAUSED"):
             continue
-        deps_satisfied = all(
-            store.get_status(dep) == "PASSED"
-            for dep in node.depends_on
-        )
+        deps_satisfied = all(store.get_status(dep) == "PASSED" for dep in node.depends_on)
         if deps_satisfied:
             ready.append(node)
     return ready

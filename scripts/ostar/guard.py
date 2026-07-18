@@ -9,6 +9,7 @@ Verifies system state before a soak run begins:
   - Config and dependency snapshots
   - State-recovery and heartbeat mechanism verification
 """
+
 from __future__ import annotations
 
 import os
@@ -26,6 +27,7 @@ from . import hardware_monitor as _hw
 @dataclass
 class GuardResult:
     """Result of the pre-flight guard checks."""
+
     passed: bool
     timestamp_utc: str
     run_id: str
@@ -52,11 +54,13 @@ class GuardResult:
     checks: list[dict] = field(default_factory=list)
 
     def add_check(self, name: str, passed: bool, message: str = "") -> None:
-        self.checks.append({
-            "name": name,
-            "status": "PASS" if passed else "FAIL",
-            "message": message,
-        })
+        self.checks.append(
+            {
+                "name": name,
+                "status": "PASS" if passed else "FAIL",
+                "message": message,
+            }
+        )
         if not passed:
             self.errors.append(f"[{name}] {message}")
 
@@ -93,9 +97,14 @@ class Guard:
 
     # Patterns for processes that indicate real training (not soak tests)
     TRAINING_PROCESS_PATTERNS = [
-        "python.*train", "python.*main", "python.*train.py",
-        "torchrun", "torch.distributed.run", "deepspeed",
-        "accelerate", "python.*training",
+        "python.*train",
+        "python.*main",
+        "python.*train.py",
+        "torchrun",
+        "torch.distributed.run",
+        "deepspeed",
+        "accelerate",
+        "python.*training",
     ]
 
     def __init__(self, project_root: Path | str):
@@ -136,6 +145,7 @@ class Guard:
     def _check_torch(self) -> None:
         try:
             import torch as _torch
+
             ver = _torch.__version__
             self._result.add_check("TORCH_AVAILABLE", True, f"v{ver}")
             self._result.torch_version = ver
@@ -157,35 +167,44 @@ class Guard:
 
         try:
             commit = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], cwd=str(self.project_root),
-                stderr=subprocess.DEVNULL, text=True,
+                ["git", "rev-parse", "HEAD"],
+                cwd=str(self.project_root),
+                stderr=subprocess.DEVNULL,
+                text=True,
             ).strip()
             self._result.git_commit = commit[:12]
 
             branch = subprocess.check_output(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                cwd=str(self.project_root), stderr=subprocess.DEVNULL, text=True,
+                cwd=str(self.project_root),
+                stderr=subprocess.DEVNULL,
+                text=True,
             ).strip()
             self._result.git_branch = branch
 
             # Capture dirty diff safely — never discard user changes
             dirty = subprocess.run(
                 ["git", "diff", "--stat"],
-                cwd=str(self.project_root), capture_output=True, text=True,
+                cwd=str(self.project_root),
+                capture_output=True,
+                text=True,
             )
             self._result.git_dirty = dirty.returncode == 0 and bool(dirty.stdout.strip())
 
             if self._result.git_dirty:
                 diff = subprocess.run(
                     ["git", "diff"],
-                    cwd=str(self.project_root), capture_output=True, text=True,
+                    cwd=str(self.project_root),
+                    capture_output=True,
+                    text=True,
                 )
                 self._result.git_dirty_diff = diff.stdout[:5000]  # cap at 5 KB
                 self._result.warnings.append(
                     "Uncommitted changes present (first 5KB captured in guard result)"
                 )
                 self._result.add_check(
-                    "GIT_DIRTY_PROTECTION", True,
+                    "GIT_DIRTY_PROTECTION",
+                    True,
                     "uncommitted changes recorded, will NOT be overwritten",
                 )
             else:
@@ -204,7 +223,8 @@ class Guard:
         if snap.gpu_count > 0:
             self._result.gpu_label = f"{snap.gpu_count}x {snap.gpu_names[0]}"
             self._result.add_check(
-                "GPU_AVAILABLE", True,
+                "GPU_AVAILABLE",
+                True,
                 f"{snap.gpu_count} GPU(s): {snap.gpu_names[0]}",
             )
         else:
@@ -213,7 +233,8 @@ class Guard:
             self._result.warnings.append("No GPU detected — GPU stress tests will be skipped")
 
         self._result.add_check(
-            "CPU_CORES", True,
+            "CPU_CORES",
+            True,
             f"{self._result.cpu_cores} cores, {self._result.ram_total_gb:.1f} GB RAM",
         )
 
@@ -223,12 +244,14 @@ class Guard:
         required = _C.DEFAULT_DISK_RESERVE_GB + 5  # 5 GB for soak artifacts
         if snap.disk_free_gb >= required:
             self._result.add_check(
-                "DISK_SPACE", True,
+                "DISK_SPACE",
+                True,
                 f"{snap.disk_free_gb:.1f} GB free",
             )
         else:
             self._result.add_check(
-                "DISK_SPACE", False,
+                "DISK_SPACE",
+                False,
                 f"only {snap.disk_free_gb:.1f} GB free, need ≥{required} GB",
             )
 
@@ -238,21 +261,26 @@ class Guard:
         try:
             ps_result = subprocess.run(
                 ["ps", "aux"],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if ps_result.returncode == 0:
                 lines = ps_result.stdout.splitlines()
                 for line in lines[1:]:  # skip header
                     for pattern in self.TRAINING_PROCESS_PATTERNS:
                         import re as _re
+
                         if _re.search(pattern, line, _re.IGNORECASE):
                             parts = line.split()
                             if len(parts) >= 11:
-                                competing.append({
-                                    "pid": parts[1],
-                                    "user": parts[0],
-                                    "command": " ".join(parts[10:]),
-                                })
+                                competing.append(
+                                    {
+                                        "pid": parts[1],
+                                        "user": parts[0],
+                                        "command": " ".join(parts[10:]),
+                                    }
+                                )
                             break
         except Exception:
             pass
@@ -264,7 +292,8 @@ class Guard:
                 f"may compete for GPU resources",
             )
         self._result.add_check(
-            "NO_REAL_TRAINING", True,
+            "NO_REAL_TRAINING",
+            True,
             f"{len(competing)} competing process(es) noted",
         )
 
@@ -290,6 +319,7 @@ class Guard:
         hb_path = soak_root / "heartbeat.json"
         try:
             import json as _json
+
             hb_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = hb_path.with_suffix(".tmp")
             tmp.write_text(_json.dumps({"test": True}), encoding="utf-8")
@@ -310,6 +340,7 @@ class Guard:
             ckpt_dir.mkdir(parents=True, exist_ok=True)
             test_ckpt = ckpt_dir / "ckpt_guard_test.json"
             import json as _json
+
             data = {"guard": "test", "seq": 0}
             tmp = test_ckpt.with_suffix(".tmp")
             tmp.write_text(_json.dumps(data, indent=2), encoding="utf-8")

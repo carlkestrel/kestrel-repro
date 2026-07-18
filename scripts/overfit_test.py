@@ -44,7 +44,9 @@ print(f"L1_OVERFIT_PASS final_loss={{final_loss:.6f}}")
     if result.returncode == 0 and "L1_OVERFIT_PASS" in result.stdout:
         print("L1 Overfit Test: PASS")
         sys.exit(0)
-    elif ("ModuleNotFoundError" in result.stderr or "ModuleNotFoundError" in result.stdout) and "torch" in (result.stderr + result.stdout):
+    elif (
+        "ModuleNotFoundError" in result.stderr or "ModuleNotFoundError" in result.stdout
+    ) and "torch" in (result.stderr + result.stdout):
         print("L1 Overfit Test: STUB_TEST_PASSED (torch not installed — R1 constraint)")
         sys.exit(0)
     else:

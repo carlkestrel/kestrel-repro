@@ -8,6 +8,7 @@ This is the heart of OSTAR. It implements:
   - Subprocess isolation for test suites
   - Graceful pause / resume / stop
 """
+
 from __future__ import annotations
 
 import json
@@ -34,6 +35,7 @@ from . import test_suites as _ts
 @dataclass
 class CycleContext:
     """Per-cycle execution context."""
+
     cycle_seq: int
     run_id: str
     started_at_utc: str
@@ -168,6 +170,7 @@ class SoakEngine:
 
         # ── Phase 3: Generate reports ───────────────────────────────────
         from . import reporter as _rpt
+
         _rpt.generate_all_reports(self._state, self._run_id)
 
         return SoakEngineResult(
@@ -189,9 +192,13 @@ class SoakEngine:
         guard_result = self._run_guard()
         if not guard_result.passed:
             return SoakEngineResult(
-                status="GUARD_FAILED", verdict=_C.VERDICT_FAILED_UNRESOLVED,
-                run_id=guard_result.run_id, cycles_completed=0,
-                total_repairs=0, verified_repairs=0, rollbacks=0,
+                status="GUARD_FAILED",
+                verdict=_C.VERDICT_FAILED_UNRESOLVED,
+                run_id=guard_result.run_id,
+                cycles_completed=0,
+                total_repairs=0,
+                verified_repairs=0,
+                rollbacks=0,
                 termination_reason="guard failed",
                 duration_seconds=time.time() - self._start_time,
             )
@@ -256,8 +263,7 @@ class SoakEngine:
                 return False
 
         # 2. One GPU short loop (cap at 5 steps)
-        gpu_result = _ts.run_gpu_stress(
-            self.project_root, max_steps=5, batch_size=10)
+        gpu_result = _ts.run_gpu_stress(self.project_root, max_steps=5, batch_size=10)
         notes.append(f"GPU short loop: {gpu_result.status}")
 
         # 3. State save / restore cycle
@@ -270,6 +276,7 @@ class SoakEngine:
 
         # 4. Report generation (dry)
         from . import reporter as _rpt
+
         try:
             _rpt.generate_all_reports(self._state, self._run_id)
             notes.append("report generation: ok")
@@ -337,7 +344,8 @@ class SoakEngine:
 
                 # Record cycle in state
                 self._state.record_cycle(
-                    self._run_id, self._cycle_seq,
+                    self._run_id,
+                    self._cycle_seq,
                     result.get("status", "UNKNOWN"),
                     exit_reason=result.get("exit_reason"),
                     bug_count=result.get("bug_count", 0),
@@ -372,8 +380,11 @@ class SoakEngine:
                 self._consecutive_crashes += 1
                 self._state.record_event(
                     "CYCLE_ERROR",
-                    payload={"cycle_seq": self._cycle_seq,
-                             "error": str(e), "traceback": traceback.format_exc()[-500:]},
+                    payload={
+                        "cycle_seq": self._cycle_seq,
+                        "error": str(e),
+                        "traceback": traceback.format_exc()[-500:],
+                    },
                 )
                 if self._consecutive_crashes >= _C.DEFAULT_MAX_CONSECUTIVE_CRASHES:
                     self._termination_reason = "consecutive_agent_crashes"
@@ -386,8 +397,7 @@ class SoakEngine:
         self._state.complete_run(self._run_id, verdict.verdict)
 
         return {
-            "status": "COMPLETED" if self._termination_code == _C.EXIT_OK
-                      else "TERMINATED",
+            "status": "COMPLETED" if self._termination_code == _C.EXIT_OK else "TERMINATED",
             "verdict": verdict.verdict,
             "total_repairs": total_repairs,
             "verified_repairs": verified_repairs,
@@ -406,7 +416,8 @@ class SoakEngine:
         # Record CI results
         for sr in suite_results:
             self._state.record_ci_result(
-                self._run_id, None,
+                self._run_id,
+                None,
                 suite_name=sr.name,
                 passed=sr.passed,
                 failed=sr.failed,
@@ -420,9 +431,12 @@ class SoakEngine:
         failed_suites = [r for r in suite_results if r.status == "FAIL"]
         if not failed_suites:
             return {
-                "status": "PASS", "exit_reason": "all suites passed",
-                "bug_count": 0, "repairs_attempted": 0,
-                "repairs_verified": 0, "rollbacks": 0,
+                "status": "PASS",
+                "exit_reason": "all suites passed",
+                "bug_count": 0,
+                "repairs_attempted": 0,
+                "repairs_verified": 0,
+                "rollbacks": 0,
             }
 
         # ── C. REPRODUCE + CLASSIFY ──────────────────────────────────
@@ -432,15 +446,19 @@ class SoakEngine:
                 fp = self._fingerprint_error(err, suite.output)
                 error_class, _ = self._classify(err, suite.output)
                 bug_id = self._state.upsert_bug(
-                    self._run_id, fingerprint=fp, error_class=error_class,
+                    self._run_id,
+                    fingerprint=fp,
+                    error_class=error_class,
                 )
-                bugs.append({
-                    "bug_id": bug_id,
-                    "fingerprint": fp,
-                    "error_class": error_class,
-                    "suite": suite.name,
-                    "error": err,
-                })
+                bugs.append(
+                    {
+                        "bug_id": bug_id,
+                        "fingerprint": fp,
+                        "error_class": error_class,
+                        "suite": suite.name,
+                        "error": err,
+                    }
+                )
                 ctx.bugs_found.append({"bug_id": bug_id, "error_class": error_class})
 
                 # Save failure evidence
@@ -502,7 +520,8 @@ class SoakEngine:
                 status=repair_result.status,
                 target_test_passed=(
                     repair_result.target_test_runs == 3
-                    if repair_result.target_test_runs > 0 else None
+                    if repair_result.target_test_runs > 0
+                    else None
                 ),
                 regression_passed=repair_result.regression_test_added,
                 notes="; ".join(repair_result.notes),
@@ -566,8 +585,9 @@ class SoakEngine:
 
         # P0 unresolved
         bugs = self._state.get_bugs(self._run_id)
-        p0_active = [b for b in bugs if b.get("is_blocked")
-                     and b.get("consecutive_failures", 0) > 0]
+        p0_active = [
+            b for b in bugs if b.get("is_blocked") and b.get("consecutive_failures", 0) > 0
+        ]
         if p0_active:
             return "p0_unresolved", _C.EXIT_REPAIR_EXHAUSTED
 
@@ -602,6 +622,7 @@ class SoakEngine:
     def _fingerprint_error(self, error: str, output: str) -> str:
         import hashlib
         import re
+
         combined = (error + output)[:4000]
         type_match = re.search(
             r"(Error|Exception|AssertionError|CUDA|OOM|Timeout):\s*(\S+)",
@@ -658,13 +679,17 @@ class SoakEngine:
         while self._hb_active.is_set():
             if self._run_id:
                 self._state.heartbeat(
-                    self._run_id, os.getpid(),
+                    self._run_id,
+                    os.getpid(),
                     {
                         "cycle_seq": self._cycle_seq,
-                        "active_bugs": len([
-                            b for b in self._state.get_bugs(self._run_id)
-                            if b.get("consecutive_failures", 0) > 0
-                        ]),
+                        "active_bugs": len(
+                            [
+                                b
+                                for b in self._state.get_bugs(self._run_id)
+                                if b.get("consecutive_failures", 0) > 0
+                            ]
+                        ),
                     },
                 )
             self._hb_active.wait(timeout=_C.DEFAULT_HEARTBEAT_INTERVAL_SECONDS)

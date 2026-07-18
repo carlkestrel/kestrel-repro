@@ -35,34 +35,43 @@ def profile_gpu() -> dict[str, Any]:
         "devices": [],
     }
 
-    rc, stdout, stderr = run_cmd(["nvidia-smi", "--query-gpu=name,memory.total,memory.free,compute_cap,driver_version",
-                                   "--format=csv,noheader,nounits"])
+    rc, stdout, stderr = run_cmd(
+        [
+            "nvidia-smi",
+            "--query-gpu=name,memory.total,memory.free,compute_cap,driver_version",
+            "--format=csv,noheader,nounits",
+        ]
+    )
     if rc == 0 and stdout.strip():
         profile["available"] = True
         for i, line in enumerate(stdout.strip().split("\n")):
             parts = [p.strip() for p in line.split(",")]
             if len(parts) >= 5:
-                profile["devices"].append({
-                    "id": i,
-                    "name": parts[0],
-                    "memory_total_mb": int(parts[1]),
-                    "memory_free_mb": int(parts[2]),
-                    "compute_capability": parts[3],
-                    "driver_version": parts[4],
-                })
+                profile["devices"].append(
+                    {
+                        "id": i,
+                        "name": parts[0],
+                        "memory_total_mb": int(parts[1]),
+                        "memory_free_mb": int(parts[2]),
+                        "compute_capability": parts[3],
+                        "driver_version": parts[4],
+                    }
+                )
     else:
         profile["error"] = stderr.strip() or "nvidia-smi not available"
 
     # Additional GPU details
     try:
         import torch
+
         if torch.cuda.is_available():
             profile["pytorch_cuda_version"] = torch.version.cuda
             profile["pytorch_bf16_supported"] = torch.cuda.is_bf16_supported()
             profile["pytorch_tf32_supported"] = (
-                hasattr(torch.backends.cuda, "matmul") and
-                torch.backends.cuda.matmul.allow_tf32
-            ) if hasattr(torch, "backends") else False
+                (hasattr(torch.backends.cuda, "matmul") and torch.backends.cuda.matmul.allow_tf32)
+                if hasattr(torch, "backends")
+                else False
+            )
             profile["cudnn_version"] = torch.backends.cudnn.version()
             profile["gpu_count"] = torch.cuda.device_count()
 
@@ -122,9 +131,10 @@ def profile_memory() -> dict[str, Any]:
 
     try:
         import shutil
+
         mem = shutil.mem_info()
-        profile["total_gb"] = round(mem[0] / (1024 ** 3), 2)
-        profile["available_gb"] = round(mem[1] / (1024 ** 3), 2)
+        profile["total_gb"] = round(mem[0] / (1024**3), 2)
+        profile["available_gb"] = round(mem[1] / (1024**3), 2)
         profile["used_gb"] = round(profile["total_gb"] - profile["available_gb"], 2)
     except Exception:
         pass
@@ -139,6 +149,7 @@ def profile_memory() -> dict[str, Any]:
 def profile_disk(path: str = ".") -> dict[str, Any]:
     """Profile disk space and type."""
     import shutil
+
     profile = {"path": str(Path(path).resolve())}
 
     try:
@@ -163,6 +174,7 @@ def profile_pytorch() -> dict[str, Any]:
     profile = {"available": False}
     try:
         import torch
+
         profile["available"] = True
         profile["version"] = torch.__version__
         profile["cuda_available"] = torch.cuda.is_available()
@@ -179,8 +191,9 @@ def profile_pytorch() -> dict[str, Any]:
     return profile
 
 
-def compute_recommendations(gpu_profile: dict, cpu_profile: dict,
-                           memory_profile: dict, disk_profile: dict) -> dict[str, Any]:
+def compute_recommendations(
+    gpu_profile: dict, cpu_profile: dict, memory_profile: dict, disk_profile: dict
+) -> dict[str, Any]:
     """Compute hardware recommendations."""
     recs = {}
 
@@ -206,7 +219,9 @@ def compute_recommendations(gpu_profile: dict, cpu_profile: dict,
 
         # Precision recommendations
         recs["amp_safe"] = True
-        recs["bf16_safe"] = float(compute_cap.split(".")[0] if "." in str(compute_cap) else "0") >= 8
+        recs["bf16_safe"] = (
+            float(compute_cap.split(".")[0] if "." in str(compute_cap) else "0") >= 8
+        )
         recs["tf32_safe"] = recs["bf16_safe"]
 
         # Memory efficiency mode
@@ -316,11 +331,17 @@ def format_markdown(profile: dict[str, Any]) -> str:
     # Recommendations
     lines.append("## Recommendations")
     recs = profile.get("recommendations", {})
-    lines.append(f"- Recommended batch size: `{recs.get('recommended_batch', 'N/A')}` ({recs.get('batch_tier', 'unknown')})")
-    lines.append(f"- Recommended dataloader workers: `{recs.get('recommended_dataloader_workers', 'N/A')}`")
+    lines.append(
+        f"- Recommended batch size: `{recs.get('recommended_batch', 'N/A')}` ({recs.get('batch_tier', 'unknown')})"
+    )
+    lines.append(
+        f"- Recommended dataloader workers: `{recs.get('recommended_dataloader_workers', 'N/A')}`"
+    )
     lines.append(f"- AMP safe: `{recs.get('amp_safe', 'unknown')}`")
     lines.append(f"- BF16 safe: `{recs.get('bf16_safe', 'unknown')}`")
-    lines.append(f"- Gradient checkpointing recommended: `{recs.get('gradient_checkpointing_recommended', 'unknown')}`")
+    lines.append(
+        f"- Gradient checkpointing recommended: `{recs.get('gradient_checkpointing_recommended', 'unknown')}`"
+    )
     lines.append(f"- Disk space sufficient: `{recs.get('disk_space_sufficient', 'unknown')}`")
 
     return "\n".join(lines)

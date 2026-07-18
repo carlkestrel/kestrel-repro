@@ -9,8 +9,12 @@ PLUGIN_ROOT = Path(__file__).parent.parent.resolve()
 
 def test_l0_smoke():
     result = subprocess.run(
-        [sys.executable, str(PLUGIN_ROOT / "scripts" / "smoke_test.py"),
-         "--primary", str(PLUGIN_ROOT)],
+        [
+            sys.executable,
+            str(PLUGIN_ROOT / "scripts" / "smoke_test.py"),
+            "--primary",
+            str(PLUGIN_ROOT),
+        ],
         capture_output=True,
         text=True,
     )
@@ -21,8 +25,14 @@ def test_l0_smoke():
 
 def test_l1_overfit():
     result = subprocess.run(
-        [sys.executable, str(PLUGIN_ROOT / "scripts" / "overfit_test.py"),
-         "--primary", str(PLUGIN_ROOT), "--steps", "50"],
+        [
+            sys.executable,
+            str(PLUGIN_ROOT / "scripts" / "overfit_test.py"),
+            "--primary",
+            str(PLUGIN_ROOT),
+            "--steps",
+            "50",
+        ],
         capture_output=True,
         text=True,
     )
@@ -32,8 +42,14 @@ def test_l1_overfit():
 
 def test_l2_mini_loop():
     result = subprocess.run(
-        [sys.executable, str(PLUGIN_ROOT / "scripts" / "mini_loop_test.py"),
-         "--primary", str(PLUGIN_ROOT), "--epochs", "2"],
+        [
+            sys.executable,
+            str(PLUGIN_ROOT / "scripts" / "mini_loop_test.py"),
+            "--primary",
+            str(PLUGIN_ROOT),
+            "--epochs",
+            "2",
+        ],
         capture_output=True,
         text=True,
     )
@@ -43,8 +59,12 @@ def test_l2_mini_loop():
 
 def test_l3_checkpoint_resume():
     result = subprocess.run(
-        [sys.executable, str(PLUGIN_ROOT / "scripts" / "checkpoint_resume_test.py"),
-         "--primary", str(PLUGIN_ROOT)],
+        [
+            sys.executable,
+            str(PLUGIN_ROOT / "scripts" / "checkpoint_resume_test.py"),
+            "--primary",
+            str(PLUGIN_ROOT),
+        ],
         capture_output=True,
         text=True,
     )

@@ -5,4 +5,5 @@ as package data so the test suite can locate them via
 ``importlib.resources.files("scripts.fixtures")`` regardless of
 the current working directory.
 """
+
 __all__: list[str] = []

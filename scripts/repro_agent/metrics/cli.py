@@ -3,6 +3,7 @@ Metric Protocol Auditor - CLI
 
 Command-line interface for metric auditing operations.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,9 +53,7 @@ def cmd_discover(args) -> int:
     output_dir = project / ".repro" / "metrics"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    (output_dir / "takeover_inventory.json").write_text(
-        json.dumps(results, indent=2, default=str)
-    )
+    (output_dir / "takeover_inventory.json").write_text(json.dumps(results, indent=2, default=str))
 
     print("\nDiscovered:")
     print(f"  Files scanned: {results['num_files_scanned']}")
@@ -88,9 +87,9 @@ def cmd_takeover(args) -> int:
     dois = [f["value"] for f in results["findings"] if f["type"] == "DOI"]
     wrong_doi_found = any(doi in WRONG_DOIS for doi in dois)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("TAKEOVER REPORT")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Project: {project}")
     print(f"Files scanned: {results['num_files_scanned']}")
     print(f"Findings: {results['num_findings']}")
@@ -149,9 +148,7 @@ def cmd_audit(args) -> int:
         "timestamp": __import__("datetime").datetime.now().__str__(),
     }
 
-    (output_dir / "metric_protocol_audit.md").write_text(
-        generate_audit_markdown(audit_report)
-    )
+    (output_dir / "metric_protocol_audit.md").write_text(generate_audit_markdown(audit_report))
 
     return 0
 
@@ -177,23 +174,28 @@ def cmd_recompute(args) -> int:
 
     # Recompute metrics
     results = MetricRecomputer.recompute_from_confusion_matrix(
-        cm,
-        class_names=SiamKPConv_CLASS_NAMES
+        cm, class_names=SiamKPConv_CLASS_NAMES
     )
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("METRIC RECOMPUTATION RESULTS")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
-    print(f"\nmIoU_ch (classes 1-6): {results['miou_ch']:.4f} ({results['miou_ch']*100:.2f}%)")
-    print(f"All-class mIoU (0-6):   {results['all_class_miou']:.4f} ({results['all_class_miou']*100:.2f}%)")
-    print(f"Overall Accuracy:        {results['overall_accuracy']:.4f} ({results['overall_accuracy']*100:.2f}%)")
-    print(f"Mean Accuracy:           {results['mean_accuracy']:.4f} ({results['mean_accuracy']*100:.2f}%)")
+    print(f"\nmIoU_ch (classes 1-6): {results['miou_ch']:.4f} ({results['miou_ch'] * 100:.2f}%)")
+    print(
+        f"All-class mIoU (0-6):   {results['all_class_miou']:.4f} ({results['all_class_miou'] * 100:.2f}%)"
+    )
+    print(
+        f"Overall Accuracy:        {results['overall_accuracy']:.4f} ({results['overall_accuracy'] * 100:.2f}%)"
+    )
+    print(
+        f"Mean Accuracy:           {results['mean_accuracy']:.4f} ({results['mean_accuracy'] * 100:.2f}%)"
+    )
 
     print("\nPer-class IoU:")
     for cls_name, iou in results["per_class_iou"].items():
         marker = " ← mIoU_ch" if cls_name != "Unchanged" else " (excluded)"
-        print(f"  {cls_name}: {iou:.4f} ({iou*100:.2f}%){marker}")
+        print(f"  {cls_name}: {iou:.4f} ({iou * 100:.2f}%){marker}")
 
     # Compare with paper targets
     print("\nComparison with paper targets:")
@@ -264,9 +266,9 @@ def cmd_verify(args) -> int:
     golden = SiamKPConvGoldenTest()
     results = golden.run_all_tests()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("PROTOCOL VERIFICATION")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Passed: {results['total_passed']}/{results['total_passed'] + results['total_failed']}")
 
     if results["all_passed"]:
@@ -300,12 +302,12 @@ def cmd_report(args) -> int:
 
 ## Paper Identity
 
-- **Title**: {SiamKPConv_PAPER_METADATA['title']}
-- **Authors**: {', '.join(SiamKPConv_PAPER_METADATA['authors'])}
-- **Journal**: {SiamKPConv_PAPER_METADATA['journal']}
-- **Volume**: {SiamKPConv_PAPER_METADATA['volume']}
-- **Year**: {SiamKPConv_PAPER_METADATA['year']}
-- **DOI**: {SiamKPConv_PAPER_METADATA['doi']}
+- **Title**: {SiamKPConv_PAPER_METADATA["title"]}
+- **Authors**: {", ".join(SiamKPConv_PAPER_METADATA["authors"])}
+- **Journal**: {SiamKPConv_PAPER_METADATA["journal"]}
+- **Volume**: {SiamKPConv_PAPER_METADATA["volume"]}
+- **Year**: {SiamKPConv_PAPER_METADATA["year"]}
+- **DOI**: {SiamKPConv_PAPER_METADATA["doi"]}
 
 ## Paper Target Values
 
@@ -313,7 +315,7 @@ def cmd_report(args) -> int:
 
 ## Golden Test Results
 
-- **Passed**: {golden_results['total_passed']}/{golden_results['total_passed'] + golden_results['total_failed']}
+- **Passed**: {golden_results["total_passed"]}/{golden_results["total_passed"] + golden_results["total_failed"]}
 - **Status**: {"✅ PASS" if golden_results["all_passed"] else "❌ FAIL"}
 
 ### Test Details
@@ -366,9 +368,9 @@ def cmd_doctor(args) -> int:
     if hardcode_report["errors"]:
         issues.append(f"Hardcoded metrics found: {len(hardcode_report['errors'])}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("METRIC DOCTOR RESULTS")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     if issues:
         print("❌ Issues found:")
@@ -386,9 +388,9 @@ def cmd_golden(args) -> int:
 
     results = run_golden_test()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("SIAMESE KPCONV GOLDEN TEST")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Passed: {results['total_passed']}/{results['total_passed'] + results['total_failed']}")
 
     if results["all_passed"]:
@@ -414,18 +416,18 @@ def generate_audit_markdown(audit_report: dict) -> str:
 
     report = f"""# Metric Protocol Audit Report
 
-**Generated**: {audit_report.get('timestamp', 'N/A')}
+**Generated**: {audit_report.get("timestamp", "N/A")}
 
 ## Golden Test Results
 
-- **Passed**: {golden.get('total_passed', 0)}/{golden.get('total_passed', 0) + golden.get('total_failed', 0)}
+- **Passed**: {golden.get("total_passed", 0)}/{golden.get("total_passed", 0) + golden.get("total_failed", 0)}
 - **Status**: {"✅ PASS" if golden.get("all_passed") else "❌ FAIL"}
 
 ## Hardcode Detection
 
-- **Total findings**: {hardcode.get('total_findings', 0)}
-- **Errors**: {len(hardcode.get('errors', []))}
-- **Warnings**: {len(hardcode.get('warnings', []))}
+- **Total findings**: {hardcode.get("total_findings", 0)}
+- **Errors**: {len(hardcode.get("errors", []))}
+- **Warnings**: {len(hardcode.get("warnings", []))}
 
 """
 
@@ -515,6 +517,7 @@ def main():
         except Exception as e:
             print(f"Error: {e}")
             import traceback
+
             traceback.print_exc()
             return 1
     else:

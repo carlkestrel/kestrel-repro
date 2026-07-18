@@ -7,6 +7,7 @@ This module provides:
 - Claim-to-evidence mapping
 - Backward compatibility with legacy output paths
 """
+
 from __future__ import annotations
 
 import json
@@ -80,7 +81,13 @@ def init_run_structure(run_dir: Path) -> dict[str, Path]:
     """Initialize standard subdirectories in a run directory."""
     paths = {}
     for subdir in RUN_SUBDIRS:
-        if subdir.endswith(".log") or subdir.endswith(".csv") or subdir.endswith(".json") or subdir.endswith(".yaml") or subdir.endswith(".txt"):
+        if (
+            subdir.endswith(".log")
+            or subdir.endswith(".csv")
+            or subdir.endswith(".json")
+            or subdir.endswith(".yaml")
+            or subdir.endswith(".txt")
+        ):
             paths[subdir] = run_dir / subdir
         else:
             paths[subdir] = run_dir / subdir
@@ -152,6 +159,7 @@ def write_metrics(run_dir: Path, metrics: list[dict] | str) -> Path:
     else:
         if metrics:
             import csv
+
             with metrics_path.open("w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=metrics[0].keys())
                 writer.writeheader()
@@ -168,6 +176,7 @@ def capture_hardware_info() -> dict:
     # GPU info
     try:
         import torch
+
         if torch.cuda.is_available():
             info["gpu"] = {
                 "device_count": torch.cuda.device_count(),
@@ -175,28 +184,27 @@ def capture_hardware_info() -> dict:
             }
             for i in range(torch.cuda.device_count()):
                 props = torch.cuda.get_device_properties(i)
-                info["gpu"]["devices"].append({
-                    "id": i,
-                    "name": torch.cuda.get_device_name(i),
-                    "total_memory_gb": props.total_memory / 1024**3,
-                })
+                info["gpu"]["devices"].append(
+                    {
+                        "id": i,
+                        "name": torch.cuda.get_device_name(i),
+                        "total_memory_gb": props.total_memory / 1024**3,
+                    }
+                )
     except Exception:
         pass
 
     # CPU/Memory via system commands
     try:
         import subprocess
+
         # CPU cores
-        result = subprocess.run(
-            ["nproc"], capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["nproc"], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             info["cpu_cores"] = int(result.stdout.strip())
 
         # Memory
-        result = subprocess.run(
-            ["free", "-b"], capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["free", "-b"], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             lines = result.stdout.strip().split("\n")
             if len(lines) >= 2:
@@ -245,7 +253,9 @@ class EvidenceManager:
         self.artifact_root.mkdir(parents=True, exist_ok=True)
         self.runs_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_run(self, task_id: str, command: str, config: dict | None = None) -> tuple[str, Path]:
+    def create_run(
+        self, task_id: str, command: str, config: dict | None = None
+    ) -> tuple[str, Path]:
         """Create a new run with standard structure."""
         run_id = generate_run_id()
         run_dir = self.get_run_dir(run_id)
@@ -281,9 +291,13 @@ class EvidenceManager:
             return json.loads(manifest_path.read_text())
         return None
 
-    def complete_run(self, run_id: str, status: str = "COMPLETE",
-                     metrics: list[dict] | None = None,
-                     verification: dict | None = None) -> dict:
+    def complete_run(
+        self,
+        run_id: str,
+        status: str = "COMPLETE",
+        metrics: list[dict] | None = None,
+        verification: dict | None = None,
+    ) -> dict:
         """Mark run as complete with final metrics."""
         run_dir = self.get_run_dir(run_id)
         updates = {
@@ -327,11 +341,13 @@ class EvidenceManager:
                 # Simple search - in production would use more sophisticated matching
                 content = metrics_path.read_text()
                 if claim.lower() in content.lower():
-                    evidence.append({
-                        "run_id": run_id,
-                        "task_id": run_info.get("task_id"),
-                        "metrics_path": str(metrics_path),
-                    })
+                    evidence.append(
+                        {
+                            "run_id": run_id,
+                            "task_id": run_info.get("task_id"),
+                            "metrics_path": str(metrics_path),
+                        }
+                    )
 
         return evidence
 
@@ -352,17 +368,21 @@ class EvidenceManager:
         for fname in required_files:
             path = run_dir / fname
             if path.exists():
-                verification["checks"].append({
-                    "type": "file_exists",
-                    "path": fname,
-                    "status": "PASSED",
-                })
+                verification["checks"].append(
+                    {
+                        "type": "file_exists",
+                        "path": fname,
+                        "status": "PASSED",
+                    }
+                )
             else:
-                verification["checks"].append({
-                    "type": "file_exists",
-                    "path": fname,
-                    "status": "FAILED",
-                })
+                verification["checks"].append(
+                    {
+                        "type": "file_exists",
+                        "path": fname,
+                        "status": "FAILED",
+                    }
+                )
                 verification["status"] = "FAILED"
 
         # Check manifest integrity
@@ -370,17 +390,21 @@ class EvidenceManager:
             required_manifest_keys = ["run_id", "task_id", "command", "created_at"]
             for key in required_manifest_keys:
                 if key in manifest:
-                    verification["checks"].append({
-                        "type": "manifest_key",
-                        "key": key,
-                        "status": "PASSED",
-                    })
+                    verification["checks"].append(
+                        {
+                            "type": "manifest_key",
+                            "key": key,
+                            "status": "PASSED",
+                        }
+                    )
                 else:
-                    verification["checks"].append({
-                        "type": "manifest_key",
-                        "key": key,
-                        "status": "FAILED",
-                    })
+                    verification["checks"].append(
+                        {
+                            "type": "manifest_key",
+                            "key": key,
+                            "status": "FAILED",
+                        }
+                    )
                     verification["status"] = "FAILED"
 
         # Write verification
@@ -435,17 +459,21 @@ class EvidenceManager:
                 try:
                     canonical_path.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copytree(legacy_path, canonical_path)
-                    migrations.append({
-                        "legacy": str(legacy_path),
-                        "canonical": str(canonical_path),
-                        "status": "copied",
-                    })
+                    migrations.append(
+                        {
+                            "legacy": str(legacy_path),
+                            "canonical": str(canonical_path),
+                            "status": "copied",
+                        }
+                    )
                 except Exception as e:
-                    migrations.append({
-                        "legacy": str(legacy_path),
-                        "canonical": str(canonical_path),
-                        "status": "error",
-                        "error": str(e),
-                    })
+                    migrations.append(
+                        {
+                            "legacy": str(legacy_path),
+                            "canonical": str(canonical_path),
+                            "status": "error",
+                            "error": str(e),
+                        }
+                    )
 
         return {"migrations": migrations}

@@ -52,9 +52,14 @@ class BenchmarkResult:
     status: str = "unknown"
 
 
-def run_training_benchmark(mode: str, duration: int, batch_size: int,
-                          amp: bool = False, primary_path: Path | None = None,
-                          warmup: int = 10) -> BenchmarkResult:
+def run_training_benchmark(
+    mode: str,
+    duration: int,
+    batch_size: int,
+    amp: bool = False,
+    primary_path: Path | None = None,
+    warmup: int = 10,
+) -> BenchmarkResult:
     """Run a benchmark by executing the training script for a fixed duration."""
 
     result = BenchmarkResult(
@@ -67,10 +72,14 @@ def run_training_benchmark(mode: str, duration: int, batch_size: int,
     benchmark_script = Path(__file__).parent / "benchmark_train.py"
 
     cmd = [
-        sys.executable, str(benchmark_script),
-        "--duration", str(duration),
-        "--batch-size", str(batch_size),
-        "--warmup", str(warmup),
+        sys.executable,
+        str(benchmark_script),
+        "--duration",
+        str(duration),
+        "--batch-size",
+        str(batch_size),
+        "--warmup",
+        str(warmup),
     ]
     if amp:
         cmd.append("--amp")
@@ -120,9 +129,9 @@ def run_training_benchmark(mode: str, duration: int, batch_size: int,
     return result
 
 
-def compare_modes(strict_result: BenchmarkResult,
-                 optimized_result: BenchmarkResult,
-                 tolerance: float = 0.5) -> dict[str, Any]:
+def compare_modes(
+    strict_result: BenchmarkResult, optimized_result: BenchmarkResult, tolerance: float = 0.5
+) -> dict[str, Any]:
     """Compare strict vs optimized mode results."""
     comparison = {
         "strict": asdict(strict_result),
@@ -140,27 +149,30 @@ def compare_modes(strict_result: BenchmarkResult,
 
     if strict_result.throughput_samples_per_sec > 0:
         comparison["throughput_speedup"] = (
-            optimized_result.throughput_samples_per_sec /
-            strict_result.throughput_samples_per_sec
+            optimized_result.throughput_samples_per_sec / strict_result.throughput_samples_per_sec
         )
 
     if strict_result.gpu_memory_peak_gb > 0:
         comparison["memory_reduction_ratio"] = (
-            strict_result.gpu_memory_peak_gb /
-            optimized_result.gpu_memory_peak_gb
-            if optimized_result.gpu_memory_peak_gb > 0 else 0
+            strict_result.gpu_memory_peak_gb / optimized_result.gpu_memory_peak_gb
+            if optimized_result.gpu_memory_peak_gb > 0
+            else 0
         )
 
     # Loss parity check
     if strict_result.loss_avg > 0:
-        loss_diff_pct = abs(strict_result.loss_avg - optimized_result.loss_avg) / strict_result.loss_avg * 100
+        loss_diff_pct = (
+            abs(strict_result.loss_avg - optimized_result.loss_avg) / strict_result.loss_avg * 100
+        )
         comparison["metric_parity"]["loss_within_tolerance"] = loss_diff_pct < tolerance * 10
         comparison["metric_parity"]["loss_diff_percent"] = round(loss_diff_pct, 3)
 
     # Recommend
-    if comparison["metric_parity"]["loss_within_tolerance"] and \
-       optimized_result.steps_with_nan == 0 and \
-       comparison["throughput_speedup"] > 1.0:
+    if (
+        comparison["metric_parity"]["loss_within_tolerance"]
+        and optimized_result.steps_with_nan == 0
+        and comparison["throughput_speedup"] > 1.0
+    ):
         comparison["recommendation"] = "optimized_repro_safe"
     elif comparison["throughput_speedup"] > 1.0 and optimized_result.steps_with_nan == 0:
         comparison["recommendation"] = "requires_manual_parity_check"
@@ -191,7 +203,9 @@ def format_report(results: dict[str, Any]) -> str:
     # Optimized
     if optimized.get("mode"):
         lines.append("## Optimized Mode (AMP)")
-        lines.append(f"- Throughput: `{optimized.get('throughput_samples_per_sec', 0):.1f}` samples/sec")
+        lines.append(
+            f"- Throughput: `{optimized.get('throughput_samples_per_sec', 0):.1f}` samples/sec"
+        )
         lines.append(f"- Steps/sec: `{optimized.get('throughput_steps_per_sec', 0):.2f}`")
         lines.append(f"- GPU memory peak: `{optimized.get('gpu_memory_peak_gb', 0):.2f}` GB")
         lines.append(f"- GPU utilization avg: `{optimized.get('gpu_utilization_avg', 0):.1f}%`")
@@ -222,10 +236,13 @@ def format_report(results: dict[str, Any]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["strict", "optimized", "compare"],
-                       default="strict", help="Benchmark mode")
-    parser.add_argument("--duration", type=int, default=120,
-                       help="Benchmark duration in seconds")
+    parser.add_argument(
+        "--mode",
+        choices=["strict", "optimized", "compare"],
+        default="strict",
+        help="Benchmark mode",
+    )
+    parser.add_argument("--duration", type=int, default=120, help="Benchmark duration in seconds")
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--amp", action="store_true", help="Use AMP")
     parser.add_argument("--warmup", type=int, default=10)
@@ -238,13 +255,23 @@ def main() -> None:
 
     if args.mode == "compare":
         print("Running strict mode benchmark...")
-        strict = run_training_benchmark("strict", args.duration, args.batch_size,
-                                        amp=False, primary_path=args.primary,
-                                        warmup=args.warmup)
+        strict = run_training_benchmark(
+            "strict",
+            args.duration,
+            args.batch_size,
+            amp=False,
+            primary_path=args.primary,
+            warmup=args.warmup,
+        )
         print("Running optimized mode benchmark...")
-        optimized = run_training_benchmark("optimized", args.duration, args.batch_size,
-                                           amp=True, primary_path=args.primary,
-                                           warmup=args.warmup)
+        optimized = run_training_benchmark(
+            "optimized",
+            args.duration,
+            args.batch_size,
+            amp=True,
+            primary_path=args.primary,
+            warmup=args.warmup,
+        )
         comparison = compare_modes(strict, optimized)
         results = {
             "strict": asdict(strict),
@@ -254,9 +281,14 @@ def main() -> None:
         }
     else:
         is_amp = args.mode == "optimized"
-        result = run_training_benchmark(args.mode, args.duration, args.batch_size,
-                                        amp=is_amp, primary_path=args.primary,
-                                        warmup=args.warmup)
+        result = run_training_benchmark(
+            args.mode,
+            args.duration,
+            args.batch_size,
+            amp=is_amp,
+            primary_path=args.primary,
+            warmup=args.warmup,
+        )
         results = {
             args.mode: asdict(result),
             "timestamp": datetime.now(timezone.utc).isoformat(),

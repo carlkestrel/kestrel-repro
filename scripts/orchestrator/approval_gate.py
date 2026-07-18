@@ -7,7 +7,7 @@ from typing import Any
 
 class ApprovalGate:
     """Persist approval requests and explicit decisions in the state store.
-    
+
     NORA-style enhancements:
     - Human checkpoint support
     - Auto-approval for low-risk operations
@@ -20,17 +20,22 @@ class ApprovalGate:
 
     def request(self, task: dict, reason: str = "", checkpoint: str | None = None) -> str:
         """Request approval for a task.
-        
+
         Args:
             task: Task dictionary
             reason: Reason for the approval request
             checkpoint: Optional human checkpoint name
         """
-        existing = [approval for approval in self.store.pending_approvals()
-                    if approval["task_id"] == task["id"]]
+        existing = [
+            approval
+            for approval in self.store.pending_approvals()
+            if approval["task_id"] == task["id"]
+        ]
         if existing:
             return existing[0]["approval_id"]
-        if task["status"] not in {"READY", "APPROVED"}:
+        # R3R-4: allow request() for VERIFYING tasks (non-evidentiary flow where
+        # the controller transitions to WAITING_APPROVAL after creating the approval).
+        if task["status"] not in {"READY", "APPROVED", "VERIFYING"}:
             return ""
         approval_id = f"apr_{uuid.uuid4().hex[:16]}"
         expires_at = time.time() + self.ttl_seconds if self.ttl_seconds else None
@@ -39,19 +44,26 @@ class ApprovalGate:
         except ValueError:
             current = self.store.get_task(task["id"])
             if current is None or current["status"] == "WAITING_APPROVAL":
-                pending = [a["approval_id"] for a in self.store.pending_approvals()
-                           if a["task_id"] == task["id"]]
+                pending = [
+                    a["approval_id"]
+                    for a in self.store.pending_approvals()
+                    if a["task_id"] == task["id"]
+                ]
                 return pending[0] if pending else ""
             raise
         if reason:
-            self.store.record_event("APPROVAL_REASON", task["id"], {
-                "approval_id": approval_id, "reason": reason
-            })
+            self.store.record_event(
+                "APPROVAL_REASON", task["id"], {"approval_id": approval_id, "reason": reason}
+            )
         if checkpoint:
-            self.store.record_event("HUMAN_CHECKPOINT", task["id"], {
-                "checkpoint": checkpoint,
-                "approval_id": approval_id,
-            })
+            self.store.record_event(
+                "HUMAN_CHECKPOINT",
+                task["id"],
+                {
+                    "checkpoint": checkpoint,
+                    "approval_id": approval_id,
+                },
+            )
         return approval_id
 
     def approve(self, approval_id: str, reason: str = "") -> dict:
@@ -59,7 +71,7 @@ class ApprovalGate:
 
     def waive(self, approval_id: str, reason: str = "") -> dict:
         """R3F-5 task 5: explicitly waive (bypass) a task's approval requirement.
-        
+
         Unlike ``approve()`` which means the acceptance_tests passed, ``waive()``
         means a human has reviewed and accepted the outcome without formal tests.
         Used for non-evidentiary tasks or situations where acceptance_tests are
@@ -79,25 +91,38 @@ class ApprovalGate:
                 # R3R-4: expired approvals transition to REJECTED (not WAIVED).
                 # REJECTED is terminal: the human never approved it in time,
                 # so the task is rejected rather than silently waived.
-                self.store.decide_approval(
-                    approval["approval_id"], "REJECTED", "approval expired"
-                )
+                self.store.decide_approval(approval["approval_id"], "REJECTED", "approval expired")
                 expired.append(approval["approval_id"])
         return expired
 
     def auto_approve_low_risk(self, task: dict) -> bool:
         """Auto-approve low-risk tasks if conditions are met.
-        
+
         Returns True if the task was auto-approved, False otherwise.
+
+        R3R-4: non-evidentiary tasks are skipped here; they go through the
+        _NEEDS_WAIVER_ path in _run_verifications instead.
         """
         gate = task.get("gate", "")
         low_risk_gates = {
-            "read_only", "safe", "compute_metrics", "generate_report",
-            "mini_benchmark", "small_download",
+            "read_only",
+            "safe",
+            "compute_metrics",
+            "generate_report",
+            "mini_benchmark",
+            "small_download",
             # R3F-5: init and env_check are infrastructure gates; they should not
             # block waiting for manual approval in daemon/reproctl run contexts.
-            "init", "env_check", "audit",
+            "init",
+            "env_check",
+            "audit",
         }
+
+        # R3R-4: non-evidentiary tasks are NOT auto-approved here; the controller's
+        # _run_verifications will create a PENDING approval and transition the task
+        # to WAITING_APPROVAL so a human can explicitly waive it.
+        if task.get("non_evidentiary", False):
+            return False
 
         if gate in low_risk_gates:
             # Auto-approve low-risk tasks

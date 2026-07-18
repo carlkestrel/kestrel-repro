@@ -18,7 +18,9 @@ def test_parity_failure_flagged():
     tol = 0.5
     gap = abs(strict_miou - optimized_miou)
     assert gap > tol, "expected gap > tolerance"
-    print(f"strict={strict_miou}, optimized={optimized_miou}, gap={gap} > {tol} → FLAGGED (correct)")
+    print(
+        f"strict={strict_miou}, optimized={optimized_miou}, gap={gap} > {tol} → FLAGGED (correct)"
+    )
 
 
 if __name__ == "__main__":

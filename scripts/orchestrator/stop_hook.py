@@ -7,6 +7,7 @@ This module implements NORA's automatic state saving mechanism:
 - Saves StateStore snapshot
 - Supports graceful shutdown and crash recovery
 """
+
 from __future__ import annotations
 
 import atexit
@@ -42,9 +43,12 @@ class StopHook:
     3. StateStore snapshot
     """
 
-    def __init__(self, project_root: str | Path,
-                 state_store: StateStore | None = None,
-                 event_journal: EventJournal | None = None):
+    def __init__(
+        self,
+        project_root: str | Path,
+        state_store: StateStore | None = None,
+        event_journal: EventJournal | None = None,
+    ):
         self.project_root = Path(project_root).resolve()
         self.execution_dir = self.project_root / ".repro" / "execution"
         self.state_store = state_store
@@ -187,9 +191,19 @@ class StopHook:
         if self.state_store is not None:
             try:
                 tasks = self.state_store.list_tasks()
-                pending = [t for t in tasks if t["status"] in {
-                    "PENDING", "READY", "RUNNING", "VERIFYING", "WAITING_APPROVAL", "RETRY_WAIT"
-                }]
+                pending = [
+                    t
+                    for t in tasks
+                    if t["status"]
+                    in {
+                        "PENDING",
+                        "READY",
+                        "RUNNING",
+                        "VERIFYING",
+                        "WAITING_APPROVAL",
+                        "RETRY_WAIT",
+                    }
+                ]
                 completed = [t for t in tasks if t["status"] in {"PASSED", "FAILED", "REJECTED"}]
 
                 handoff["execution_state"] = {
@@ -366,9 +380,11 @@ class RecoveryManager:
             return None
 
 
-def create_stop_hook(project_root: str | Path,
-                    state_store: StateStore | None = None,
-                    event_journal: EventJournal | None = None) -> StopHook:
+def create_stop_hook(
+    project_root: str | Path,
+    state_store: StateStore | None = None,
+    event_journal: EventJournal | None = None,
+) -> StopHook:
     """
     Factory function to create and register a StopHook.
 

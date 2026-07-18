@@ -27,6 +27,7 @@ The plugin can also be run directly from the source tree without a
 build step (for example, while iterating in the editor). Falling
 back to the literal keeps the file useful in that mode.
 """
+
 from __future__ import annotations
 
 __version__ = "0.2.0"

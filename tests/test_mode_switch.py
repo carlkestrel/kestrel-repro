@@ -1,4 +1,5 @@
 """Test mode switching (P1_T02 surface)."""
+
 import importlib.util
 import json
 import sys

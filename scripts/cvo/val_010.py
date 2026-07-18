@@ -2,6 +2,7 @@
 VAL-010 REPOSITORY_INVENTORY — Scan all source, config, test, CLI and Cursor files.
 Generate repository_inventory.json with counts and line counts.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,8 +26,16 @@ def is_valid_json(path):
 
 
 EXCLUDE_DIRS = {
-    ".git", ".venv", "venv", "node_modules", "__pycache__",
-    ".pytest_cache", ".mypy_cache", ".tox", "build", "dist",
+    ".git",
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".tox",
+    "build",
+    "dist",
 }
 
 
@@ -60,12 +69,14 @@ def run(project_root=None):
         for p in sorted(project.rglob(pat)):
             if any(ex in p.parts for ex in EXCLUDE_DIRS):
                 continue
-            cfg_files.append({
-                "path": str(p.relative_to(project)),
-                "type": p.suffix.lstrip("."),
-                "lines": count_lines(p),
-                "valid": is_valid_json(p) if p.suffix == ".json" else None,
-            })
+            cfg_files.append(
+                {
+                    "path": str(p.relative_to(project)),
+                    "type": p.suffix.lstrip("."),
+                    "lines": count_lines(p),
+                    "valid": is_valid_json(p) if p.suffix == ".json" else None,
+                }
+            )
     inventory["config_files"] = cfg_files
     inventory["config_file_count"] = len(cfg_files)
 
@@ -92,8 +103,9 @@ def run(project_root=None):
     cursor_cmds = []
     if cmd_dir.exists():
         for p in sorted(cmd_dir.glob("*.md")):
-            cursor_cmds.append({"path": str(p.relative_to(project)), "name": p.stem,
-                                 "lines": count_lines(p)})
+            cursor_cmds.append(
+                {"path": str(p.relative_to(project)), "name": p.stem, "lines": count_lines(p)}
+            )
     inventory["cursor_commands"] = cursor_cmds
     inventory["cursor_command_count"] = len(cursor_cmds)
 
@@ -111,8 +123,13 @@ def run(project_root=None):
     schemas = []
     if schema_dir.exists():
         for p in sorted(schema_dir.glob("*.json")):
-            schemas.append({"path": str(p.relative_to(project)),
-                            "valid": is_valid_json(p), "lines": count_lines(p)})
+            schemas.append(
+                {
+                    "path": str(p.relative_to(project)),
+                    "valid": is_valid_json(p),
+                    "lines": count_lines(p),
+                }
+            )
     inventory["schemas"] = schemas
     inventory["schema_count"] = len(schemas)
 
@@ -164,16 +181,23 @@ def _get_audit_id(audit_dir):
 def _write_node_state(audit_dir, node_id, status, evidence):
     node_dir = audit_dir / "nodes"
     node_dir.mkdir(parents=True, exist_ok=True)
-    (node_dir / f"{node_id}.json").write_text(json.dumps({
-        "node_id": node_id,
-        "status": status,
-        "finished_at": datetime.now(timezone.utc).isoformat(),
-        "evidence_files": evidence,
-    }, indent=2), encoding="utf-8")
+    (node_dir / f"{node_id}.json").write_text(
+        json.dumps(
+            {
+                "node_id": node_id,
+                "status": status,
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "evidence_files": evidence,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":
     import sys
+
     result = run()
     print(json.dumps(result, indent=2))
     sys.exit(0 if result["status"] == "PASSED" else 1)

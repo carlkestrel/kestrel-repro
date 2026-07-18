@@ -17,6 +17,7 @@ Exit codes:
     7  - BLOCKED
     10 - Internal error
 """
+
 from __future__ import annotations
 
 import argparse
@@ -141,10 +142,12 @@ def _heartbeat(project: Path, owner: str, pid: int, detail: dict | None = None) 
 # Doctor check
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _run_doctor(project: Path) -> dict:
     """Run doctor preflight checks."""
     sys.path.insert(0, str(PACKAGE_ROOT / "scripts"))
     from startup.doctor import run as doctor_run
+
     plan_path = project / DEFAULT_PLAN_PATH
     result = doctor_run(
         project_root=project,
@@ -157,10 +160,11 @@ def _run_doctor(project: Path) -> dict:
 # Autopilot run command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_run(args: argparse.Namespace) -> int:
     """
     Run the continuous autopilot loop.
-    
+
     This wraps the orchestrator controller with NORA-style behavior:
     - Continuous execution until blocked or complete
     - Automatic recovery on startup
@@ -192,8 +196,10 @@ def cmd_run(args: argparse.Namespace) -> int:
             if yaml_files:
                 plan_path = yaml_files[0]
         if not plan_path.exists():
-            print(f"ERROR: Plan not found. Create {DEFAULT_PLAN_PATH} or use --plan <path>",
-                  file=sys.stderr)
+            print(
+                f"ERROR: Plan not found. Create {DEFAULT_PLAN_PATH} or use --plan <path>",
+                file=sys.stderr,
+            )
             return EXIT_NOT_FOUND
 
     print(f"Starting autopilot with plan: {plan_path}")
@@ -241,11 +247,16 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
 
         # Write initial heartbeat
-        _heartbeat(project, "autopilot", os.getpid(), {
-            "plan": str(plan_path),
-            "mode": args.mode or "default",
-            "automation": args.automation,
-        })
+        _heartbeat(
+            project,
+            "autopilot",
+            os.getpid(),
+            {
+                "plan": str(plan_path),
+                "mode": args.mode or "default",
+                "automation": args.automation,
+            },
+        )
 
         # Run until blocked or complete
         result = controller.run()
@@ -296,6 +307,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"ERROR: Autopilot failed: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         _write_pid(project, 0)
         return EXIT_INTERNAL
@@ -304,6 +316,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 # ──────────────────────────────────────────────────────────────────────────────
 # Autopilot status command
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def cmd_status(args: argparse.Namespace) -> int:
     """Show autopilot status."""
@@ -376,6 +389,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 # Autopilot recover command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_recover(args: argparse.Namespace) -> int:
     """Recover from interrupted state."""
     project = _resolve_project(args.project)
@@ -438,6 +452,7 @@ def cmd_recover(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"ERROR: Recovery failed: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         return EXIT_INTERNAL
 
@@ -445,6 +460,7 @@ def cmd_recover(args: argparse.Namespace) -> int:
 # ──────────────────────────────────────────────────────────────────────────────
 # Autopilot pause/stop/continue commands
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def cmd_pause(args: argparse.Namespace) -> int:
     """Pause the autopilot."""
@@ -497,10 +513,11 @@ def cmd_continue(args: argparse.Namespace) -> int:
 # Autopilot takeover command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_takeover(args: argparse.Namespace) -> int:
     """
     Take over an existing reproduction project.
-    
+
     This command:
     1. Detects the project type (paper repo, existing repro project, etc.)
     2. Reads existing state
@@ -548,8 +565,10 @@ def cmd_takeover(args: argparse.Namespace) -> int:
         if git_dir.exists():
             try:
                 sha = subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], cwd=str(primary),
-                    stderr=subprocess.DEVNULL, text=True
+                    ["git", "rev-parse", "HEAD"],
+                    cwd=str(primary),
+                    stderr=subprocess.DEVNULL,
+                    text=True,
                 ).strip()
                 print(f"  Commit: {sha[:12]}")
             except Exception:
@@ -622,6 +641,7 @@ def _get_takeover_recommendation(project_type: str, has_repro: bool, has_plan: b
 # Autopilot events command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_events(args: argparse.Namespace) -> int:
     """Stream the event log."""
     project = _resolve_project(args.project)
@@ -651,6 +671,7 @@ def cmd_events(args: argparse.Namespace) -> int:
 # ──────────────────────────────────────────────────────────────────────────────
 # Autopilot approve/reject commands
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def cmd_approve(args: argparse.Namespace) -> int:
     """Approve a pending task."""
@@ -706,6 +727,7 @@ def cmd_reject(args: argparse.Namespace) -> int:
 # Autopilot daemon command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_daemon(args: argparse.Namespace) -> int:
     """Control the autopilot daemon."""
     project = _resolve_project(args.project)
@@ -732,11 +754,15 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        sys.executable, str(THIS),
+        sys.executable,
+        str(THIS),
         "run",
-        "--project", str(project),
-        "--plan", str(plan_path),
-        "--automation", args.automation,
+        "--project",
+        str(project),
+        "--plan",
+        str(plan_path),
+        "--automation",
+        args.automation,
     ]
     if args.mode:
         cmd.extend(["--mode", args.mode])
@@ -840,6 +866,7 @@ def _daemon_stop(project: Path) -> int:
 # L0-L3 loop command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_l0l3(args: argparse.Namespace) -> int:
     """Run the L0-L3 automated verification loop."""
     project = _resolve_project(args.project)
@@ -875,6 +902,7 @@ def cmd_l0l3(args: argparse.Namespace) -> int:
 # Report command
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_report(args: argparse.Namespace) -> int:
     """Generate reproduction report."""
     project = _resolve_project(args.project)
@@ -905,6 +933,7 @@ def cmd_report(args: argparse.Namespace) -> int:
 # Main
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="autopilot.py",
@@ -918,18 +947,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--plan", help=f"Plan file path (default: {DEFAULT_PLAN_PATH})")
     p_run.add_argument("--policy", help="Policy file path")
     p_run.add_argument("--mode", choices=["strict", "optimized"], help="Execution mode")
-    p_run.add_argument("--automation", default="safe-auto",
-                       choices=["safe-auto", "auto", "manual"],
-                       help="Automation level (default: safe-auto)")
-    p_run.add_argument("--until", default="blocked-or-complete",
-                       choices=["blocked", "complete", "blocked-or-complete", "always"],
-                       help="Run until condition (default: blocked-or-complete)")
-    p_run.add_argument("--resume", action="store_true",
-                       help="Resume from interrupted state")
-    p_run.add_argument("--skip-doctor", action="store_true",
-                       help="Skip preflight doctor checks")
-    p_run.add_argument("--poll-interval", type=float, default=0.5,
-                       help="Poll interval in seconds (default: 0.5)")
+    p_run.add_argument(
+        "--automation",
+        default="safe-auto",
+        choices=["safe-auto", "auto", "manual"],
+        help="Automation level (default: safe-auto)",
+    )
+    p_run.add_argument(
+        "--until",
+        default="blocked-or-complete",
+        choices=["blocked", "complete", "blocked-or-complete", "always"],
+        help="Run until condition (default: blocked-or-complete)",
+    )
+    p_run.add_argument("--resume", action="store_true", help="Resume from interrupted state")
+    p_run.add_argument("--skip-doctor", action="store_true", help="Skip preflight doctor checks")
+    p_run.add_argument(
+        "--poll-interval", type=float, default=0.5, help="Poll interval in seconds (default: 0.5)"
+    )
 
     # status
     p_status = sub.add_parser("status", help="Show autopilot status")
@@ -938,8 +972,9 @@ def build_parser() -> argparse.ArgumentParser:
     # recover
     p_recover = sub.add_parser("recover", help="Recover from interrupted state")
     p_recover.add_argument("--project", required=True, help="Project root directory")
-    p_recover.add_argument("--skip-doctor", action="store_true",
-                          help="Skip preflight doctor checks")
+    p_recover.add_argument(
+        "--skip-doctor", action="store_true", help="Skip preflight doctor checks"
+    )
 
     # pause/stop/continue
     p_pause = sub.add_parser("pause", help="Pause the autopilot")
@@ -976,11 +1011,11 @@ def build_parser() -> argparse.ArgumentParser:
     # daemon
     p_daemon = sub.add_parser("daemon", help="Control the autopilot daemon")
     p_daemon.add_argument("--project", required=True, help="Project root directory")
-    p_daemon.add_argument("action", choices=["start", "status", "stop"],
-                         help="Daemon action")
+    p_daemon.add_argument("action", choices=["start", "status", "stop"], help="Daemon action")
     p_daemon.add_argument("--plan", help="Plan file path")
-    p_daemon.add_argument("--automation", default="safe-auto",
-                          choices=["safe-auto", "auto", "manual"])
+    p_daemon.add_argument(
+        "--automation", default="safe-auto", choices=["safe-auto", "auto", "manual"]
+    )
     p_daemon.add_argument("--mode", choices=["strict", "optimized"])
     p_daemon.add_argument("--resume", action="store_true")
 
@@ -994,13 +1029,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_l0l3.add_argument("--conda-env", default="t4", help="Conda environment with torch")
     p_l0l3.add_argument("--l1-steps", type=int, default=50, help="L1: number of overfit steps")
     p_l0l3.add_argument("--l2-epochs", type=int, default=3, help="L2: number of mini loop epochs")
-    p_l0l3.add_argument("--continue-on-fail", action="store_true", help="Continue to next stage on failure")
+    p_l0l3.add_argument(
+        "--continue-on-fail", action="store_true", help="Continue to next stage on failure"
+    )
     p_l0l3.add_argument("--output", help="Output path for results JSON")
 
     # report - Generate reproduction report
     p_report = sub.add_parser("report", help="Generate reproduction report")
     p_report.add_argument("--project", required=True, help="Project root directory")
-    p_report.add_argument("--format", default="markdown", choices=["markdown", "json"], help="Report format")
+    p_report.add_argument(
+        "--format", default="markdown", choices=["markdown", "json"], help="Report format"
+    )
 
     return parser
 
@@ -1042,6 +1081,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         return EXIT_INTERNAL
 

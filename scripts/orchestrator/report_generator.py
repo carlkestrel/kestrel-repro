@@ -7,6 +7,7 @@ This module generates:
 - Go/Pivot/No-Go verdicts
 - Claim-to-evidence mapping
 """
+
 from __future__ import annotations
 
 import csv
@@ -62,18 +63,20 @@ class ReportGenerator:
         csv_path = self.reports_dir / "summary_report.csv"
         if task_results:
             with csv_path.open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=[
-                    "id", "name", "status", "attempts", "failure_reason"
-                ])
+                writer = csv.DictWriter(
+                    f, fieldnames=["id", "name", "status", "attempts", "failure_reason"]
+                )
                 writer.writeheader()
                 for task in task_results:
-                    writer.writerow({
-                        "id": task.get("id", ""),
-                        "name": task.get("name", ""),
-                        "status": task.get("status", ""),
-                        "attempts": task.get("attempts", 0),
-                        "failure_reason": task.get("failure_reason", ""),
-                    })
+                    writer.writerow(
+                        {
+                            "id": task.get("id", ""),
+                            "name": task.get("name", ""),
+                            "status": task.get("status", ""),
+                            "attempts": task.get("attempts", 0),
+                            "failure_reason": task.get("failure_reason", ""),
+                        }
+                    )
 
         return report
 
@@ -97,9 +100,9 @@ class ReportGenerator:
 | Metric | Count |
 |--------|-------|
 | Total Tasks | {len(task_results)} |
-| Passed | {sum(1 for t in task_results if t.get('status') == 'PASS')} |
-| Failed | {sum(1 for t in task_results if t.get('status') == 'FAIL')} |
-| Blocked | {sum(1 for t in task_results if t.get('status') == 'BLOCKED')} |
+| Passed | {sum(1 for t in task_results if t.get("status") == "PASS")} |
+| Failed | {sum(1 for t in task_results if t.get("status") == "FAIL")} |
+| Blocked | {sum(1 for t in task_results if t.get("status") == "BLOCKED")} |
 
 """
 
@@ -195,6 +198,7 @@ artifacts/runs/<run_id>/
 """
         # Try to read metrics from artifacts
         from .evidence_manager import EvidenceManager
+
         em = EvidenceManager(self.project_root)
         runs = em.list_runs()
 
@@ -260,7 +264,8 @@ artifacts/runs/<run_id>/
             "total_tasks": total,
             "failed_task_details": [
                 {"id": t.get("id"), "reason": t.get("failure_reason")}
-                for t in task_results if t.get("status") == "FAILED"
+                for t in task_results
+                if t.get("status") == "FAILED"
             ],
             "recommendations": self._get_recommendations(verdict, task_results),
             "generated_at": utc_now(),
@@ -296,7 +301,9 @@ artifacts/runs/<run_id>/
                 reason = task.get("failure_reason", "Unknown error")
 
                 if "OOM" in str(reason):
-                    recommendations.append(f"{task_id}: Consider reducing batch size or using gradient accumulation")
+                    recommendations.append(
+                        f"{task_id}: Consider reducing batch size or using gradient accumulation"
+                    )
                 elif "timeout" in str(reason).lower():
                     recommendations.append(f"{task_id}: Increase timeout or optimize training loop")
                 elif "verification" in str(reason).lower():
@@ -369,8 +376,7 @@ artifacts/runs/<run_id>/
         # Determine overall verdict
         if comparison["differences"]:
             within_tolerance = sum(
-                1 for d in comparison["differences"].values()
-                if d.get("within_tolerance", False)
+                1 for d in comparison["differences"].values() if d.get("within_tolerance", False)
             )
             total = len(comparison["differences"])
 

@@ -1,4 +1,5 @@
 """Command-line entry points for the continuous auto-execution controller."""
+
 from __future__ import annotations
 
 import argparse
@@ -57,8 +58,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     plan_path = Path(args.plan).resolve()
     controller = Controller(
-        project_root=project, plan_path=plan_path, mode=args.mode,
-        automation=args.automation, policy_path=args.policy, resume=args.resume,
+        project_root=project,
+        plan_path=plan_path,
+        mode=args.mode,
+        automation=args.automation,
+        policy_path=args.policy,
+        resume=args.resume,
     )
     result = controller.run()
     if result["status"] == COMPLETE:
@@ -100,8 +105,14 @@ def cmd_stop(args: argparse.Namespace) -> int:
             manager.terminate(int(pid))
             watchdog_terminated.append(int(pid))
     snapshot = store.export_snapshots()
-    _output({"status": "STOPPED", "project_root": str(project),
-             "terminated": watchdog_terminated, "snapshots": snapshot})
+    _output(
+        {
+            "status": "STOPPED",
+            "project_root": str(project),
+            "terminated": watchdog_terminated,
+            "snapshots": snapshot,
+        }
+    )
     return EXIT_OK
 
 
@@ -126,6 +137,7 @@ def cmd_next(args: argparse.Namespace) -> int:
     plan = load_plan(args.plan)
     store.initialize_plan(plan, args.plan)
     from orchestrator.scheduler import Scheduler  # local import to avoid cycles
+
     scheduler = Scheduler(store)
     scheduler.refresh()
     nxt = scheduler.next_task()
@@ -160,9 +172,11 @@ def cmd_reject(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     store = _store(project)
     pending = store.pending_approvals()
-    target = (next((a for a in pending if a["approval_id"] == args.approval_id), None)
-              if args.approval_id.startswith("apr_") else
-              next((a for a in pending if a["task_id"] == args.approval_id), None))
+    target = (
+        next((a for a in pending if a["approval_id"] == args.approval_id), None)
+        if args.approval_id.startswith("apr_")
+        else next((a for a in pending if a["task_id"] == args.approval_id), None)
+    )
     if target is None:
         raise SystemExit(EXIT_NOT_FOUND)
     result = store.decide_approval(target["approval_id"], "REJECTED", args.reason or "")
@@ -211,18 +225,30 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
     log_path = project / ".repro" / "execution" / "daemon.log"
     # D2 fix: make sure the log directory exists BEFORE Popen opens the file.
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [sys.executable, str(THIS), "run",
-           "--project", str(project), "--plan", str(plan_path),
-           "--automation", args.automation]
+    cmd = [
+        sys.executable,
+        str(THIS),
+        "run",
+        "--project",
+        str(project),
+        "--plan",
+        str(plan_path),
+        "--automation",
+        args.automation,
+    ]
     if args.mode:
         cmd.extend(["--mode", args.mode])
     cmd.append("--daemon-child")
     env = os.environ.copy()
     env["REPRO_ORCHESTRATOR_DAEMON"] = "1"
     proc = subprocess.Popen(
-        cmd, cwd=str(project), env=env,
-        stdin=subprocess.DEVNULL, stdout=log_path.open("ab"),
-        stderr=subprocess.STDOUT, start_new_session=True,
+        cmd,
+        cwd=str(project),
+        env=env,
+        stdin=subprocess.DEVNULL,
+        stdout=log_path.open("ab"),
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
     )
     pid_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = pid_path.with_suffix(".tmp")
@@ -241,13 +267,13 @@ def _daemon_start(project: Path, args: argparse.Namespace) -> int:
         _output({"status": "START_FAILED", "pid": proc.pid})
         return EXIT_INTERNAL
     if manager.is_alive(proc.pid):
-        _output({"status": "STARTED", "pid": proc.pid,
-                 "log": str(log_path), "plan": str(plan_path)})
+        _output(
+            {"status": "STARTED", "pid": proc.pid, "log": str(log_path), "plan": str(plan_path)}
+        )
         return EXIT_OK
     # D3 fix: detach failed; clean up stale artifacts.
     _pid_path(project).unlink(missing_ok=True)
-    _output({"status": "START_FAILED", "pid": proc.pid,
-             "log": str(log_path)})
+    _output({"status": "START_FAILED", "pid": proc.pid, "log": str(log_path)})
     return EXIT_INTERNAL
 
 
@@ -289,24 +315,31 @@ def _daemon_stop(project: Path) -> int:
         # Terminate workers first so the SQLite RUNNING rows don't survive.
         for worker_pid in worker_pids:
             terminated = manager.terminate(int(worker_pid), grace_seconds=2.0)
-            worker_results.append({"pid": worker_pid,
-                                   "terminated": bool(terminated)})
+            worker_results.append({"pid": worker_pid, "terminated": bool(terminated)})
             try:
                 _store(project).transition(
-                    task_id=task["id"], new_status="READY",
+                    task_id=task["id"],
+                    new_status="READY",
                     expected="RUNNING",
-                    fields={"pid": None, "failure_reason": "daemon stop",
-                            "finished_at": utc_now_iso()},
+                    fields={
+                        "pid": None,
+                        "failure_reason": "daemon stop",
+                        "finished_at": utc_now_iso(),
+                    },
                     event_type="TASK_DAEMON_STOPPED",
                 )
             except Exception:
                 # last-resort fallback: force the row to FAIL so it can't linger.
                 try:
                     _store(project).transition(
-                        task_id=task["id"], new_status="FAILED",
+                        task_id=task["id"],
+                        new_status="FAILED",
                         expected="RUNNING",
-                        fields={"pid": None, "failure_reason": "daemon stop",
-                                "finished_at": utc_now_iso()},
+                        fields={
+                            "pid": None,
+                            "failure_reason": "daemon stop",
+                            "finished_at": utc_now_iso(),
+                        },
                         event_type="TASK_DAEMON_STOPPED",
                     )
                 except Exception:
@@ -316,8 +349,14 @@ def _daemon_stop(project: Path) -> int:
     if not manager.is_alive(pid):
         _pid_path(project).unlink(missing_ok=True)
         _heartbeat_path(project).unlink(missing_ok=True)
-        _output({"status": "STOPPED", "project_root": str(project), "pid": pid,
-                 "workers": worker_results})
+        _output(
+            {
+                "status": "STOPPED",
+                "project_root": str(project),
+                "pid": pid,
+                "workers": worker_results,
+            }
+        )
         return EXIT_OK
     try:
         os.killpg(pid, signal.SIGTERM)
@@ -335,13 +374,15 @@ def _daemon_stop(project: Path) -> int:
             pass
     _pid_path(project).unlink(missing_ok=True)
     _heartbeat_path(project).unlink(missing_ok=True)
-    _output({"status": "STOPPED", "project_root": str(project), "pid": pid,
-             "workers": worker_results})
+    _output(
+        {"status": "STOPPED", "project_root": str(project), "pid": pid, "workers": worker_results}
+    )
     return EXIT_OK
 
 
 def utc_now_iso() -> str:
     from datetime import datetime, timezone
+
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -349,6 +390,7 @@ def cmd_migrate(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     store = _store(project)
     from orchestrator import migrate as migrate_module
+
     dry_run = getattr(args, "check_only", False)
     result = migrate_module.migrate(
         store,
@@ -362,6 +404,7 @@ def cmd_migrate(args: argparse.Namespace) -> int:
 def cmd_backup(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     from orchestrator import backup as backup_module
+
     result = backup_module.backup_project(
         project,
         output_dir=Path(args.output_dir) if getattr(args, "output_dir", None) else None,
@@ -374,6 +417,7 @@ def cmd_backup(args: argparse.Namespace) -> int:
 def cmd_restore(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     from orchestrator import backup as backup_module
+
     result = backup_module.restore_project(
         project,
         snapshot_id=args.snapshot,
@@ -386,6 +430,7 @@ def cmd_restore(args: argparse.Namespace) -> int:
 def cmd_integrity_check(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     from orchestrator import backup as backup_module
+
     result = backup_module.integrity_check(project)
     _output(result)
     print(f"\nIntegrity: {result['summary']}")
@@ -403,14 +448,16 @@ def cmd_rollback_version(args: argparse.Namespace) -> int:
     project = _resolve_project(args.project)
     store = _store(project)
     from orchestrator import migrate as migrate_module
+
     result = migrate_module.rollback(Path(args.backup_dir), store)
     _output(result)
     return EXIT_OK if result["status"] == "restored" else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="reproctl orchestrator",
-                                     description="Continuous auto-execution controller")
+    parser = argparse.ArgumentParser(
+        prog="reproctl orchestrator", description="Continuous auto-execution controller"
+    )
     sub = parser.add_subparsers(dest="orch_command", required=True)
 
     p_run = sub.add_parser("run", help="Run the persistent controller loop")
@@ -426,8 +473,7 @@ def build_parser() -> argparse.ArgumentParser:
     # foreground distinction is already conveyed via REPRO_ORCHESTRATOR_DAEMON
     # for any future code that needs to differentiate). Accepting it here
     # also lets the daemon start path treat argv uniformly.
-    p_run.add_argument("--daemon-child", action="store_true",
-                       help=argparse.SUPPRESS)
+    p_run.add_argument("--daemon-child", action="store_true", help=argparse.SUPPRESS)
 
     for name, helptext in (
         ("pause", "pause the orchestrator"),

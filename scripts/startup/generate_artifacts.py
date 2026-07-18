@@ -9,6 +9,7 @@ Produces (under a temporary fixture project's .repro/startup/):
   - recovery_test_report.md
   - installation_checklist.md
 """
+
 from __future__ import annotations
 
 import csv
@@ -39,7 +40,9 @@ def _build(fixture_root: Path) -> int:
     print("[artifacts] running pytest on tests/test_startup.py ...")
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", str(TEST_FILE), "-v", "--tb=line"],
-        cwd=str(REPO), capture_output=True, text=True,
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
     )
     pytest_out = proc.stdout + "\n" + proc.stderr
 
@@ -55,7 +58,8 @@ def _build(fixture_root: Path) -> int:
     _run(["git", "add", "."], cwd=proj)
     _run(["git", "commit", "-q", "-m", "init"], cwd=proj)
     plan = proj / "plan.md"
-    plan.write_text(textwrap.dedent("""\
+    plan.write_text(
+        textwrap.dedent("""\
         ---
         name: artifact_fixture
         overview: artifact-generation fixture plan
@@ -65,7 +69,8 @@ def _build(fixture_root: Path) -> int:
             acceptance: [T1 produced]
         ---
         # artifact_fixture
-        """))
+        """)
+    )
 
     env = {
         **os.environ,
@@ -73,9 +78,21 @@ def _build(fixture_root: Path) -> int:
         "REPRO_FAKE_GPU": "0",
     }
     subprocess.run(
-        [sys.executable, str(SCRIPTS / "reproctl.py"), "start",
-         "--project", str(proj), "--plan", str(plan), "--mode", "strict"],
-        cwd=str(proj), env=env, capture_output=True, text=True,
+        [
+            sys.executable,
+            str(SCRIPTS / "reproctl.py"),
+            "start",
+            "--project",
+            str(proj),
+            "--plan",
+            str(plan),
+            "--mode",
+            "strict",
+        ],
+        cwd=str(proj),
+        env=env,
+        capture_output=True,
+        text=True,
     )
 
     # 3. Build the artifacts in proj/.repro/startup/
@@ -90,8 +107,12 @@ def _build(fixture_root: Path) -> int:
     # 4. Also keep a copy under audits/ inside the plugin (not under .repro)
     audits = REPO / "audits" / "startup_v0.2.0"
     audits.mkdir(parents=True, exist_ok=True)
-    for fn in ("startup_test_report.md", "command_matrix.csv",
-               "recovery_test_report.md", "installation_checklist.md"):
+    for fn in (
+        "startup_test_report.md",
+        "command_matrix.csv",
+        "recovery_test_report.md",
+        "installation_checklist.md",
+    ):
         shutil.copy(artifacts_dir / fn, audits / fn)
 
     print(f"[artifacts] wrote 4 artifacts into {audits}/")
@@ -110,6 +131,7 @@ def _write_test_report(path: Path, pytest_out: str, rc: int) -> None:
         if line.startswith("===") and "passed" in line:
             summary_line = line
     import re
+
     m_pass = re.search(r"(\d+)\s+passed", summary_line)
     m_fail = re.search(r"(\d+)\s+failed", summary_line)
     if m_pass:
@@ -162,7 +184,7 @@ def _write_test_report(path: Path, pytest_out: str, rc: int) -> None:
         ## Raw pytest output
 
         ```
-{textwrap.indent(pytest_out, '        ')}
+{textwrap.indent(pytest_out, "        ")}
         ```
         """)
     path.write_text(body)
@@ -172,7 +194,14 @@ def _write_command_matrix(path: Path) -> None:
     rows = [
         # command, exit_on_pass, exit_on_dry_run, exit_on_duplicate, exit_on_invalid_plan, covered_test_id
         ("reproctl start  --project <P> --plan <P>", "0", "0", "4", "5", "1, 2, 3, 4, 9"),
-        ("reproctl doctor --project <P> [--plan <P>]", "0", "0", "0", "0", "doctor_clean, doctor_no_gpu"),
+        (
+            "reproctl doctor --project <P> [--plan <P>]",
+            "0",
+            "0",
+            "0",
+            "0",
+            "doctor_clean, doctor_no_gpu",
+        ),
         ("reproctl status --project <P>", "0", "0", "0", "0", "status command help"),
         ("reproctl resume --project <P>", "0", "0", "4", "8", "11, 12"),
         ("reproctl stop --project <P>", "0", "0", "0", "0", "15"),
@@ -189,9 +218,16 @@ def _write_command_matrix(path: Path) -> None:
     ]
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(("command", "exit_on_pass", "exit_on_dry_run",
-                    "exit_on_duplicate", "exit_on_invalid_plan",
-                    "covered_test_id"))
+        w.writerow(
+            (
+                "command",
+                "exit_on_pass",
+                "exit_on_dry_run",
+                "exit_on_duplicate",
+                "exit_on_invalid_plan",
+                "covered_test_id",
+            )
+        )
         for r in rows:
             w.writerow(r)
 

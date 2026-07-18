@@ -17,6 +17,7 @@ The orchestrator's own ``state_store.py`` is not touched here; it may
 continue to be used by the orchestrator subsystem. This module only
 manages the startup-layer migration.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -44,6 +45,7 @@ from scripts.core.state_store import (
 )
 
 # ─── Migration report ─────────────────────────────────────────────────
+
 
 @dataclass
 class MigrationReport:
@@ -80,6 +82,7 @@ def utc_now() -> str:
 
 
 # ─── SHA-256 helpers ─────────────────────────────────────────────────
+
 
 def sha256_of(path: Path) -> str:
     h = hashlib.sha256()
@@ -135,6 +138,7 @@ def parse_legacy_file(path: Path) -> dict[str, Any] | None:
 
 # ─── Task migration ──────────────────────────────────────────────────
 
+
 def _migrate_task_state(raw_state: str) -> tuple[str, str]:
     """Map legacy task state to R2 state.
 
@@ -147,9 +151,16 @@ def _migrate_task_state(raw_state: str) -> tuple[str, str]:
     """
     legacy = raw_state.upper()
     KNOWN = {
-        "PASS", "FAIL", "READY", "PENDING", "BLOCKED",
-        "WAITING_APPROVAL", "APPROVED", "REJECTED",
-        "RUNNING", "VERIFYING",
+        "PASS",
+        "FAIL",
+        "READY",
+        "PENDING",
+        "BLOCKED",
+        "WAITING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "RUNNING",
+        "VERIFYING",
     }
     if legacy == "PASS":
         return "LEGACY_UNVERIFIED", "evidence_unconfirmable"
@@ -159,6 +170,7 @@ def _migrate_task_state(raw_state: str) -> tuple[str, str]:
 
 
 # ─── Gate migration ─────────────────────────────────────────────────
+
 
 def _migrate_gate(legacy_gate: dict[str, Any]) -> dict[str, str]:
     """Map legacy gate to R2 gate."""
@@ -171,6 +183,7 @@ def _migrate_gate(legacy_gate: dict[str, Any]) -> dict[str, str]:
 
 
 # ─── Migration executor ───────────────────────────────────────────────
+
 
 def migrate_legacy_state(
     project_root: Path,
@@ -188,9 +201,7 @@ def migrate_legacy_state(
     Returns:
       MigrationReport with counts and SHA-256 of each backed-up file.
     """
-    report_id = hashlib.sha256(
-        f"{project_root}{utc_now()}".encode()
-    ).hexdigest()[:16]
+    report_id = hashlib.sha256(f"{project_root}{utc_now()}".encode()).hexdigest()[:16]
 
     report = MigrationReport(migration_id=report_id, started_at=utc_now())
     report.output_path = str(output_dir or (project_root / ".repro" / "reports"))
@@ -274,12 +285,15 @@ def migrate_legacy_state(
     if store is not None:
         # Check for conflicts
         from scripts.startup.state_store import StateConflict
+
         try:
-            conflict = store.detect_conflict({
-                "plan_hash": plan_hash,
-                "canonical_plan_hash": canonical_hash,
-                "project_state": project_state,
-            })
+            conflict = store.detect_conflict(
+                {
+                    "plan_hash": plan_hash,
+                    "canonical_plan_hash": canonical_hash,
+                    "project_state": project_state,
+                }
+            )
             if conflict:
                 # detect_conflict raises StateConflict
                 pass
@@ -292,9 +306,9 @@ def migrate_legacy_state(
         if plan_hash or canonical_hash:
             project_id_for_plan = "migrated"
             try:
-                cur_proj = store._connect().execute(
-                    "SELECT project_id FROM project LIMIT 1"
-                ).fetchone()
+                cur_proj = (
+                    store._connect().execute("SELECT project_id FROM project LIMIT 1").fetchone()
+                )
                 if cur_proj and cur_proj["project_id"]:
                     project_id_for_plan = cur_proj["project_id"]
             except sqlite3.OperationalError:
@@ -311,7 +325,8 @@ def migrate_legacy_state(
                 source_hash=plan_hash,
                 schema_version="2.0",
                 authorization_bound_hash=compute_authorization_bound_hash(
-                    canonical_hash or plan_hash, "2.0",
+                    canonical_hash or plan_hash,
+                    "2.0",
                     CURRENT_CANONICALIZATION_VERSION,
                 ),
             )

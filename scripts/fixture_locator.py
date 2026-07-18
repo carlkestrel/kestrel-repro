@@ -24,6 +24,7 @@ Resolution order:
    ``__file__``-based introspection — but ONLY for development
    convenience, never as the primary lookup.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterable

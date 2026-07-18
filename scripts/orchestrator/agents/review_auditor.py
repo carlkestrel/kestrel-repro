@@ -3,6 +3,7 @@ Review Auditor Agent - NORA-style specialist for final review and verdict.
 
 This agent performs final review and generates GO/PIVOT/NO-GO verdict.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -50,26 +51,25 @@ class ReviewAuditorAgent(SpecialistAgent):
 
         completeness = verification_result.get("completeness", {})
 
-        scores = self._calculate_scores(
-            evidence, chain, completeness, fit_recommendation
-        )
+        scores = self._calculate_scores(evidence, chain, completeness, fit_recommendation)
 
         verdict = self._generate_verdict(scores)
 
-        summary = self._generate_summary(
-            scores, verdict, chain, metric_targets, requirements
-        )
+        summary = self._generate_summary(scores, verdict, chain, metric_targets, requirements)
 
         recommendations = self._generate_recommendations(
             verdict, scores, fit_recommendation, requirements
         )
 
-        self.prepare_handoff(context, {
-            "scores": scores,
-            "verdict": verdict,
-            "summary": summary,
-            "recommendations": recommendations,
-        })
+        self.prepare_handoff(
+            context,
+            {
+                "scores": scores,
+                "verdict": verdict,
+                "summary": summary,
+                "recommendations": recommendations,
+            },
+        )
 
         return AgentResult(
             agent_type=self.agent_type,
@@ -120,9 +120,7 @@ class ReviewAuditorAgent(SpecialistAgent):
         scores["hardware"] = fit_score
 
         scores["overall"] = (
-            scores["evidence"] * 0.3 +
-            scores["completeness"] * 0.4 +
-            scores["hardware"] * 0.3
+            scores["evidence"] * 0.3 + scores["completeness"] * 0.4 + scores["hardware"] * 0.3
         )
 
         return scores
@@ -196,7 +194,9 @@ class ReviewAuditorAgent(SpecialistAgent):
             if scores.get("evidence", 0) < 30:
                 recommendations.append("Critical: Insufficient evidence - gather more data")
             if scores.get("hardware", 0) < 30:
-                recommendations.append("Critical: Hardware incompatible - consider different platform")
+                recommendations.append(
+                    "Critical: Hardware incompatible - consider different platform"
+                )
             recommendations.append("Review paper requirements against capabilities")
             recommendations.append("May need to pivot to different paper")
 
@@ -241,7 +241,9 @@ class ReviewAuditorAgent(SpecialistAgent):
 
             if entry.get("claim"):
                 claim = entry["claim"]
-                lines.append(f"   - Claim: {claim.get('type', 'unknown')} = {claim.get('value', 'N/A')}")
+                lines.append(
+                    f"   - Claim: {claim.get('type', 'unknown')} = {claim.get('value', 'N/A')}"
+                )
 
             evidence_count = len(entry.get("evidence", []))
             lines.append(f"   - Supporting Evidence: {evidence_count} items")

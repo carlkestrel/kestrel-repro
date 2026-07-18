@@ -1,6 +1,7 @@
 """
 Metric Protocol Auditor (MPA) - Package Initialization
 """
+
 from .conflict_detector import ConflictDetector
 from .golden_test import SiamKPConvGoldenTest, run_golden_test
 from .hardcode_detector import HardcodeDetector

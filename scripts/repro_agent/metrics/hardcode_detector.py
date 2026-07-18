@@ -3,6 +3,7 @@ Hardcode Detection Module
 
 Scans code and documents for hardcoded metrics, stubs, and simulated data.
 """
+
 from __future__ import annotations
 
 import json
@@ -83,7 +84,16 @@ class HardcodeDetector:
         if not file_path.exists():
             return findings
 
-        if file_path.suffix not in {".py", ".yaml", ".yml", ".json", ".md", ".html", ".js", ".ipynb"}:
+        if file_path.suffix not in {
+            ".py",
+            ".yaml",
+            ".yml",
+            ".json",
+            ".md",
+            ".html",
+            ".js",
+            ".ipynb",
+        }:
             return findings
 
         try:
@@ -96,13 +106,15 @@ class HardcodeDetector:
             for pattern in patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
                 for match in matches:
-                    findings.append({
-                        "file": str(file_path),
-                        "category": category,
-                        "pattern": pattern,
-                        "match": match.group(),
-                        "line": content[:match.start()].count("\n") + 1,
-                    })
+                    findings.append(
+                        {
+                            "file": str(file_path),
+                            "category": category,
+                            "pattern": pattern,
+                            "match": match.group(),
+                            "line": content[: match.start()].count("\n") + 1,
+                        }
+                    )
 
         # Check for paper target values
         for target_value, metric_name in self.PAPER_TARGET_PATTERNS:
@@ -123,14 +135,16 @@ class HardcodeDetector:
                     if comment_start < match.start() - line_start:
                         continue  # In comment, might be documentation
 
-                findings.append({
-                    "file": str(file_path),
-                    "category": "paper_target",
-                    "pattern": pattern,
-                    "match": f"{target_value}",
-                    "metric_name": metric_name,
-                    "line": content[:match.start()].count("\n") + 1,
-                })
+                findings.append(
+                    {
+                        "file": str(file_path),
+                        "category": "paper_target",
+                        "pattern": pattern,
+                        "match": f"{target_value}",
+                        "metric_name": metric_name,
+                        "line": content[: match.start()].count("\n") + 1,
+                    }
+                )
 
         # Check for normalized confusion matrix patterns
         if "confusion" in file_path.name.lower() or "cm" in file_path.name.lower():
@@ -145,22 +159,32 @@ class HardcodeDetector:
             for pattern in normalized_patterns:
                 matches = re.finditer(pattern, content, re.IGNORECASE)
                 for match in matches:
-                    findings.append({
-                        "file": str(file_path),
-                        "category": "normalized_confusion",
-                        "pattern": pattern,
-                        "match": match.group(),
-                        "line": content[:match.start()].count("\n") + 1,
-                    })
+                    findings.append(
+                        {
+                            "file": str(file_path),
+                            "category": "normalized_confusion",
+                            "pattern": pattern,
+                            "match": match.group(),
+                            "line": content[: match.start()].count("\n") + 1,
+                        }
+                    )
 
         return findings
 
     def scan_directory(self, root: Path, exclude_dirs: list[str] | None = None) -> list[dict]:
         """Scan entire directory for hardcoded content."""
         exclude_dirs = exclude_dirs or [
-            ".git", ".venv", "venv", "node_modules",
-            "__pycache__", ".pytest_cache", ".mypy_cache",
-            ".tox", "build", "dist", "*.egg-info",
+            ".git",
+            ".venv",
+            "venv",
+            "node_modules",
+            "__pycache__",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".tox",
+            "build",
+            "dist",
+            "*.egg-info",
         ]
 
         findings = []

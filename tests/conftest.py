@@ -23,6 +23,7 @@ This conftest provides ONLY:
      still resolve. Falls back gracefully when the package is not
      installed editable.
 """
+
 from __future__ import annotations
 
 import importlib

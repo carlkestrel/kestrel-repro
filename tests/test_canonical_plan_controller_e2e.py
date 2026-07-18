@@ -6,9 +6,9 @@ These tests verify that:
 2. The retry semantics are unified: canonical max_attempts → legacy max_retries.
 3. All required fields are accessible via dict interface.
 """
+
 from __future__ import annotations
 
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -20,7 +20,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from orchestrator import Controller, StateStore  # noqa: E402
-from orchestrator.controller import BLOCKED, COMPLETE  # noqa: E402
+from orchestrator.controller import BLOCKED  # noqa: E402
 
 
 def _mkdirs(project: Path) -> Path:
@@ -29,10 +29,15 @@ def _mkdirs(project: Path) -> Path:
     return project
 
 
-def _make_canonical_plan(tmp_path: Path, *, tasks, execution_track: str = "strict",
-                          automation_level: str = "gated-autopilot",
-                          max_attempts: int = 1,
-                          mandatory_task_ids: list[str] | None = None) -> Path:
+def _make_canonical_plan(
+    tmp_path: Path,
+    *,
+    tasks,
+    execution_track: str = "strict",
+    automation_level: str = "gated-autopilot",
+    max_attempts: int = 1,
+    mandatory_task_ids: list[str] | None = None,
+) -> Path:
     """Create a canonical YAML-frontmatter plan (not legacy JSON).
 
     R3R-2: Tests the canonical path (PlanSchema) rather than legacy fallback.
@@ -44,9 +49,10 @@ def _make_canonical_plan(tmp_path: Path, *, tasks, execution_track: str = "stric
     )
     # Canonical YAML frontmatter
     import yaml
+
     fm = {
         "schema_version": "2.0",
-        "plan_id": f"canonical-{tmp_path.name}-{int(time.time()*1000)}",
+        "plan_id": f"canonical-{tmp_path.name}-{int(time.time() * 1000)}",
         "execution_track": execution_track,
         "automation_level": automation_level,
         "research_purpose": "reproduce",

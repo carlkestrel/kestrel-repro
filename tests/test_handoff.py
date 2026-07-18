@@ -1,4 +1,5 @@
 """Test handoff.json structure and recovery flow (P4_T03 + P4_T04)."""
+
 import importlib.util
 import json
 import os
@@ -7,6 +8,7 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+
 
 def load_reproctl():
     spec = importlib.util.spec_from_file_location("reproctl", str(REPO / "scripts" / "reproctl.py"))
@@ -22,9 +24,20 @@ def test_handoff_template_has_12_required_fields():
     assert handoff.exists()
     data = json.loads(handoff.read_text())
     required = data.get("required", [])
-    expected = {"project_mode","current_phase","completed_phases","current_run_id",
-                "run_command","process_id","log_path","checkpoint_path","next_step",
-                "recovery_required_files","blockers","timestamp"}
+    expected = {
+        "project_mode",
+        "current_phase",
+        "completed_phases",
+        "current_run_id",
+        "run_command",
+        "process_id",
+        "log_path",
+        "checkpoint_path",
+        "next_step",
+        "recovery_required_files",
+        "blockers",
+        "timestamp",
+    }
     assert expected.issubset(set(required)), f"missing: {expected - set(required)}"
     print("test_handoff_template_has_12_required_fields: PASS")
 
@@ -34,7 +47,12 @@ def test_handoff_round_trip():
     handoff = {
         "project_mode": "reproduce",
         "current_phase": "P4_monitor",
-        "completed_phases": ["P0_preparation","P1_mode_contract","P2_claim_evidence","P3_human_checkpoint"],
+        "completed_phases": [
+            "P0_preparation",
+            "P1_mode_contract",
+            "P2_claim_evidence",
+            "P3_human_checkpoint",
+        ],
         "current_run_id": "r-test-001",
         "run_command": "python scripts/reproctl.py launch --mode=strict_repro --seed=42",
         "process_id": 12345,

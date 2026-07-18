@@ -21,6 +21,7 @@ R2 acceptance:
   #14 — symlink traversal attempts are denied.
   #15 — expired/revoked contracts block.
 """
+
 from __future__ import annotations
 
 import sys
@@ -37,10 +38,11 @@ except ImportError:
 
 # ─── Error type ─────────────────────────────────────────────────────────
 
+
 class AuthorizationError(Exception):
     """Raised when an action violates the authorization contract."""
-    def __init__(self, action: str, reason: str,
-                 contract_id: str = "", contract_path: str = ""):
+
+    def __init__(self, action: str, reason: str, contract_id: str = "", contract_path: str = ""):
         self.action = action
         self.reason = reason
         self.contract_id = contract_id
@@ -52,6 +54,7 @@ class AuthorizationError(Exception):
 
 
 # ─── Data model ────────────────────────────────────────────────────────
+
 
 @dataclass
 class AuthorizationContract:
@@ -69,12 +72,12 @@ class AuthorizationContract:
     granted_actions: list[str] = field(default_factory=list)
     denied_actions: list[str] = field(default_factory=list)
     allowed_write_roots: list[str] = field(default_factory=list)
-    network_policy: str = "deny"          # "allow" | "deny" | "read-only"
-    clone_policy: str = "deny"            # "allow" | "deny"
-    download_policy: str = "deny"         # "allow" | "deny"
+    network_policy: str = "deny"  # "allow" | "deny" | "read-only"
+    clone_policy: str = "deny"  # "allow" | "deny"
+    download_policy: str = "deny"  # "allow" | "deny"
     dependency_install_policy: str = "deny"  # "allow" | "deny"
     source_modification_policy: str = "deny"  # "allow" | "deny"
-    gpu_execution_policy: str = "deny"   # "allow" | "deny"
+    gpu_execution_policy: str = "deny"  # "allow" | "deny"
     training_stages: list[str] = field(default_factory=list)
     time_budget_minutes: int = 0
     disk_budget_gb: int = 0
@@ -85,7 +88,7 @@ class AuthorizationContract:
     local_commit_permission: bool = False
     push_pr_permission: bool = False
     release_permission: bool = False
-    revocation_state: str = "active"      # "active" | "revoked" | "expired"
+    revocation_state: str = "active"  # "active" | "revoked" | "expired"
     _loaded_from: Path | None = None
 
     def is_active(self) -> bool:
@@ -112,14 +115,16 @@ class AuthorizationContract:
         """Raise AuthorizationError if action is not permitted."""
         if not self.is_active():
             raise AuthorizationError(
-                action, f"contract {self.contract_id} is {self.revocation_state}",
+                action,
+                f"contract {self.contract_id} is {self.revocation_state}",
                 contract_id=self.contract_id,
             )
 
         # Deny list always wins
         if action in self.denied_actions:
             raise AuthorizationError(
-                action, "explicitly denied by contract",
+                action,
+                "explicitly denied by contract",
                 contract_id=self.contract_id,
             )
 
@@ -132,7 +137,8 @@ class AuthorizationContract:
             return
 
         raise AuthorizationError(
-            action, "not in granted_actions (deny-by-default)",
+            action,
+            "not in granted_actions (deny-by-default)",
             contract_id=self.contract_id,
         )
 
@@ -147,13 +153,15 @@ class AuthorizationContract:
         """
         if not self.is_active():
             raise AuthorizationError(
-                "<write>", f"contract {self.contract_id} is {self.revocation_state}",
+                "<write>",
+                f"contract {self.contract_id} is {self.revocation_state}",
                 contract_id=self.contract_id,
             )
 
         if not self.allowed_write_roots:
             raise AuthorizationError(
-                "<write>", "no allowed_write_roots defined (deny-by-default)",
+                "<write>",
+                "no allowed_write_roots defined (deny-by-default)",
                 contract_id=self.contract_id,
             )
 
@@ -161,7 +169,8 @@ class AuthorizationContract:
             abs_path = Path(path).resolve()
         except Exception as e:
             raise AuthorizationError(
-                "<write>", f"cannot resolve path {path!r}: {e}",
+                "<write>",
+                f"cannot resolve path {path!r}: {e}",
                 contract_id=self.contract_id,
             ) from e
 
@@ -171,7 +180,8 @@ class AuthorizationContract:
             allowed = [Path(project_root) / r for r in self.allowed_write_roots]
             if not any(_is_within(abs_path, r) for r in allowed):
                 raise AuthorizationError(
-                    "<write>", f"absolute path {path!r} outside allowed_write_roots",
+                    "<write>",
+                    f"absolute path {path!r} outside allowed_write_roots",
                     contract_id=self.contract_id,
                 )
 
@@ -213,6 +223,7 @@ def _is_within(child: Path, parent: Path) -> bool:
 
 # ─── Validation ────────────────────────────────────────────────────────
 
+
 @dataclass
 class ContractValidationError:
     field: str
@@ -228,18 +239,26 @@ def validate_contract(contract: AuthorizationContract) -> list[ContractValidatio
     if not contract.project_id:
         errors.append(ContractValidationError("project_id", "required"))
     # Policy values
-    for field_name in ("network_policy", "clone_policy", "download_policy",
-                       "dependency_install_policy", "source_modification_policy",
-                       "gpu_execution_policy"):
+    for field_name in (
+        "network_policy",
+        "clone_policy",
+        "download_policy",
+        "dependency_install_policy",
+        "source_modification_policy",
+        "gpu_execution_policy",
+    ):
         val = getattr(contract, field_name, None)
         if val not in ("allow", "deny", "read-only", ""):
-            errors.append(ContractValidationError(
-                field_name, f"invalid value {val!r}; must be allow/deny/read-only"
-            ))
+            errors.append(
+                ContractValidationError(
+                    field_name, f"invalid value {val!r}; must be allow/deny/read-only"
+                )
+            )
     return errors
 
 
 # ─── Loaders ──────────────────────────────────────────────────────────
+
 
 def load_contract(path: str | Path) -> AuthorizationContract:
     """Parse and validate an authorization contract YAML file.
@@ -337,7 +356,9 @@ def _mini_yaml(text: str) -> dict[str, Any]:
 
 
 __all__ = [
-    "AuthorizationContract", "AuthorizationError",
+    "AuthorizationContract",
+    "AuthorizationError",
     "ContractValidationError",
-    "validate_contract", "load_contract",
+    "validate_contract",
+    "load_contract",
 ]

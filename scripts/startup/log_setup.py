@@ -1,4 +1,5 @@
 """Logging setup that always scrubs secrets and is safe to call multiple times."""
+
 from __future__ import annotations
 
 import logging
@@ -29,9 +30,9 @@ _FORMAT = "%(asctime)s %(levelname)-5s [%(name)s] %(message)s"
 _DATEFMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
-def get_logger(name: str = "reproctl.startup",
-               log_file: Path | None = None,
-               level: str | None = None) -> Logger:
+def get_logger(
+    name: str = "reproctl.startup", log_file: Path | None = None, level: str | None = None
+) -> Logger:
     """Return a logger configured with the secret filter.
 
     Idempotent: re-calling returns the same logger with filters intact.

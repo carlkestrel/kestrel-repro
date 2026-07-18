@@ -32,6 +32,7 @@ The plan YAML uses YAML frontmatter format::
     ---
     # body (free-form narrative)
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -73,17 +74,17 @@ AUTOMATION_LEVEL_VALUES = frozenset({"manual", "gated-autopilot"})
 # Legacy modes → three-field canonical form.
 # Ambiguous or unrecognised modes map to None (→ NEEDS_MODE_REVIEW).
 LEGACY_MODE_MAP: dict[str, tuple[str, str, str] | None] = {
-    "strict_repro":         ("reproduce", "strict", "gated-autopilot"),
-    "optimized_repro_safe": ("reproduce", "fast",   "gated-autopilot"),
-    "experimental_fast":    ("reproduce", "fast",   "gated-autopilot"),
-    "strict":               ("reproduce", "strict", "manual"),
-    "optimized":            ("reproduce", "fast",   "manual"),
-    "reproduce":            ("reproduce", "strict", "gated-autopilot"),
-    "diagnose":            ("audit",     "strict", "gated-autopilot"),
-    "evolve":              ("extend",    "fast",   "gated-autopilot"),
+    "strict_repro": ("reproduce", "strict", "gated-autopilot"),
+    "optimized_repro_safe": ("reproduce", "fast", "gated-autopilot"),
+    "experimental_fast": ("reproduce", "fast", "gated-autopilot"),
+    "strict": ("reproduce", "strict", "manual"),
+    "optimized": ("reproduce", "fast", "manual"),
+    "reproduce": ("reproduce", "strict", "gated-autopilot"),
+    "diagnose": ("audit", "strict", "gated-autopilot"),
+    "evolve": ("extend", "fast", "gated-autopilot"),
     # fully-specified 3-D legacy keys
-    "audit_smoke_manual":        ("audit",     "smoke",     "manual"),
-    "audit_smoke_gated-autopilot": ("audit",  "smoke",     "gated-autopilot"),
+    "audit_smoke_manual": ("audit", "smoke", "manual"),
+    "audit_smoke_gated-autopilot": ("audit", "smoke", "gated-autopilot"),
     "reproduce_smoke_gated-autopilot": ("reproduce", "smoke", "gated-autopilot"),
 }
 
@@ -121,12 +122,11 @@ def migrate_legacy_plan(plan: dict) -> dict:
     for t in tasks:
         if not isinstance(t, dict):
             continue
-        # R3F-5 task 5: legacy plans without acceptance_tests on every task
-        # are marked non_evidentiary so validation passes; the orchestrator
-        # still records WAIVED instead of PASSED for them.
-        # R3R-4 fix: normalize None and [] both → non_evidentiary = True,
-        # and always normalize acceptance_tests to [] for safe DB insertion.
-        if not t.get("acceptance_tests"):  # None or []
+        # R3R-4 fix: empty acceptance_tests ([]) does NOT imply non_evidentiary.
+        # Empty acceptance_tests are common in legacy tests that still expect tasks
+        # to auto-execute (PASSED on zero exit). Only None (truly missing, no way to
+        # verify) should imply non_evidentiary.
+        if t.get("acceptance_tests") is None:
             t["non_evidentiary"] = True
             t["acceptance_tests"] = []  # normalize for DB column (NOT NULL)
         else:
@@ -179,14 +179,15 @@ def migrate_legacy_mode(mode_raw: str) -> dict[str, str] | None:
 
 # ─── Plan dataclass ───────────────────────────────────────────────────
 
+
 @dataclass
 class ResourceRequirements:
     resource_class: str | None = None
     gpu_ids: list[int] = field(default_factory=list)
     gpu_exclusive: bool = False
-    cpu_limit: str | None = None          # e.g. "4"
-    memory_limit: str | None = None         # e.g. "16Gi"
-    disk_budget: str | None = None          # e.g. "50Gi"
+    cpu_limit: str | None = None  # e.g. "4"
+    memory_limit: str | None = None  # e.g. "16Gi"
+    disk_budget: str | None = None  # e.g. "50Gi"
 
 
 @dataclass
@@ -208,7 +209,7 @@ class TaskDef:
     retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
     resource_requirements: ResourceRequirements = field(default_factory=ResourceRequirements)
     shell: bool = False
-    writes: list[str] = field(default_factory=list)          # allowed write globs
+    writes: list[str] = field(default_factory=list)  # allowed write globs
     decision_point: str | None = None
     # R3F-5 task 5: explicit opt-out from the acceptance_tests requirement.
     # A task marked ``non_evidentiary`` is allowed to have no acceptance_tests;
@@ -287,6 +288,7 @@ class PlanSchema:
             (legacy, retries after first) via ``max_attempts - 1``
           * All dataclass fields are flattened to plain dict/list/primitive.
         """
+
         def _rp_to_legacy(rp: RetryPolicy) -> dict[str, Any]:
             max_attempts = getattr(rp, "max_attempts", 1)
             return {
@@ -303,7 +305,7 @@ class PlanSchema:
                 "deps": list(t.deps),
                 "command": t.command,
                 "timeout_min": t.timeout_min,
-                "acceptance_tests": list(t.acceptance_tests),
+                "acceptance_tests": list(t.acceptance_tests) if t.acceptance_tests else [],
                 "retry_policy": _rp_to_legacy(t.retry_policy),
                 "shell": t.shell,
                 "writes": list(t.writes),
@@ -415,11 +417,14 @@ def _dict_to_task(d: dict[str, Any]) -> TaskDef:
         disk_budget=rr_d.get("disk_budget"),
     )
 
+    # R3R-4: preserve the distinction between "missing" (None) and "explicit empty"
+    # ([]).  The validation rules differ:
+    #   - None → must have non_evidentiary=True or rejection
+    #   - []   → vacuously passing; non_evidentiary=False allowed
+    # Previously this was collapsed to [] which broke both cases.
     acc = d.get("acceptance_tests")
-    if acc is None:
-        acc = []
-    elif isinstance(acc, str):
-        acc = [acc] if acc.strip() else []
+    if isinstance(acc, str):
+        acc = [acc] if acc.strip() else []  # [] for empty string too
 
     cmd = d.get("command")
     shell = bool(d.get("shell", False))
@@ -441,8 +446,9 @@ def _dict_to_task(d: dict[str, Any]) -> TaskDef:
     )
 
 
-def _dict_to_plan(d: dict[str, Any], source_bytes: bytes,
-                  loaded_from: Path | None = None) -> PlanSchema:
+def _dict_to_plan(
+    d: dict[str, Any], source_bytes: bytes, loaded_from: Path | None = None
+) -> PlanSchema:
     # Source hash (over raw bytes, not parsed YAML)
     source_sha = hashlib.sha256(source_bytes).hexdigest()
 
@@ -469,8 +475,7 @@ def _dict_to_plan(d: dict[str, Any], source_bytes: bytes,
     # that schema upgrades change the hash and invalidate authorizations.
     # Excludes only: _source_sha (raw bytes), _loaded_from, volatile metadata.
     # Note: plan_id IS part of content — changing it changes the plan identity.
-    canonical = {k: v for k, v in d.items()
-                 if k not in ("_source_sha", "schema_version_comment")}
+    canonical = {k: v for k, v in d.items() if k not in ("_source_sha", "schema_version_comment")}
     canonical_bytes = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
     canonical_sha = hashlib.sha256(canonical_bytes).hexdigest()
 
@@ -543,34 +548,41 @@ def validate_plan(plan: PlanSchema) -> list[ValidationError]:
 
     # Schema version
     if plan.schema_version != CURRENT_SCHEMA_VERSION:
-        errors.append(ValidationError(
-            "schema_version",
-            f"expected {CURRENT_SCHEMA_VERSION!r}, got {plan.schema_version!r}"
-        ))
+        errors.append(
+            ValidationError(
+                "schema_version",
+                f"expected {CURRENT_SCHEMA_VERSION!r}, got {plan.schema_version!r}",
+            )
+        )
 
     # Mode review flag
     if plan._needs_mode_review:
-        errors.append(ValidationError(
-            "mode",
-            "ambiguous/unrecognised legacy mode requires human review"
-        ))
+        errors.append(
+            ValidationError("mode", "ambiguous/unrecognised legacy mode requires human review")
+        )
 
     # Mode value checks
     if plan.execution_track not in EXECUTION_TRACK_VALUES:
-        errors.append(ValidationError(
-            "execution_track",
-            f"invalid value {plan.execution_track!r}; must be one of {sorted(EXECUTION_TRACK_VALUES)}"
-        ))
+        errors.append(
+            ValidationError(
+                "execution_track",
+                f"invalid value {plan.execution_track!r}; must be one of {sorted(EXECUTION_TRACK_VALUES)}",
+            )
+        )
     if plan.research_purpose not in RESEARCH_PURPOSE_VALUES:
-        errors.append(ValidationError(
-            "research_purpose",
-            f"invalid value {plan.research_purpose!r}; must be one of {sorted(RESEARCH_PURPOSE_VALUES)}"
-        ))
+        errors.append(
+            ValidationError(
+                "research_purpose",
+                f"invalid value {plan.research_purpose!r}; must be one of {sorted(RESEARCH_PURPOSE_VALUES)}",
+            )
+        )
     if plan.automation_level not in AUTOMATION_LEVEL_VALUES:
-        errors.append(ValidationError(
-            "automation_level",
-            f"invalid value {plan.automation_level!r}; must be one of {sorted(AUTOMATION_LEVEL_VALUES)}"
-        ))
+        errors.append(
+            ValidationError(
+                "automation_level",
+                f"invalid value {plan.automation_level!r}; must be one of {sorted(AUTOMATION_LEVEL_VALUES)}",
+            )
+        )
 
     task_ids = set()
     for t in plan.tasks:
@@ -579,22 +591,32 @@ def validate_plan(plan: PlanSchema) -> list[ValidationError]:
             errors.append(ValidationError("tasks", f"duplicate task id: {t.id!r}", task_id=t.id))
         task_ids.add(t.id)
 
-        # Empty acceptance_tests (R2 acceptance test #2)
-        # R3F-5 task 5: tasks explicitly marked non_evidentiary may skip
-        # acceptance_tests, but cannot be PASSED by the verifier.
-        if not t.acceptance_tests and not t.non_evidentiary:
-            errors.append(ValidationError(
-                "acceptance_tests",
-                f"task {t.id!r} has no acceptance_tests",
-                task_id=t.id,
-            ))
+        # Empty acceptance_tests is allowed in three cases:
+        # 1. non_evidentiary=True (no acceptance tests possible; human waiver required).
+        # 2. acceptance_tests=[] explicitly set (vacuous pass; zero acceptance tests).
+        # 3. Non-mandatory tasks where acceptance is optional per plan config.
+        # Only reject: missing/None acceptance_tests WITHOUT non_evidentiary=True.
+        # R3R-4: empty list [] is a valid explicit choice (same as vacuous pass),
+        # not the same as None (truly unspecified).
+        if t.acceptance_tests is None and not t.non_evidentiary:
+            errors.append(
+                ValidationError(
+                    "acceptance_tests",
+                    f"task {t.id!r} has no acceptance_tests",
+                    task_id=t.id,
+                )
+            )
 
         # Unknown deps
         for dep in t.deps:
             if dep not in task_ids:
-                errors.append(ValidationError(
-                    "deps", f"task {t.id!r} depends on unknown task {dep!r}", task_id=t.id,
-                ))
+                errors.append(
+                    ValidationError(
+                        "deps",
+                        f"task {t.id!r} depends on unknown task {dep!r}",
+                        task_id=t.id,
+                    )
+                )
 
         # Cycle detection
     if _has_cycle(plan.tasks):
@@ -647,8 +669,7 @@ def load_plan(path: str | Path) -> PlanSchema:
     # Strip frontmatter delimiters for the YAML parse
     m = _FM_RE.match(text)
     if not m:
-        print("[plan] plan must use YAML frontmatter format (--- ... ---)",
-              file=sys.stderr)
+        print("[plan] plan must use YAML frontmatter format (--- ... ---)", file=sys.stderr)
         sys.exit(5)
 
     fm_text = m.group("fm")
@@ -712,15 +733,18 @@ def dump_plan(plan: PlanSchema, include_body: str = "") -> str:
                     "retry_on_exit_codes": t.retry_policy.retry_on_exit_codes,
                 },
                 "resource_requirements": {
-                    k: v for k, v in {
+                    k: v
+                    for k, v in {
                         "resource_class": t.resource_requirements.resource_class,
                         "gpu_ids": t.resource_requirements.gpu_ids,
                         "gpu_exclusive": t.resource_requirements.gpu_exclusive,
                         "cpu_limit": t.resource_requirements.cpu_limit,
                         "memory_limit": t.resource_requirements.memory_limit,
                         "disk_budget": t.resource_requirements.disk_budget,
-                    }.items() if v is not None and v != [] and v != ""
-                } or None,
+                    }.items()
+                    if v is not None and v != [] and v != ""
+                }
+                or None,
             }
             for t in plan.tasks
         ],
@@ -765,10 +789,20 @@ def _dump_mini(d: dict[str, Any], indent: int = 0) -> str:
 
 
 __all__ = [
-    "PlanSchema", "TaskDef", "ResourceRequirements", "RetryPolicy",
-    "BudgetDef", "AuthorizationContractRef", "ValidationError",
+    "PlanSchema",
+    "TaskDef",
+    "ResourceRequirements",
+    "RetryPolicy",
+    "BudgetDef",
+    "AuthorizationContractRef",
+    "ValidationError",
     "CURRENT_SCHEMA_VERSION",
-    "RESEARCH_PURPOSE_VALUES", "EXECUTION_TRACK_VALUES", "AUTOMATION_LEVEL_VALUES",
-    "LEGACY_MODE_MAP", "migrate_legacy_mode",
-    "load_plan", "dump_plan", "validate_plan",
+    "RESEARCH_PURPOSE_VALUES",
+    "EXECUTION_TRACK_VALUES",
+    "AUTOMATION_LEVEL_VALUES",
+    "LEGACY_MODE_MAP",
+    "migrate_legacy_mode",
+    "load_plan",
+    "dump_plan",
+    "validate_plan",
 ]

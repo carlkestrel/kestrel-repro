@@ -16,6 +16,7 @@ What this script does:
 This script is the "human-in-the-loop" guided entry. For daemon/resume
 use cases, call reproctl directly.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -77,9 +78,9 @@ def _resolve_project(project: str | None) -> Path:
         if (parent / "plan.yaml").exists() or (parent / "plan.md").exists():
             return parent
 
-    print(f"[ERROR] Could not auto-detect project root.", file=sys.stderr)
+    print("[ERROR] Could not auto-detect project root.", file=sys.stderr)
     print(f"  CWD: {cwd}", file=sys.stderr)
-    print(f"  Pass --project explicitly.", file=sys.stderr)
+    print("  Pass --project explicitly.", file=sys.stderr)
     sys.exit(2)
 
 
@@ -104,12 +105,14 @@ def _resolve_plan(project: Path, plan: str | None) -> Path | None:
 
 def _run_doctor(project: Path, plan: Path | None) -> dict:
     """Run doctor checks via reproctl."""
-    args = [sys.executable, str(REPROCTL), "doctor",
-             "--project", str(project)]
+    args = [sys.executable, str(REPROCTL), "doctor", "--project", str(project)]
     if plan:
         args += ["--plan", str(plan)]
     result = subprocess.run(
-        args, capture_output=True, text=True, timeout=120,
+        args,
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     if result.returncode == 0:
         return {"overall": "PASS", "report": {}}
@@ -167,10 +170,9 @@ def _collect_auth_contract(project: Path, mode: str) -> dict:
     return default
 
 
-def _write_startup_summary(project: Path, mode: str,
-                             plan: Path | None,
-                             doctor_result: dict,
-                             auth: dict) -> None:
+def _write_startup_summary(
+    project: Path, mode: str, plan: Path | None, doctor_result: dict, auth: dict
+) -> None:
     """Write startup summary JSON to .repro/startup/."""
     summary_dir = project / ".repro" / "startup"
     summary_dir.mkdir(parents=True, exist_ok=True)
@@ -196,24 +198,32 @@ def main(argv: list[str] | None = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--project", dest="project",
+        "--project",
+        dest="project",
         help="Project root (auto-detected if not provided)",
     )
     parser.add_argument(
-        "--plan", dest="plan",
+        "--plan",
+        dest="plan",
         help="Plan file path (auto-detected if not provided)",
     )
     parser.add_argument(
-        "--mode", dest="mode", default="strict",
+        "--mode",
+        dest="mode",
+        default="strict",
         choices=MODES,
         help="Execution mode (default: strict)",
     )
     parser.add_argument(
-        "--dry-run", dest="dry_run", action="store_true",
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
         help="Validate plan and emit summary without executing",
     )
     parser.add_argument(
-        "--auto-proceed", dest="auto_proceed", action="store_true",
+        "--auto-proceed",
+        dest="auto_proceed",
+        action="store_true",
         help="Enable AUTO_PROCEED for low-risk gates",
     )
     args = parser.parse_args(argv)
@@ -234,7 +244,7 @@ def main(argv: list[str] | None = None) -> int:
     doctor_result = _run_doctor(project, plan)
     if doctor_result.get("overall") == "FAIL":
         print("[WARN] Some doctor checks failed.", file=sys.stderr)
-        print(f"       See doctor report for details.", file=sys.stderr)
+        print("       See doctor report for details.", file=sys.stderr)
         # Continue anyway for diagnose/test modes; block for strict
         if args.mode == "strict":
             print("[ERROR] Doctor failures block strict-mode start.", file=sys.stderr)
@@ -263,10 +273,15 @@ def main(argv: list[str] | None = None) -> int:
         env["AUTO_PROCEED"] = "true"
 
     reproctl_args = [
-        sys.executable, str(REPROCTL), "run",
-        "--project", str(project),
-        "--mode", args.mode,
-        "--automation", auth.get("automation", "safe-auto"),
+        sys.executable,
+        str(REPROCTL),
+        "run",
+        "--project",
+        str(project),
+        "--mode",
+        args.mode,
+        "--automation",
+        auth.get("automation", "safe-auto"),
     ]
     if plan:
         reproctl_args += ["--plan", str(plan)]

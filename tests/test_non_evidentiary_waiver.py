@@ -6,9 +6,9 @@ R3R-4: P0-5 + P0-6 fixes:
 - P0-6: expired approvals transition to REJECTED (not WAIVED), since the
   human never reviewed them in time.
 """
+
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -20,8 +20,7 @@ SCRIPTS_DIR = PLUGIN_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from orchestrator import ApprovalGate, Controller, StateStore  # noqa: E402
-
+from orchestrator import ApprovalGate, StateStore  # noqa: E402
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -96,7 +95,7 @@ def test_non_evidentiary_verifier_does_not_record_pass(store):
 
     v.verify(task)
 
-    events_after = [e for e in s.events(after_seq=seq_before)]
+    events_after = list(s.events(after_seq=seq_before))
     event_types = {e["event_type"] for e in events_after}
     assert "VERIFICATION_PASS" not in event_types
     assert "VERIFICATION_BYPASS" in event_types
@@ -235,7 +234,7 @@ def test_expired_approval_emits_rejected_event_not_waived(store):
     assert approval_id
     gate.cleanup_expired()
 
-    events_after = [e for e in s.events(after_seq=seq_before)]
+    events_after = list(s.events(after_seq=seq_before))
     event_types = {e["event_type"] for e in events_after}
     assert "APPROVAL_REJECTED" in event_types
     assert "APPROVAL_WAIVED" not in event_types

@@ -2,7 +2,7 @@
 
 > Config ID: `test-candidate`
 > Requested: 10s → Actual: 10s
-> Timestamp: 2026-07-18T13:37:50.439738+00:00
+> Timestamp: 2026-07-18T14:53:35.455606+00:00
 
 ## Summary
 

@@ -13,6 +13,7 @@ Note: legacy callers that used `PASS` / `FAIL` enums should be updated to
 StateStore automatically aliases `PASS` → `PASSED` and `FAIL` → `FAILED`
 in `transition_task` and `list_tasks`.
 """
+
 from scripts.core.state_store import (
     CURRENT_CANONICALIZATION_VERSION,
     HUMAN_TRANSITIONS,

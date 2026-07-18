@@ -24,6 +24,7 @@ Directory layout::
         ├── overnight_summary.html
         └── ...
 """
+
 from __future__ import annotations
 
 import json
@@ -46,6 +47,7 @@ def _utc_now() -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Atomic file helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _atomic_write_json(path: Path, data: dict) -> None:
     """Write ``data`` to ``path`` atomically (rename from tmp)."""
@@ -71,6 +73,7 @@ def _atomic_write_text(path: Path, text: str) -> None:
 # SoakStateStore
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class SoakStateStore:
     """SQLite-backed + JSON-snapshot OSTAR state store."""
 
@@ -83,9 +86,15 @@ class SoakStateStore:
         self.metrics_dir = self.soak_root / "metrics"
         self.checkpoints_dir = self.soak_root / "checkpoints"
         self.reports_dir = self.soak_root / "reports"
-        for d in (self.nodes_dir, self.failures_dir, self.repairs_dir,
-                  self.logs_dir, self.metrics_dir, self.checkpoints_dir,
-                  self.reports_dir):
+        for d in (
+            self.nodes_dir,
+            self.failures_dir,
+            self.repairs_dir,
+            self.logs_dir,
+            self.metrics_dir,
+            self.checkpoints_dir,
+            self.reports_dir,
+        ):
             d.mkdir(parents=True, exist_ok=True)
         self.db_path = self.soak_root / "soak.sqlite3"
         self.manifest_path = self.soak_root / "soak_manifest.json"
@@ -123,8 +132,7 @@ class SoakStateStore:
 
     def _init_db(self) -> None:
         ddl = [
-            "CREATE TABLE IF NOT EXISTS metadata ("
-            "key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
             "CREATE TABLE IF NOT EXISTS soak_runs ("
             "run_id TEXT PRIMARY KEY, started_at TEXT NOT NULL,"
             "ended_at TEXT, status TEXT NOT NULL,"
@@ -230,15 +238,22 @@ class SoakStateStore:
                 "INSERT INTO cycles(run_id,sequence,started_at,ended_at,status,"
                 "exit_reason,bug_count,repair_count) "
                 "VALUES(?,?,?,?,?,?,?,?)",
-                (run_id, seq, now, ended_at or now, status,
-                 exit_reason, bug_count, repair_count),
+                (run_id, seq, now, ended_at or now, status, exit_reason, bug_count, repair_count),
             )
             cycle_id = cur.lastrowid
-            self._event_tx(conn, "CYCLE_COMPLETE", {
-                "run_id": run_id, "cycle_id": cycle_id, "sequence": seq,
-                "status": status, "exit_reason": exit_reason,
-                "bug_count": bug_count, "repair_count": repair_count,
-            })
+            self._event_tx(
+                conn,
+                "CYCLE_COMPLETE",
+                {
+                    "run_id": run_id,
+                    "cycle_id": cycle_id,
+                    "sequence": seq,
+                    "status": status,
+                    "exit_reason": exit_reason,
+                    "bug_count": bug_count,
+                    "repair_count": repair_count,
+                },
+            )
         return cycle_id
 
     def record_ci_result(
@@ -258,8 +273,17 @@ class SoakStateStore:
                 "INSERT INTO ci_results(run_id,cycle_id,suite_name,passed,failed,"
                 "skipped,duration_seconds,flaky,ran_at) "
                 "VALUES(?,?,?,?,?,?,?,?,?)",
-                (run_id, cycle_id, suite_name, passed, failed, skipped,
-                 duration_seconds, int(flaky), now),
+                (
+                    run_id,
+                    cycle_id,
+                    suite_name,
+                    passed,
+                    failed,
+                    skipped,
+                    duration_seconds,
+                    int(flaky),
+                    now,
+                ),
             )
 
     def upsert_bug(
@@ -292,13 +316,17 @@ class SoakStateStore:
                     "first_seen_at,last_seen_at,occurrences,"
                     "consecutive_failures,is_blocked) "
                     "VALUES(?,?,?,?,?,?,?,?,?)",
-                    (run_id, bug_id, fingerprint, error_class, now, now, 1, 1,
-                     is_blocked),
+                    (run_id, bug_id, fingerprint, error_class, now, now, 1, 1, is_blocked),
                 )
-                self._event_tx(conn, "BUG_DETECTED", {
-                    "run_id": run_id, "bug_id": bug_id,
-                    "error_class": error_class,
-                })
+                self._event_tx(
+                    conn,
+                    "BUG_DETECTED",
+                    {
+                        "run_id": run_id,
+                        "bug_id": bug_id,
+                        "error_class": error_class,
+                    },
+                )
         return bug_id
 
     def record_repair(
@@ -322,24 +350,38 @@ class SoakStateStore:
                 "ended_at,status,patch_json,target_test_passed,"
                 "regression_test_passed,notes) "
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                (repair_id, bug_id, run_id, attempt, now,
-                 ended_at or now, status,
-                 json.dumps(patch) if patch else None,
-                 int(target_test_passed) if target_test_passed is not None else None,
-                 int(regression_passed) if regression_passed is not None else None,
-                 notes),
+                (
+                    repair_id,
+                    bug_id,
+                    run_id,
+                    attempt,
+                    now,
+                    ended_at or now,
+                    status,
+                    json.dumps(patch) if patch else None,
+                    int(target_test_passed) if target_test_passed is not None else None,
+                    int(regression_passed) if regression_passed is not None else None,
+                    notes,
+                ),
             )
-            self._event_tx(conn, "REPAIR_ATTEMPT", {
-                "run_id": run_id, "bug_id": bug_id,
-                "repair_id": repair_id, "attempt": attempt,
-                "status": status,
-            })
+            self._event_tx(
+                conn,
+                "REPAIR_ATTEMPT",
+                {
+                    "run_id": run_id,
+                    "bug_id": bug_id,
+                    "repair_id": repair_id,
+                    "attempt": attempt,
+                    "status": status,
+                },
+            )
         return repair_id
 
     def get_bug(self, bug_id: str) -> dict | None:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT * FROM bugs WHERE bug_id=?", (bug_id,),
+                "SELECT * FROM bugs WHERE bug_id=?",
+                (bug_id,),
             ).fetchone()
         return dict(row) if row else None
 
@@ -392,29 +434,43 @@ class SoakStateStore:
                 "UPDATE soak_runs SET status=?,verdict=?,ended_at=?,"
                 "duration_seconds=?,cycles_completed=?,total_repairs=?,"
                 "rollback_count=?,updated_at=? WHERE run_id=?",
-                ("COMPLETED", verdict, now, duration,
-                 (cyc["cnt"] if cyc else 0),
-                 (repl["cnt"] if repl else 0),
-                 (rlbk["cnt"] if rlbk else 0),
-                 now, run_id),
+                (
+                    "COMPLETED",
+                    verdict,
+                    now,
+                    duration,
+                    (cyc["cnt"] if cyc else 0),
+                    (repl["cnt"] if repl else 0),
+                    (rlbk["cnt"] if rlbk else 0),
+                    now,
+                    run_id,
+                ),
             )
-            self._event_tx(conn, "RUN_COMPLETE", {
-                "run_id": run_id, "verdict": verdict,
-            })
-        self._write_state({"status": "COMPLETED", "run_id": run_id,
-                           "verdict": verdict})
+            self._event_tx(
+                conn,
+                "RUN_COMPLETE",
+                {
+                    "run_id": run_id,
+                    "verdict": verdict,
+                },
+            )
+        self._write_state({"status": "COMPLETED", "run_id": run_id, "verdict": verdict})
 
     def abort_run(self, run_id: str, reason: str) -> None:
         now = _utc_now()
         with self.transaction() as conn:
             conn.execute(
-                "UPDATE soak_runs SET status=?,verdict=?,ended_at=?,updated_at=? "
-                "WHERE run_id=?",
+                "UPDATE soak_runs SET status=?,verdict=?,ended_at=?,updated_at=? WHERE run_id=?",
                 ("FAILED", _C.VERDICT_FAILED_UNRESOLVED, now, now, run_id),
             )
-            self._event_tx(conn, "RUN_ABORTED", {
-                "run_id": run_id, "reason": reason,
-            })
+            self._event_tx(
+                conn,
+                "RUN_ABORTED",
+                {
+                    "run_id": run_id,
+                    "reason": reason,
+                },
+            )
         self._write_state({"status": "FAILED", "run_id": run_id, "reason": reason})
 
     def pause_run(self, run_id: str) -> None:
@@ -428,7 +484,8 @@ class SoakStateStore:
     def heartbeat(self, run_id: str, pid: int, detail: dict | None = None) -> None:
         now = _utc_now()
         payload = {
-            "run_id": run_id, "pid": pid,
+            "run_id": run_id,
+            "pid": pid,
             "timestamp": datetime.now(timezone.utc).timestamp(),
             "utc": now,
             "detail": detail or {},
@@ -444,8 +501,7 @@ class SoakStateStore:
         _atomic_write_json(path, failure)
         return str(path)
 
-    def write_cycle_metrics(self, run_id: str, cycle_seq: int,
-                            metrics: dict) -> None:
+    def write_cycle_metrics(self, run_id: str, cycle_seq: int, metrics: dict) -> None:
         path = self.metrics_dir / f"{run_id}_cycle_{cycle_seq:04d}.json"
         _atomic_write_json(path, metrics)
 
@@ -461,7 +517,8 @@ class SoakStateStore:
     def get_run(self, run_id: str) -> dict | None:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT * FROM soak_runs WHERE run_id=?", (run_id,),
+                "SELECT * FROM soak_runs WHERE run_id=?",
+                (run_id,),
             ).fetchone()
         return dict(row) if row else None
 
@@ -508,10 +565,15 @@ class SoakStateStore:
                 "SELECT * FROM events WHERE seq>? ORDER BY seq LIMIT ?",
                 (after_seq, limit),
             ).fetchall()
-        return [{"seq": r["seq"], "timestamp": r["timestamp"],
-                 "event_type": r["event_type"],
-                 "payload": json.loads(r["payload_json"])}
-                for r in rows]
+        return [
+            {
+                "seq": r["seq"],
+                "timestamp": r["timestamp"],
+                "event_type": r["event_type"],
+                "payload": json.loads(r["payload_json"]),
+            }
+            for r in rows
+        ]
 
     def status_summary(self) -> dict:
         run_ids = self._get_active_runs()
@@ -555,16 +617,21 @@ class SoakStateStore:
         with self.transaction() as conn:
             self._event_tx(conn, event_type, payload)
 
-    def _event_tx(self, conn: sqlite3.Connection, event_type: str,
-                  payload: dict | None = None) -> dict:
+    def _event_tx(
+        self, conn: sqlite3.Connection, event_type: str, payload: dict | None = None
+    ) -> dict:
         now = _utc_now()
         payload = payload or {}
         cur = conn.execute(
             "INSERT INTO events(timestamp,event_type,payload_json) VALUES(?,?,?)",
             (now, event_type, json.dumps(payload, sort_keys=True)),
         )
-        return {"seq": cur.lastrowid, "timestamp": now,
-                "event_type": event_type, "payload": payload}
+        return {
+            "seq": cur.lastrowid,
+            "timestamp": now,
+            "event_type": event_type,
+            "payload": payload,
+        }
 
     def _write_state(self, state: dict) -> None:
         _atomic_write_json(self.state_path, state)

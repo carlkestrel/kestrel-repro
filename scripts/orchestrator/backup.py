@@ -10,8 +10,9 @@ from pathlib import Path
 from typing import Any
 
 
-def backup_project(project_root: Path, output_dir: Path | None = None,
-                   include_checkpoints: bool = False) -> dict:
+def backup_project(
+    project_root: Path, output_dir: Path | None = None, include_checkpoints: bool = False
+) -> dict:
     """Create a backup snapshot of a project.
 
     Args:
@@ -59,22 +60,34 @@ def backup_project(project_root: Path, output_dir: Path | None = None,
             ckpt_path = project_root / entry["path"]
             if ckpt_path.exists():
                 if include_checkpoints:
-                    _backup_file(ckpt_path, snapshot_dir / f"ckpt_{entry['id']}.pt", files_backed_up)
+                    _backup_file(
+                        ckpt_path, snapshot_dir / f"ckpt_{entry['id']}.pt", files_backed_up
+                    )
                     total_size += ckpt_path.stat().st_size
-                ckpt_records.append({
-                    "id": entry["id"],
-                    "path": entry["path"],
-                    "sha256": hashlib.sha256(ckpt_path.read_bytes()).hexdigest()[:16],
-                    "size": ckpt_path.stat().st_size,
-                    "included": include_checkpoints,
-                })
+                ckpt_records.append(
+                    {
+                        "id": entry["id"],
+                        "path": entry["path"],
+                        "sha256": hashlib.sha256(ckpt_path.read_bytes()).hexdigest()[:16],
+                        "size": ckpt_path.stat().st_size,
+                        "included": include_checkpoints,
+                    }
+                )
             else:
-                ckpt_records.append({
-                    "id": entry["id"], "path": entry["path"],
-                    "sha256": "MISSING", "size": 0, "included": False,
-                })
+                ckpt_records.append(
+                    {
+                        "id": entry["id"],
+                        "path": entry["path"],
+                        "sha256": "MISSING",
+                        "size": 0,
+                        "included": False,
+                    }
+                )
         (snapshot_dir / "checkpoint_index.json").write_text(
-            json.dumps({"checkpoints": ckpt_records, "included_data": include_checkpoints}, indent=2))
+            json.dumps(
+                {"checkpoints": ckpt_records, "included_data": include_checkpoints}, indent=2
+            )
+        )
 
     # Run manifest index
     run_manifest = project_root / ".repro" / "run_manifest.json"
@@ -86,8 +99,7 @@ def backup_project(project_root: Path, output_dir: Path | None = None,
     evidence_dir = project_root / ".execution" / "evidence"
     if evidence_dir.exists():
         evidence_index = _build_evidence_index(evidence_dir)
-        (snapshot_dir / "evidence_index.json").write_text(
-            json.dumps(evidence_index, indent=2))
+        (snapshot_dir / "evidence_index.json").write_text(json.dumps(evidence_index, indent=2))
 
     # Backup manifest
     manifest: dict[str, Any] = {
@@ -98,8 +110,7 @@ def backup_project(project_root: Path, output_dir: Path | None = None,
         "total_size_bytes": total_size,
         "schema_version": "1.0.0",
     }
-    (snapshot_dir / "snapshot_manifest.json").write_text(
-        json.dumps(manifest, indent=2))
+    (snapshot_dir / "snapshot_manifest.json").write_text(json.dumps(manifest, indent=2))
 
     return manifest
 
@@ -107,30 +118,33 @@ def backup_project(project_root: Path, output_dir: Path | None = None,
 def _backup_file(src: Path, dst: Path, records: list[dict]) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
-    records.append({
-        "name": src.name,
-        "path": str(src),
-        "size": src.stat().st_size,
-        "sha256": hashlib.sha256(src.read_bytes()).hexdigest()[:16],
-    })
+    records.append(
+        {
+            "name": src.name,
+            "path": str(src),
+            "size": src.stat().st_size,
+            "sha256": hashlib.sha256(src.read_bytes()).hexdigest()[:16],
+        }
+    )
 
 
 def _build_evidence_index(evidence_dir: Path) -> dict:
     index: dict[str, Any] = {"entries": [], "total_size": 0}
     for f in evidence_dir.rglob("*"):
         if f.is_file():
-            index["entries"].append({
-                "name": f.name,
-                "path": str(f.relative_to(evidence_dir)),
-                "size": f.stat().st_size,
-                "sha256": hashlib.sha256(f.read_bytes()).hexdigest()[:16],
-            })
+            index["entries"].append(
+                {
+                    "name": f.name,
+                    "path": str(f.relative_to(evidence_dir)),
+                    "size": f.stat().st_size,
+                    "sha256": hashlib.sha256(f.read_bytes()).hexdigest()[:16],
+                }
+            )
             index["total_size"] += f.stat().st_size
     return index
 
 
-def restore_project(project_root: Path, snapshot_id: str,
-                    output_dir: Path | None = None) -> dict:
+def restore_project(project_root: Path, snapshot_id: str, output_dir: Path | None = None) -> dict:
     """Restore a project from a backup snapshot."""
     output_dir = output_dir or (project_root / ".repro" / "backups")
     snapshot_dir = output_dir / snapshot_id
@@ -289,9 +303,7 @@ def integrity_check(project_root: Path) -> dict:
                 if Path(plan_path).exists():
                     actual = hashlib.sha256(Path(plan_path).read_bytes()).hexdigest()[:16]
                     if actual != expected_hash:
-                        issues.append(
-                            "Plan hash mismatch: plan on disk differs from recorded hash"
-                        )
+                        issues.append("Plan hash mismatch: plan on disk differs from recorded hash")
                     else:
                         checks_passed.append("plan_hash_verified")
                 else:
@@ -314,13 +326,11 @@ def integrity_check(project_root: Path) -> dict:
                 ).fetchall()
             except sqlite3.OperationalError:
                 no_acceptance = conn.execute(
-                    "SELECT id, name, acceptance_json FROM tasks "
-                    "WHERE acceptance_json='[]'"
+                    "SELECT id, name, acceptance_json FROM tasks WHERE acceptance_json='[]'"
                 ).fetchall()
             for row in no_acceptance:
                 issues.append(
-                    f"Task '{row['name']}' has empty acceptance_tests — "
-                    f"may cause false completion"
+                    f"Task '{row['name']}' has empty acceptance_tests — may cause false completion"
                 )
             conn.close()
             checks_passed.append("tasks_have_acceptance")

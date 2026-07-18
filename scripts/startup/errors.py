@@ -6,6 +6,7 @@ These are referenced by:
   * ``scripts.core.state_store`` (single-state-authority self-check)
   * ``scripts.startup.cli`` (machine-readable error codes)
 """
+
 from __future__ import annotations
 
 from typing import Any

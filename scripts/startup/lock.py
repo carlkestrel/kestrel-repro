@@ -14,6 +14,7 @@ A lock is considered stale when ANY of:
 State-consistency check is performed by ``state_machine.is_consistent``
 so that callers can re-enter the locked section safely.
 """
+
 from __future__ import annotations
 
 import json
@@ -84,10 +85,15 @@ def _is_stale(info: dict) -> bool:
     return False
 
 
-def acquire(lock_path: Path, *, command: str, plan_hash: str,
-            project_root: str | None = None,
-            plugin_version: str = _DEFAULT_PLUGIN_VERSION,
-            consistency_check=None) -> dict:
+def acquire(
+    lock_path: Path,
+    *,
+    command: str,
+    plan_hash: str,
+    project_root: str | None = None,
+    plugin_version: str = _DEFAULT_PLUGIN_VERSION,
+    consistency_check=None,
+) -> dict:
     """Acquire the project-level lock.
 
     If a stale lock is found, archive it as ``run.lock.stale.<ts>`` and
@@ -104,8 +110,7 @@ def acquire(lock_path: Path, *, command: str, plan_hash: str,
         )
     if existing:
         # Stale lock — archive it, run consistency check, then clear
-        archive = lock_path.with_name(
-            f"run.lock.stale.{int(time.time())}")
+        archive = lock_path.with_name(f"run.lock.stale.{int(time.time())}")
         try:
             shutil.copy2(lock_path, archive)
         except Exception:

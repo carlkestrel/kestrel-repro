@@ -19,7 +19,13 @@ class TaskExecutor:
     def launch(self, task: dict):
         attempt = int(task.get("attempts", 0))
         log_path = self.logs_dir / f"{task['id']}.attempt-{attempt}.log"
-        heartbeat_path = self.project_root / ".repro" / "execution" / "task-heartbeats" / f"{task['id']}.heartbeat"
+        heartbeat_path = (
+            self.project_root
+            / ".repro"
+            / "execution"
+            / "task-heartbeats"
+            / f"{task['id']}.heartbeat"
+        )
         heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
         env = {
             "REPRO_PROJECT_ROOT": str(self.project_root),
@@ -56,7 +62,8 @@ class TaskExecutor:
         # verify a real subprocess was launched for the task.
         try:
             self.store.record_event(
-                "PROCESS_STARTED", task["id"],
+                "PROCESS_STARTED",
+                task["id"],
                 {"pid": proc.pid, "log_path": str(log_path), "attempt": attempt},
             )
         except Exception:

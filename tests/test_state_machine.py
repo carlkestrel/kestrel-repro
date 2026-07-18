@@ -1,4 +1,5 @@
 """Test the project state machine (mode transitions)."""
+
 import importlib.util
 import sys
 from pathlib import Path
@@ -45,11 +46,13 @@ def test_default_state():
     for key in ["HUMAN_CHECKPOINT", "WIP_LIMIT"]:
         assert key in state["flags"], f"required flag {key} missing from state"
     # HUMAN_CHECKPOINT must be bool True (not string "True")
-    assert state["flags"]["HUMAN_CHECKPOINT"] == True, \
+    assert state["flags"]["HUMAN_CHECKPOINT"] == True, (
         f"HUMAN_CHECKPOINT must be True (bool), got {state['flags']['HUMAN_CHECKPOINT']!r}"
+    )
     # WIP_LIMIT must be int 1 (not string "1")
-    assert state["flags"]["WIP_LIMIT"] == 1, \
+    assert state["flags"]["WIP_LIMIT"] == 1, (
         f"WIP_LIMIT must be 1 (int), got {state['flags']['WIP_LIMIT']!r}"
+    )
 
 
 def test_state_machine_round_trip(tmp_path):
@@ -65,8 +68,10 @@ def test_state_machine_round_trip(tmp_path):
 
 if __name__ == "__main__":
     import tempfile
+
     with tempfile.TemporaryDirectory() as td:
         import os
+
         old_cwd = os.getcwd()
         try:
             test_valid_project_modes()

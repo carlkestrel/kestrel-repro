@@ -14,6 +14,7 @@ hardcoded; the impl location is resolved relative to this package.
 Public API:
     main(argv=None)  — run the CLI. Returns the process exit code.
 """
+
 from __future__ import annotations
 
 # Single source of truth. See scripts/_version.py for the rationale.
@@ -39,9 +40,7 @@ def _resolve_impl_path():
     candidate = pkg_dir.parent / "reproctl.py"
     if candidate.exists():
         return candidate
-    raise FileNotFoundError(
-        f"reproctl implementation file not found: {candidate}"
-    )
+    raise FileNotFoundError(f"reproctl implementation file not found: {candidate}")
 
 
 def main(argv=None):

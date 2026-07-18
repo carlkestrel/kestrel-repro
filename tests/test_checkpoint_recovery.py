@@ -1,4 +1,5 @@
 """Test checkpoint recovery (L3): save → load → produce identical metrics."""
+
 import json
 import os
 import tempfile
@@ -16,7 +17,8 @@ def test_checkpoint_metadata_round_trip():
         "seed": 42,
     }
     with tempfile.NamedTemporaryFile(suffix=".json", mode="w", delete=False) as f:
-        json.dump(meta, f); path = f.name
+        json.dump(meta, f)
+        path = f.name
     with open(path) as f:
         loaded = json.load(f)
     assert loaded["metrics"]["val_mIoU"] == 73.5

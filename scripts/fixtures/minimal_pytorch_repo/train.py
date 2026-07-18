@@ -12,6 +12,7 @@ Outputs (relative to --output-dir):
     logs/train.log
     metrics/raw_metrics.json
 """
+
 import argparse
 import json
 import random
@@ -23,11 +24,13 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
     try:
         import numpy as np
+
         np.random.seed(seed)
     except ImportError:
         pass
     try:
         import torch  # type: ignore
+
         torch.manual_seed(seed)
     except ImportError:
         pass
@@ -36,6 +39,7 @@ def set_seed(seed: int) -> None:
 def _has_torch() -> bool:
     try:
         import torch  # type: ignore
+
         return True
     except ImportError:
         return False
@@ -45,6 +49,7 @@ def build_model(input_dim: int = 4, output_dim: int = 3):
     if not _has_torch():
         return None
     import torch.nn as nn  # type: ignore
+
     return nn.Sequential(
         nn.Linear(input_dim, 8),
         nn.ReLU(),
@@ -56,17 +61,24 @@ def synthetic_batch(batch_size: int = 4, input_dim: int = 4, output_dim: int = 3
     """Build a synthetic batch. Returns (x, y) compatible with both torch and numpy."""
     if _has_torch():
         import torch  # type: ignore
+
         x = torch.randn(batch_size, input_dim)
         y = torch.randint(0, output_dim, (batch_size,))
         return x, y
     import numpy as np
+
     rng = np.random.default_rng(0)
     x = rng.standard_normal((batch_size, input_dim)).astype(np.float32)
     y = rng.integers(0, output_dim, size=(batch_size,))
+
     class _Arr:
-        def __init__(self, a): self._a = a
+        def __init__(self, a):
+            self._a = a
+
         @property
-        def shape(self): return self._a.shape
+        def shape(self):
+            return self._a.shape
+
     return _Arr(x), _Arr(y)
 
 
@@ -90,6 +102,7 @@ def main() -> int:
         import torch  # type: ignore
         import torch.nn as nn  # type: ignore
         import torch.optim as optim  # type: ignore
+
         opt = optim.SGD(model.parameters(), lr=0.01)
         loss_fn = nn.CrossEntropyLoss()
     else:
@@ -111,6 +124,7 @@ def main() -> int:
             except Exception:
                 # numpy fallback
                 import numpy as np
+
                 loss_val = float(np.abs(x._a).mean()) * 0.1 + 0.01 * epoch
             epoch_losses.append(loss_val)
             log_lines.append(f"epoch={epoch} step={step} loss={loss_val:.4f}")
@@ -128,7 +142,9 @@ def main() -> int:
 
     (out / "logs" / "train.log").write_text("\n".join(log_lines) + "\n")
     (out / "metrics" / "raw_metrics.json").write_text(json.dumps(raw_metrics, indent=2))
-    print(f"[fixture-train] {args.epochs} epochs, final mean_loss={raw_metrics[-1]['mean_loss']:.4f}")
+    print(
+        f"[fixture-train] {args.epochs} epochs, final mean_loss={raw_metrics[-1]['mean_loss']:.4f}"
+    )
     return 0
 
 

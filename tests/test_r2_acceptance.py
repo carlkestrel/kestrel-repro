@@ -24,6 +24,7 @@ These 22 tests assert the R2 contract:
  21. Transaction failure leaves no half-migration state.
  22. Recovery → plan hash and authorization stay consistent.
 """
+
 from __future__ import annotations
 
 import json
@@ -66,6 +67,7 @@ from startup.state_store import (
 
 # ─── Fixtures ───────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def tmp_project(tmp_path):
     return tmp_path
@@ -96,12 +98,14 @@ def minimal_plan_dict():
 @pytest.fixture
 def plan_yaml_file(tmp_path, minimal_plan_dict):
     import yaml
+
     p = tmp_path / "plan.yaml"
     p.write_text(f"---\n{yaml.safe_dump(minimal_plan_dict)}\n---\n# body\n", encoding="utf-8")
     return p
 
 
 # ─── 1. Valid plan schema passes ──────────────────────────────────
+
 
 def test_valid_plan_passes(plan_yaml_file):
     plan = load_plan(str(plan_yaml_file))
@@ -114,8 +118,10 @@ def test_valid_plan_passes(plan_yaml_file):
 
 # ─── 2. Missing acceptance_tests rejected ─────────────────────────
 
+
 def test_missing_acceptance_tests_rejected(tmp_path):
     import yaml
+
     bad = {
         "schema_version": "2.0",
         "plan_id": "bad",
@@ -137,11 +143,18 @@ def test_missing_acceptance_tests_rejected(tmp_path):
     assert any("acceptance" in str(e).lower() for e in errors)
 
 
-def test_empty_acceptance_tests_rejected(tmp_path):
+def test_empty_acceptance_tests_accepted(tmp_path):
+    """R3R-4: acceptance_tests=[] is now valid (vacuous pass).
+
+    Previously rejected; R3R-4 changed the semantics so that explicit empty
+    acceptance_tests means "no acceptance tests required" (same as vacuous pass).
+    Only acceptance_tests=None (missing) requires non_evidentiary=True.
+    """
     import yaml
-    bad = {
+
+    plan = {
         "schema_version": "2.0",
-        "plan_id": "bad2",
+        "plan_id": "valid",
         "tasks": [
             {
                 "id": "T1",
@@ -153,17 +166,21 @@ def test_empty_acceptance_tests_rejected(tmp_path):
             },
         ],
     }
-    p = tmp_path / "bad2.yaml"
-    p.write_text(f"---\n{yaml.safe_dump(bad)}\n---\n", encoding="utf-8")
-    plan = _dict_to_plan(bad, b"{}")
-    errors = validate_plan(plan)
-    assert any("acceptance" in str(e).lower() for e in errors)
+    p = tmp_path / "valid.yaml"
+    p.write_text(f"---\n{yaml.safe_dump(plan)}\n---\n", encoding="utf-8")
+    parsed = _dict_to_plan(plan, b"{}")
+    errors = validate_plan(parsed)
+    # acceptance_tests=[] must NOT produce an acceptance-related error
+    acc_errors = [e for e in errors if "acceptance" in str(e).lower()]
+    assert not acc_errors, f"acceptance_tests=[] should be valid, got errors: {acc_errors}"
 
 
 # ─── 3. Unknown dependencies rejected ─────────────────────────────
 
+
 def test_unknown_dep_rejected(tmp_path):
     import yaml
+
     bad = {
         "schema_version": "2.0",
         "plan_id": "bad3",
@@ -187,18 +204,30 @@ def test_unknown_dep_rejected(tmp_path):
 
 # ─── 4. Circular dependencies rejected ────────────────────────────
 
+
 def test_circular_deps_rejected(tmp_path):
     import yaml
+
     bad = {
         "schema_version": "2.0",
         "plan_id": "cycle",
         "tasks": [
-            {"id": "A", "name": "A", "gate": "default",
-             "deps": ["B"], "command": "echo A",
-             "acceptance_tests": ["x"]},
-            {"id": "B", "name": "B", "gate": "default",
-             "deps": ["A"], "command": "echo B",
-             "acceptance_tests": ["x"]},
+            {
+                "id": "A",
+                "name": "A",
+                "gate": "default",
+                "deps": ["B"],
+                "command": "echo A",
+                "acceptance_tests": ["x"],
+            },
+            {
+                "id": "B",
+                "name": "B",
+                "gate": "default",
+                "deps": ["A"],
+                "command": "echo B",
+                "acceptance_tests": ["x"],
+            },
         ],
     }
     p = tmp_path / "cycle.yaml"
@@ -210,8 +239,10 @@ def test_circular_deps_rejected(tmp_path):
 
 # ─── 5. Illegal modes rejected ─────────────────────────────────────
 
+
 def test_illegal_execution_track_rejected(tmp_path):
     import yaml
+
     bad = {
         "schema_version": "2.0",
         "plan_id": "bad-mode",
@@ -226,6 +257,7 @@ def test_illegal_execution_track_rejected(tmp_path):
 
 
 # ─── 6. Unambiguous legacy modes auto-migrate ───────────────────
+
 
 def test_legacy_strict_repro_migrates():
     result = migrate_legacy_mode("strict_repro")
@@ -251,6 +283,7 @@ def test_legacy_experimental_fast():
 
 # ─── 7. Ambiguous legacy modes → NEEDS_MODE_REVIEW ─────────────
 
+
 def test_ambiguous_mode_needs_review():
     # Single-key partial modes that could mean multiple things:
     # "diagnose" is the only non-mapped keyword-level string left
@@ -269,6 +302,7 @@ def test_unknown_mode_needs_review():
 
 # ─── 8. Canonical hash stable for same semantic content ────────────
 
+
 def test_canonical_hash_stable(plan_yaml_file):
     plan1 = load_plan(str(plan_yaml_file))
     plan2 = load_plan(str(plan_yaml_file))
@@ -281,8 +315,14 @@ def test_canonical_hash_independent_of_order():
         "schema_version": "2.0",
         "plan_id": "X",
         "tasks": [
-            {"id": "A", "name": "A", "gate": "g",
-             "deps": [], "command": "a", "acceptance_tests": ["x"]},
+            {
+                "id": "A",
+                "name": "A",
+                "gate": "g",
+                "deps": [],
+                "command": "a",
+                "acceptance_tests": ["x"],
+            },
         ],
     }
     p1 = _dict_to_plan(data, b"{}")
@@ -292,15 +332,22 @@ def test_canonical_hash_independent_of_order():
 
 # ─── 9. Content change → hash change ─────────────────────────────
 
+
 def test_content_change_changes_hash(tmp_path):
     import yaml
+
     base = {
         "schema_version": "2.0",
         "plan_id": "h1",
         "tasks": [
-            {"id": "T1", "name": "T1", "gate": "g",
-             "deps": [], "command": "echo a",
-             "acceptance_tests": ["x"]},
+            {
+                "id": "T1",
+                "name": "T1",
+                "gate": "g",
+                "deps": [],
+                "command": "echo a",
+                "acceptance_tests": ["x"],
+            },
         ],
     }
     p1 = tmp_path / "p1.yaml"
@@ -317,6 +364,7 @@ def test_content_change_changes_hash(tmp_path):
 
 # ─── 10. Plan hash change → authorization invalidated ────────────
 
+
 def test_plan_hash_invalidation(tmp_path):
     repro_dir = tmp_path / ".repro"
     repro_dir.mkdir()
@@ -326,8 +374,7 @@ def test_plan_hash_invalidation(tmp_path):
     plan_hash_2 = "def456"
 
     # Acquire with hash 1
-    acquire(lock_path, command="start", plan_hash=plan_hash_1,
-            project_root=str(tmp_path))
+    acquire(lock_path, command="start", plan_hash=plan_hash_1, project_root=str(tmp_path))
 
     # Hash unchanged → OK
     assert check_plan_hash(lock_path, plan_hash_1) is True
@@ -340,6 +387,7 @@ def test_plan_hash_invalidation(tmp_path):
 
 # ─── 11. Actions outside explicit grant denied ───────────────────
 
+
 def test_action_not_in_grant_denied():
     contract = AuthorizationContract(
         contract_id="c1",
@@ -351,10 +399,13 @@ def test_action_not_in_grant_denied():
     )
     with pytest.raises(AuthorizationError) as exc_info:
         contract.check_action("task:delete")
-    assert "not in granted_actions" in str(exc_info.value) or "deny-by-default" in str(exc_info.value)
+    assert "not in granted_actions" in str(exc_info.value) or "deny-by-default" in str(
+        exc_info.value
+    )
 
 
 # ─── 12. Actions within grant pass ───────────────────────────────
+
 
 def test_action_in_grant_passes():
     contract = AuthorizationContract(
@@ -370,6 +421,7 @@ def test_action_in_grant_passes():
 
 
 # ─── 13. Out-of-scope write paths denied ────────────────────────
+
 
 def test_write_outside_allowed_roots_denied(tmp_path):
     contract = AuthorizationContract(
@@ -399,6 +451,7 @@ def test_write_within_allowed_roots_passes(tmp_path):
 
 # ─── 14. Symlink traversal denied ───────────────────────────────
 
+
 def test_symlink_traversal_denied(tmp_path):
     contract = AuthorizationContract(
         contract_id="c5",
@@ -422,8 +475,10 @@ def test_symlink_traversal_denied(tmp_path):
 
 # ─── 15. Expired/revoked contracts block ────────────────────────
 
+
 def test_expired_contract_denies():
     from datetime import datetime, timedelta, timezone
+
     contract = AuthorizationContract(
         contract_id="c6",
         project_root="/tmp",
@@ -455,21 +510,33 @@ def test_revoked_contract_denies():
 
 # ─── 16. Legacy JSON state migration ─────────────────────────────
 
+
 def test_legacy_file_discovery(tmp_path):
     repro = tmp_path / ".repro"
     repro.mkdir()
     exec_dir = repro / "execution"
     exec_dir.mkdir()
     legacy = exec_dir / "execution_state.json"
-    legacy.write_text(json.dumps({
-        "project_state": "RUNNING",
-        "plan_hash": "legacy_hash_abc",
-        "tasks": [
-            {"id": "T1", "name": "Legacy task", "status": "PASS",
-             "gate": "default", "deps": [],
-             "command": "echo ok", "acceptance_tests": ["x"]},
-        ],
-    }), encoding="utf-8")
+    legacy.write_text(
+        json.dumps(
+            {
+                "project_state": "RUNNING",
+                "plan_hash": "legacy_hash_abc",
+                "tasks": [
+                    {
+                        "id": "T1",
+                        "name": "Legacy task",
+                        "status": "PASS",
+                        "gate": "default",
+                        "deps": [],
+                        "command": "echo ok",
+                        "acceptance_tests": ["x"],
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     found = find_legacy_files(tmp_path)
     assert any("execution_state.json" in str(f) for f in found)
 
@@ -480,12 +547,23 @@ def test_legacy_pass_migrates_to_legacy_unverified(tmp_path):
     exec_dir = repro / "execution"
     exec_dir.mkdir()
     legacy = exec_dir / "execution_state.json"
-    legacy.write_text(json.dumps({
-        "tasks": [
-            {"id": "T1", "status": "PASS", "gate": "g",
-             "deps": [], "command": "x", "acceptance_tests": ["y"]},
-        ],
-    }), encoding="utf-8")
+    legacy.write_text(
+        json.dumps(
+            {
+                "tasks": [
+                    {
+                        "id": "T1",
+                        "status": "PASS",
+                        "gate": "g",
+                        "deps": [],
+                        "command": "x",
+                        "acceptance_tests": ["y"],
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     report = migrate_legacy_state(tmp_path)
     assert report.tasks_migrated == 1
     assert report.gates_migrated == 0
@@ -507,6 +585,7 @@ def test_migration_backup_created(tmp_path):
 
 # ─── 17. State conflict → BLOCKED_STATE_CONFLICT ───────────────
 
+
 def test_state_conflict_detected(tmp_path):
     repro = tmp_path / ".repro"
     repro.mkdir()
@@ -520,15 +599,21 @@ def test_state_conflict_detected(tmp_path):
     store.record_plan("plan1", "proj", "sqlite_hash", "src_hash", "2.0")
 
     legacy = exec_dir / "execution_state.json"
-    legacy.write_text(json.dumps({
-        "plan_hash": "different_hash",
-        "tasks": [],
-    }), encoding="utf-8")
+    legacy.write_text(
+        json.dumps(
+            {
+                "plan_hash": "different_hash",
+                "tasks": [],
+            }
+        ),
+        encoding="utf-8",
+    )
     with pytest.raises(StateConflict):
         store.detect_conflict({"plan_hash": "different_hash"})
 
 
 # ─── 18. Snapshot cannot reverse-import ─────────────────────────
+
 
 def test_snapshot_is_export_only(tmp_path):
     store = StateStore(str(tmp_path))
@@ -544,14 +629,24 @@ def test_snapshot_is_export_only(tmp_path):
 
 # ─── 19. Human cannot set PASSED directly ──────────────────────
 
+
 def test_human_cannot_set_passed_directly(tmp_path):
     store = StateStore(str(tmp_path))
     store.init_project("proj", str(tmp_path))
     store.record_plan("plan1", "proj", "hash1", "src1", "2.0")
-    store.create_tasks("plan1", [
-        {"id": "T1", "name": "T1", "gate": "g",
-         "deps": [], "command": "echo", "acceptance_tests": ["x"]},
-    ])
+    store.create_tasks(
+        "plan1",
+        [
+            {
+                "id": "T1",
+                "name": "T1",
+                "gate": "g",
+                "deps": [],
+                "command": "echo",
+                "acceptance_tests": ["x"],
+            },
+        ],
+    )
     with pytest.raises(InvalidTransition) as exc_info:
         store.transition_task("T1", "PASSED", result_source="human")
     assert "PASSED" in str(exc_info.value)
@@ -559,27 +654,48 @@ def test_human_cannot_set_passed_directly(tmp_path):
 
 # ─── 20. WAIVED ≠ PASSED (strict column separation) ─────────────
 
+
 def test_waived_vs_passed_column_separation(tmp_path):
     store = StateStore(str(tmp_path))
     store.init_project("proj", str(tmp_path))
     store.record_plan("plan1", "proj", "hash1", "src1", "2.0")
-    store.create_tasks("plan1", [
-        {"id": "W1", "name": "W1", "gate": "g",
-         "deps": [], "command": "echo", "acceptance_tests": ["x"]},
-        {"id": "P1", "name": "P1", "gate": "g",
-         "deps": [], "command": "echo", "acceptance_tests": ["x"]},
-    ])
+    store.create_tasks(
+        "plan1",
+        [
+            {
+                "id": "W1",
+                "name": "W1",
+                "gate": "g",
+                "deps": [],
+                "command": "echo",
+                "acceptance_tests": ["x"],
+            },
+            {
+                "id": "P1",
+                "name": "P1",
+                "gate": "g",
+                "deps": [],
+                "command": "echo",
+                "acceptance_tests": ["x"],
+            },
+        ],
+    )
     # Approve W1 → WAIVED (human approval path)
     store.create_approval("a1", "W1", expires_at=None)
     store.decide_approval("a1", "WAIVED", "not applicable")
 
     # P1: PENDING → READY → RUNNING → VERIFYING → PASSED
     store.transition_task("P1", "READY", result_source="system")
-    store.transition_task("P1", "RUNNING", result_source="system",
-                         fields={"pid": 999, "log_path": "/tmp/p1.log"})
+    store.transition_task(
+        "P1", "RUNNING", result_source="system", fields={"pid": 999, "log_path": "/tmp/p1.log"}
+    )
     store.transition_task("P1", "VERIFYING", result_source="system")
-    store.transition_task("P1", "PASSED", result_source="evidence_verifier",
-                         fields={"finished_at": "2026-01-01T00:00:00Z"})
+    store.transition_task(
+        "P1",
+        "PASSED",
+        result_source="evidence_verifier",
+        fields={"finished_at": "2026-01-01T00:00:00Z"},
+    )
 
     w1 = store.get_task("W1")
     p1 = store.get_task("P1")
@@ -590,15 +706,25 @@ def test_waived_vs_passed_column_separation(tmp_path):
 
 # ─── 21. Transaction rollback on failure ───────────────────────
 
+
 def test_transaction_rollback_no_half_migration(tmp_path):
     store = StateStore(str(tmp_path))
     store.init_project("proj", str(tmp_path))
     store.record_plan("plan1", "proj", "hash1", "src1", "2.0")
     # Create tasks
-    store.create_tasks("plan1", [
-        {"id": "T1", "name": "T1", "gate": "g",
-         "deps": [], "command": "echo", "acceptance_tests": ["x"]},
-    ])
+    store.create_tasks(
+        "plan1",
+        [
+            {
+                "id": "T1",
+                "name": "T1",
+                "gate": "g",
+                "deps": [],
+                "command": "echo",
+                "acceptance_tests": ["x"],
+            },
+        ],
+    )
     # Verify tasks table
     with store._connect() as conn:
         rows = conn.execute("SELECT id FROM tasks").fetchall()
@@ -616,6 +742,7 @@ def test_transaction_rollback_no_half_migration(tmp_path):
 
 # ─── 22. Recovery → plan hash + authorization consistency ───────
 
+
 def test_post_recovery_hash_and_auth_consistent(tmp_path):
     repro = tmp_path / ".repro"
     repro.mkdir()
@@ -628,10 +755,15 @@ def test_post_recovery_hash_and_auth_consistent(tmp_path):
 
     plan_hash = "consistent_hash_xyz"
     bound_hash = "bound_hash_with_schema_version_included_xyz"
-    store.record_plan("plan1", "proj", plan_hash, plan_hash, "2.0",
-                      authorization_bound_hash=bound_hash)
+    store.record_plan(
+        "plan1", "proj", plan_hash, plan_hash, "2.0", authorization_bound_hash=bound_hash
+    )
     store.upsert_authorization(
-        "auth1", "proj", plan_hash, "abc", bound_hash,
+        "auth1",
+        "proj",
+        plan_hash,
+        "abc",
+        bound_hash,
         granted=["task:run"],
         denied=[],
         write_roots=["outputs/"],
@@ -653,8 +785,10 @@ def test_post_recovery_hash_and_auth_consistent(tmp_path):
 
 # ─── Import helper from plan_schema ────────────────────────────────
 
+
 def _dict_for_hash(self):
     import json as _json
+
     return _json.dumps(self, sort_keys=True, default=lambda o: o.__dict__, separators=(",", ":"))
 
 

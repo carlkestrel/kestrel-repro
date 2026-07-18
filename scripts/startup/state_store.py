@@ -8,6 +8,7 @@ transaction logic — see ADR-001.
 If you need to modify the canonical StateStore, edit
 ``scripts/core/state_store.py`` instead.
 """
+
 from scripts.core.state_store import (
     CURRENT_CANONICALIZATION_VERSION,
     HUMAN_TRANSITIONS,

@@ -4,6 +4,7 @@ Covers Authorization headers, token=, password=, cookie= and any
 secret-like assignment passed via environment. The redactor is
 deliberately conservative — when in doubt, it redacts.
 """
+
 from __future__ import annotations
 
 import os
@@ -54,18 +55,31 @@ def _replace(m: re.Match[str]) -> str:
     return f"{g1}{_REDACTED}"
 
 
-def scrub_env(env: dict | None = None,
-              keys: Iterable[str] | None = None) -> dict:
+def scrub_env(env: dict | None = None, keys: Iterable[str] | None = None) -> dict:
     """Return a dict where any sensitive env value is replaced by [REDACTED]."""
-    keys = set(keys or (
-        "AUTHORIZATION", "TOKEN", "PASSWORD", "SECRET", "API_KEY",
-        "ACCESS_TOKEN", "SESSION_ID", "COOKIE", "MY_SECRET_TOKEN",
-        "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "HF_TOKEN",
-    ))
+    keys = set(
+        keys
+        or (
+            "AUTHORIZATION",
+            "TOKEN",
+            "PASSWORD",
+            "SECRET",
+            "API_KEY",
+            "ACCESS_TOKEN",
+            "SESSION_ID",
+            "COOKIE",
+            "MY_SECRET_TOKEN",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "HF_TOKEN",
+        )
+    )
     src = env if env is not None else dict(os.environ)
     out = {}
     for k, v in src.items():
-        if k.upper() in keys or any(s in k.upper() for s in ("TOKEN", "PASSWORD", "SECRET", "KEY", "COOKIE", "AUTH")):
+        if k.upper() in keys or any(
+            s in k.upper() for s in ("TOKEN", "PASSWORD", "SECRET", "KEY", "COOKIE", "AUTH")
+        ):
             out[k] = _REDACTED
         else:
             out[k] = v
@@ -76,9 +90,16 @@ def scrub_dict(d: dict) -> dict:
     """Return a deep copy of d with secret-looking values redacted."""
     out = {}
     for k, v in d.items():
-        if isinstance(v, str) and any(s in k.lower() for s in (
-            "token", "password", "secret", "auth", "cookie",
-        )):
+        if isinstance(v, str) and any(
+            s in k.lower()
+            for s in (
+                "token",
+                "password",
+                "secret",
+                "auth",
+                "cookie",
+            )
+        ):
             out[k] = _REDACTED
         elif isinstance(v, dict):
             out[k] = scrub_dict(v)

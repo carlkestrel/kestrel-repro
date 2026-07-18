@@ -11,6 +11,7 @@ by exercising the additional guarantees introduced or hardened in R3F-2:
      no active SQLite is present (no conflict; only report).
   5. find_active_state_dbs accepts an empty project (zero active DBs).
 """
+
 from __future__ import annotations
 
 import sys

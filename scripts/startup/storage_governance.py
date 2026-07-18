@@ -12,6 +12,7 @@ class DiskPolicy:
     stop_free_gb: int = 20
     emergency_free_gb: int = 10
 
+
 @dataclass
 class RetentionPolicy:
     raw_data: str = "never_delete"
@@ -22,6 +23,7 @@ class RetentionPolicy:
     generated_plots: str = "regenerable"
     cache: str = "removable"
 
+
 def get_free_gb(path: Path) -> float:
     """Return free disk space in GB."""
     try:
@@ -30,9 +32,10 @@ def get_free_gb(path: Path) -> float:
     except OSError:
         return float("inf")
 
-def check_disk_policy(project_root: Path,
-                     disk_policy: DiskPolicy | None = None,
-                     config: dict | None = None) -> dict:
+
+def check_disk_policy(
+    project_root: Path, disk_policy: DiskPolicy | None = None, config: dict | None = None
+) -> dict:
     """Check disk space against policy."""
     dp = disk_policy or DiskPolicy()
     if config and "disk_policy" in config:
@@ -63,6 +66,7 @@ def check_disk_policy(project_root: Path,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
+
 def scan_checkpoints(project_root: Path) -> list[dict]:
     """List all checkpoints with size and age."""
     checkpoints = []
@@ -76,25 +80,30 @@ def scan_checkpoints(project_root: Path) -> list[dict]:
             continue
         for f in d.rglob("*.pt"):
             stat = f.stat()
-            checkpoints.append({
-                "path": str(f.relative_to(project_root)),
-                "size_mb": round(stat.st_size / (1024**2), 2),
-                "age_days": (datetime.now(timezone.utc) -
-                           datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)).days,
-            })
+            checkpoints.append(
+                {
+                    "path": str(f.relative_to(project_root)),
+                    "size_mb": round(stat.st_size / (1024**2), 2),
+                    "age_days": (
+                        datetime.now(timezone.utc)
+                        - datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+                    ).days,
+                }
+            )
     checkpoints.sort(key=lambda x: x["age_days"], reverse=True)
     return checkpoints
 
-def plan_cleanup(project_root: Path,
-                retention: RetentionPolicy | None = None,
-                dry_run: bool = True) -> dict:
+
+def plan_cleanup(
+    project_root: Path, retention: RetentionPolicy | None = None, dry_run: bool = True
+) -> dict:
     """Generate a cleanup plan without executing it.
-    
+
     Args:
         project_root: project directory
         retention: retention policy
         dry_run: if True, only generate plan; if False, execute
-    
+
     Returns dict with files_to_delete, space_to_free, warnings.
     """
     rp = retention or RetentionPolicy()
@@ -119,13 +128,15 @@ def plan_cleanup(project_root: Path,
             keep_count = 2 + rp.intermediate_checkpoints
             for ckpt in checkpoints[keep_count:]:
                 if not any(sn in ckpt["path"].lower() for sn in special_names):
-                    to_delete.append({
-                        "path": ckpt["path"],
-                        "size_mb": ckpt["size_mb"],
-                        "age_days": ckpt["age_days"],
-                        "reason": "intermediate checkpoint beyond retention limit",
-                        "type": "checkpoint",
-                    })
+                    to_delete.append(
+                        {
+                            "path": ckpt["path"],
+                            "size_mb": ckpt["size_mb"],
+                            "age_days": ckpt["age_days"],
+                            "reason": "intermediate checkpoint beyond retention limit",
+                            "type": "checkpoint",
+                        }
+                    )
 
     # Plan for cache cleanup
     cache_dirs = [
@@ -136,14 +147,18 @@ def plan_cleanup(project_root: Path,
         if cache_dir.exists():
             for f in cache_dir.rglob("*"):
                 if f.is_file():
-                    to_delete.append({
-                        "path": str(f.relative_to(project_root)),
-                        "size_mb": round(f.stat().st_size / (1024**2), 2),
-                        "age_days": (datetime.now(timezone.utc) -
-                                   datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)).days,
-                        "reason": "cache (removable)",
-                        "type": "cache",
-                    })
+                    to_delete.append(
+                        {
+                            "path": str(f.relative_to(project_root)),
+                            "size_mb": round(f.stat().st_size / (1024**2), 2),
+                            "age_days": (
+                                datetime.now(timezone.utc)
+                                - datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
+                            ).days,
+                            "reason": "cache (removable)",
+                            "type": "cache",
+                        }
+                    )
 
     # Plan for failed run logs
     if rp.failed_run_logs == "keep_until_final_audit":
@@ -179,6 +194,7 @@ def plan_cleanup(project_root: Path,
         result["files_failed"] = len(to_delete) - len(executed)
 
     return result
+
 
 def apply_retention_config(project_root: Path, config: dict) -> dict:
     """Apply retention and disk_policy from config file."""

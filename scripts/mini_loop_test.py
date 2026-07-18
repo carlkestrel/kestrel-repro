@@ -49,7 +49,9 @@ print("L2_MINI_LOOP_PASS")
     if result.returncode == 0 and "L2_MINI_LOOP_PASS" in result.stdout:
         print("L2 Mini-Loop Test: PASS")
         sys.exit(0)
-    elif ("ModuleNotFoundError" in result.stderr or "ModuleNotFoundError" in result.stdout) and "torch" in (result.stderr + result.stdout):
+    elif (
+        "ModuleNotFoundError" in result.stderr or "ModuleNotFoundError" in result.stdout
+    ) and "torch" in (result.stderr + result.stdout):
         print("L2 Mini-Loop Test: STUB_TEST_PASSED (torch not installed — R1 constraint)")
         sys.exit(0)
     else:

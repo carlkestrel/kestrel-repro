@@ -3,6 +3,7 @@
 Determines whether a soak run qualifies as SOAK_VERIFIED, or whether it must
 be marked REPAIRED_BUT_NOT_SOAK_VERIFIED / FAILED_WITH_UNRESOLVED_BUGS etc.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -16,6 +17,7 @@ from . import soak_state as _state
 @dataclass
 class AcceptanceCriteria:
     """Individual criterion result."""
+
     name: str
     required: bool = True
     passed: bool = False
@@ -35,6 +37,7 @@ class AcceptanceCriteria:
 @dataclass
 class ExitVerdict:
     """Final OSTAR exit verdict with full criteria breakdown."""
+
     verdict: str
     summary: str
     criteria: list[AcceptanceCriteria] = field(default_factory=list)
@@ -69,31 +72,32 @@ class ExitValidator:
 
         # ── 1. P0 unresolved = 0 ──────────────────────────────────────────
         bugs = self.store.get_bugs(run_id)
-        p0_bugs = [b for b in bugs if b.get("error_class") in _C.BLOCKED_CLASSES
-                   and b.get("consecutive_failures", 0) > 0]
+        p0_bugs = [
+            b
+            for b in bugs
+            if b.get("error_class") in _C.BLOCKED_CLASSES and b.get("consecutive_failures", 0) > 0
+        ]
         c_p0 = AcceptanceCriteria(
             name="P0_UNRESOLVED_ZERO",
             passed=len(p0_bugs) == 0,
             value=len(p0_bugs),
-            message=(
-                f"{len(p0_bugs)} P0 bug(s) unresolved"
-                if p0_bugs else "0 P0 bugs — PASS"
-            ),
+            message=(f"{len(p0_bugs)} P0 bug(s) unresolved" if p0_bugs else "0 P0 bugs — PASS"),
         )
         criteria.append(c_p0)
         details["p0_bugs"] = [dict(b) for b in p0_bugs]
 
         # ── 2. P1 unresolved = 0 ──────────────────────────────────────────
-        p1_bugs = [b for b in bugs if b.get("consecutive_failures", 0) > 0
-                   and b.get("error_class") not in _C.BLOCKED_CLASSES]
+        p1_bugs = [
+            b
+            for b in bugs
+            if b.get("consecutive_failures", 0) > 0
+            and b.get("error_class") not in _C.BLOCKED_CLASSES
+        ]
         c_p1 = AcceptanceCriteria(
             name="P1_UNRESOLVED_ZERO",
             passed=len(p1_bugs) == 0,
             value=len(p1_bugs),
-            message=(
-                f"{len(p1_bugs)} P1 bug(s) unresolved"
-                if p1_bugs else "0 P1 bugs — PASS"
-            ),
+            message=(f"{len(p1_bugs)} P1 bug(s) unresolved" if p1_bugs else "0 P1 bugs — PASS"),
         )
         criteria.append(c_p1)
 
@@ -183,10 +187,7 @@ class ExitValidator:
             name="NO_MEMORY_LEAK",
             passed=not memory_growing,
             value=memory_growing,
-            message=(
-                "Memory leak detected" if memory_growing
-                else "No memory leak — PASS"
-            ),
+            message=("Memory leak detected" if memory_growing else "No memory leak — PASS"),
         )
         criteria.append(c_mem)
 
@@ -196,10 +197,7 @@ class ExitValidator:
             name="NO_ORPHAN_PROCESSES",
             passed=orphan_count == 0,
             value=orphan_count,
-            message=(
-                f"{orphan_count} orphan process(es)"
-                if orphan_count else "0 orphans — PASS"
-            ),
+            message=(f"{orphan_count} orphan process(es)" if orphan_count else "0 orphans — PASS"),
         )
         criteria.append(c_orphan)
 
@@ -211,7 +209,8 @@ class ExitValidator:
             value=stub_found,
             message=(
                 f"Stub/hardcoded metrics found: {stub_found}"
-                if stub_found else "No stub metrics — PASS"
+                if stub_found
+                else "No stub metrics — PASS"
             ),
         )
         criteria.append(c_stub)
@@ -245,15 +244,17 @@ class ExitValidator:
             verdict = _C.VERDICT_FAILED_UNRESOLVED
             summary = f"{len(required_failed)} required criteria failed"
 
-        details.update({
-            "run_id": run_id,
-            "total_cycles": len(cycles),
-            "total_bugs": len(bugs),
-            "total_repairs": len(repairs),
-            "required_failed": [c.name for c in required_failed],
-            "optional_failed": [c.name for c in optional_failed],
-            "verdict": verdict,
-        })
+        details.update(
+            {
+                "run_id": run_id,
+                "total_cycles": len(cycles),
+                "total_bugs": len(bugs),
+                "total_repairs": len(repairs),
+                "required_failed": [c.name for c in required_failed],
+                "optional_failed": [c.name for c in optional_failed],
+                "verdict": verdict,
+            }
+        )
 
         return ExitVerdict(
             verdict=verdict,
@@ -285,11 +286,10 @@ class ExitValidator:
         # Check if last 2h cycles had failures
         cutoff = now.timestamp() - _C.STABILITY_WINDOW_SECONDS
         recent_failures = [
-            c for c in cycles
+            c
+            for c in cycles
             if c.get("ended_at")
-            and datetime.fromisoformat(
-                c["ended_at"].replace("Z", "+00:00")
-            ).timestamp() >= cutoff
+            and datetime.fromisoformat(c["ended_at"].replace("Z", "+00:00")).timestamp() >= cutoff
             and c.get("status") == "FAIL"
         ]
         return len(recent_failures) == 0
@@ -303,10 +303,13 @@ class ExitValidator:
     def _count_orphan_processes(self) -> int:
         """Count orphan processes left by the soak run."""
         import subprocess
+
         try:
             result = subprocess.run(
                 ["pgrep", "-c", "-f", "reproctl.*soak|ostar"],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode == 0:
                 return int(result.stdout.strip())

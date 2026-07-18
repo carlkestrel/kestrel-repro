@@ -9,6 +9,7 @@ These tests assert the R1 contract:
   * templates/, commands/, skills/, rules/, agents/ are visible via
     importlib.resources after install.
 """
+
 from __future__ import annotations
 
 import json
@@ -94,12 +95,8 @@ def test_version_three_sources_in_sync():
     code_v = code_version
     plugin_v = _read_plugin_json_version()
 
-    assert pyproject_v == code_v, (
-        f"pyproject={pyproject_v!r} != scripts/_version.py={code_v!r}"
-    )
-    assert pyproject_v == plugin_v, (
-        f"pyproject={pyproject_v!r} != plugin.json={plugin_v!r}"
-    )
+    assert pyproject_v == code_v, f"pyproject={pyproject_v!r} != scripts/_version.py={code_v!r}"
+    assert pyproject_v == plugin_v, f"pyproject={pyproject_v!r} != plugin.json={plugin_v!r}"
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -115,9 +112,7 @@ def test_fixture_locator_resolves():
     assert isinstance(names, list) or hasattr(names, "__iter__")
     # We expect at least one of the golden fixtures shipped with R1.
     expected_any = {"golden_torch_A", "golden_pointcloud_B", "minimal_pytorch_repo"}
-    assert expected_any & set(names), (
-        f"expected one of {expected_any} in fixtures, got {names!r}"
-    )
+    assert expected_any & set(names), f"expected one of {expected_any} in fixtures, got {names!r}"
 
 
 def test_fixture_locator_works_from_random_cwd(tmp_path, monkeypatch):
@@ -160,9 +155,7 @@ def test_no_absolute_paths_in_conftest():
     # examples.
     sanitized = re.sub(r"#.*", "", sanitized)
     for forbidden in ("sys.path.insert", "sys.path.append"):
-        assert forbidden not in sanitized, (
-            f"conftest.py contains forbidden token {forbidden!r}"
-        )
+        assert forbidden not in sanitized, f"conftest.py contains forbidden token {forbidden!r}"
     # Real (non-string) absolute paths would look like a literal
     # opening quote followed by /home/. Assert no quoted absolute
     # paths in executable code.
@@ -210,9 +203,7 @@ def test_reproctl_version_subcommand_runs(tmp_path, monkeypatch):
     # a version string, or a documented exit because the new dispatcher
     # requires a project. Either way, it must NOT traceback.
     combined = proc.stdout + proc.stderr
-    assert "Traceback" not in combined, (
-        f"reproctl version traceback:\n{combined[:1000]}"
-    )
+    assert "Traceback" not in combined, f"reproctl version traceback:\n{combined[:1000]}"
     assert proc.returncode in (0, 1, 2), (
         f"unexpected exit code: {proc.returncode}\n{combined[:400]}"
     )

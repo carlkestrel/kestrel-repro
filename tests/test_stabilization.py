@@ -71,9 +71,9 @@ class TestMigration:
         backup_dir = tmp_path / ".repro" / "backups" / "backup_test"
         backup_dir.mkdir(parents=True)
         shutil.copy2(store.db_path, backup_dir / "state.sqlite3")
-        (backup_dir / "backup_manifest.json").write_text(json.dumps({
-            "backup_id": "test", "files": [{"name": "state.sqlite3"}]
-        }))
+        (backup_dir / "backup_manifest.json").write_text(
+            json.dumps({"backup_id": "test", "files": [{"name": "state.sqlite3"}]})
+        )
 
         store.set_metadata("test_marker", "after_change")
 
@@ -107,8 +107,13 @@ class TestBackup:
         result = backup.backup_project(tmp_path)
 
         assert "snapshot_id" in result
-        manifest_path = (tmp_path / ".repro" / "backups" /
-                         result.get("snapshot_id", "") / "snapshot_manifest.json")
+        manifest_path = (
+            tmp_path
+            / ".repro"
+            / "backups"
+            / result.get("snapshot_id", "")
+            / "snapshot_manifest.json"
+        )
         if manifest_path.exists():
             manifest = json.loads(manifest_path.read_text())
             assert "files" in manifest
@@ -121,17 +126,30 @@ class TestBackup:
 
         store = StateStore(tmp_path)
         store.init_project("default", str(tmp_path))
-        store.record_plan("default", "default", "h1", "h1", "2.0",
-                          authorization_bound_hash="bh1")
+        store.record_plan("default", "default", "h1", "h1", "2.0", authorization_bound_hash="bh1")
         with store.transaction() as conn:
             conn.execute(
                 "INSERT INTO tasks(id,plan_id,name,gate,deps_json,command,"
                 "timeout_min,acceptance_tests_json,retry_policy_json,"
                 "resource_requirements_json,writes_json,state,attempts,updated_at,pid) "
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                ("test_orphan", "default", "test_orphan", "init", "[]", "echo test",
-                 5.0, "[]", "{}", "{}", "[]", "RUNNING", 1, "2026-01-01T00:00:00Z",
-                 999999),
+                (
+                    "test_orphan",
+                    "default",
+                    "test_orphan",
+                    "init",
+                    "[]",
+                    "echo test",
+                    5.0,
+                    "[]",
+                    "{}",
+                    "{}",
+                    "[]",
+                    "RUNNING",
+                    1,
+                    "2026-01-01T00:00:00Z",
+                    999999,
+                ),
             )
 
         result = backup.integrity_check(tmp_path)
@@ -146,16 +164,29 @@ class TestBackup:
 
         store = StateStore(tmp_path)
         store.init_project("default", str(tmp_path))
-        store.record_plan("default", "default", "h1", "h1", "2.0",
-                          authorization_bound_hash="bh1")
+        store.record_plan("default", "default", "h1", "h1", "2.0", authorization_bound_hash="bh1")
         with store.transaction() as conn:
             conn.execute(
                 "INSERT INTO tasks(id,plan_id,name,gate,deps_json,command,"
                 "timeout_min,acceptance_tests_json,retry_policy_json,"
                 "resource_requirements_json,writes_json,state,attempts,updated_at) "
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                ("test_pass", "default", "test_pass", "init", "[]", "echo test",
-                 5.0, "[]", "{}", "{}", "[]", "PASSED", 1, "2026-01-01T00:00:00Z"),
+                (
+                    "test_pass",
+                    "default",
+                    "test_pass",
+                    "init",
+                    "[]",
+                    "echo test",
+                    5.0,
+                    "[]",
+                    "{}",
+                    "{}",
+                    "[]",
+                    "PASSED",
+                    1,
+                    "2026-01-01T00:00:00Z",
+                ),
             )
 
         result = backup.integrity_check(tmp_path)
@@ -170,16 +201,29 @@ class TestBackup:
 
         store = StateStore(tmp_path)
         store.init_project("default", str(tmp_path))
-        store.record_plan("default", "default", "h1", "h1", "2.0",
-                          authorization_bound_hash="bh1")
+        store.record_plan("default", "default", "h1", "h1", "2.0", authorization_bound_hash="bh1")
         with store.transaction() as conn:
             conn.execute(
                 "INSERT INTO tasks(id,plan_id,name,gate,deps_json,command,"
                 "timeout_min,acceptance_tests_json,retry_policy_json,"
                 "resource_requirements_json,writes_json,state,attempts,updated_at) "
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                ("test_no_acc", "default", "test_no_acc", "init", "[]", "echo test",
-                 5.0, "[]", "{}", "{}", "[]", "PENDING", 0, "2026-01-01T00:00:00Z"),
+                (
+                    "test_no_acc",
+                    "default",
+                    "test_no_acc",
+                    "init",
+                    "[]",
+                    "echo test",
+                    5.0,
+                    "[]",
+                    "{}",
+                    "{}",
+                    "[]",
+                    "PENDING",
+                    0,
+                    "2026-01-01T00:00:00Z",
+                ),
             )
 
         result = backup.integrity_check(tmp_path)
@@ -192,9 +236,9 @@ class TestCLIDispatching:
     def test_migrate_cli_command_exists(self):
         """reproctl migrate --help works."""
         result = subprocess.run(
-            [sys.executable, str(REPROCTL),
-             "migrate", "--help"],
-            capture_output=True, text=True,
+            [sys.executable, str(REPROCTL), "migrate", "--help"],
+            capture_output=True,
+            text=True,
             cwd=str(SCRIPTS_DIR),
         )
         assert result.returncode == 0
@@ -203,9 +247,9 @@ class TestCLIDispatching:
     def test_backup_cli_command_exists(self):
         """reproctl backup --help works."""
         result = subprocess.run(
-            [sys.executable, str(REPROCTL),
-             "backup", "--help"],
-            capture_output=True, text=True,
+            [sys.executable, str(REPROCTL), "backup", "--help"],
+            capture_output=True,
+            text=True,
             cwd=str(SCRIPTS_DIR),
         )
         assert result.returncode == 0
@@ -213,9 +257,9 @@ class TestCLIDispatching:
     def test_integrity_check_cli_command_exists(self):
         """reproctl integrity-check --help works."""
         result = subprocess.run(
-            [sys.executable, str(REPROCTL),
-             "integrity-check", "--help"],
-            capture_output=True, text=True,
+            [sys.executable, str(REPROCTL), "integrity-check", "--help"],
+            capture_output=True,
+            text=True,
             cwd=str(SCRIPTS_DIR),
         )
         assert result.returncode == 0

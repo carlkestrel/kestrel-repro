@@ -8,6 +8,7 @@ This module provides deterministic metric calculation from:
 - Raw metrics CSV/JSON
 - Official evaluation output
 """
+
 from __future__ import annotations
 
 import json
@@ -29,13 +30,13 @@ class MetricRecomputer:
     ) -> np.ndarray:
         """
         Compute confusion matrix.
-        
+
         Args:
             y_true: Ground truth labels
             y_pred: Predicted labels
             num_classes: Number of classes
             ignore_index: Label to ignore in computation
-        
+
         Returns:
             Confusion matrix where rows are GT, columns are predictions
         """
@@ -47,8 +48,7 @@ class MetricRecomputer:
         # Use np.bincount for efficiency
         cm = np.zeros((num_classes, num_classes), dtype=np.int64)
         indices = np.ravel_multi_index(
-            (y_true.astype(int), y_pred.astype(int)),
-            (num_classes, num_classes)
+            (y_true.astype(int), y_pred.astype(int)), (num_classes, num_classes)
         )
         np.add.at(cm.ravel(), indices, 1)
         return cm
@@ -60,14 +60,14 @@ class MetricRecomputer:
     ) -> tuple[dict[int, float], list[int]]:
         """
         Compute per-class IoU from confusion matrix.
-        
+
         IoU_c = TP_c / (TP_c + FP_c + FN_c)
              = cm[c, c] / (sum(cm[:, c]) + sum(cm[c, :]) - cm[c, c])
-        
+
         Args:
             confusion_matrix: Non-normalized confusion matrix (GT rows, Pred columns)
             absent_class_policy: Policy for absent classes ("zero", "ignore", "error")
-        
+
         Returns:
             (per_class_iou dict, absent_classes list)
         """
@@ -105,13 +105,13 @@ class MetricRecomputer:
     ) -> float:
         """
         Compute mean IoU (mIoU).
-        
+
         Args:
             confusion_matrix: Non-normalized confusion matrix
             included_classes: Classes to include in mean
             excluded_classes: Classes to exclude from mean
             absent_class_policy: Policy for absent classes
-        
+
         Returns:
             mIoU value
         """
@@ -139,14 +139,14 @@ class MetricRecomputer:
     ) -> float:
         """
         Compute mIoU_ch for Siamese KPConv.
-        
+
         mIoU_ch = mean(IoU_c for c in [1,2,3,4,5,6])
         Excludes class 0 (Unchanged).
-        
+
         Args:
             confusion_matrix: Non-normalized confusion matrix
             num_classes: Total number of classes (default 7)
-        
+
         Returns:
             mIoU_ch value
         """
@@ -164,7 +164,7 @@ class MetricRecomputer:
     ) -> dict[int, float]:
         """
         Compute per-class accuracy from confusion matrix.
-        
+
         Accuracy_c = TP_c / (TP_c + FN_c)
                    = cm[c, c] / sum(cm[c, :])
         """
@@ -254,11 +254,11 @@ class MetricRecomputer:
     ) -> dict[str, float]:
         """
         Compute binary change detection metrics.
-        
+
         Args:
             confusion_matrix: Non-normalized confusion matrix
             change_class_indices: Indices of change classes (if None, all except 0)
-        
+
         Returns:
             Dictionary with binary IoU, Precision, Recall, F1
         """
@@ -286,10 +286,18 @@ class MetricRecomputer:
             binary_fn += confusion_matrix[c_gt, 0]
 
         # Compute metrics
-        binary_iou = binary_tp / (binary_tp + binary_fp + binary_fn) if (binary_tp + binary_fp + binary_fn) > 0 else 0.0
+        binary_iou = (
+            binary_tp / (binary_tp + binary_fp + binary_fn)
+            if (binary_tp + binary_fp + binary_fn) > 0
+            else 0.0
+        )
         binary_prec = binary_tp / (binary_tp + binary_fp) if (binary_tp + binary_fp) > 0 else 0.0
         binary_rec = binary_tp / (binary_tp + binary_fn) if (binary_tp + binary_fn) > 0 else 0.0
-        binary_f1 = 2 * binary_prec * binary_rec / (binary_prec + binary_rec) if (binary_prec + binary_rec) > 0 else 0.0
+        binary_f1 = (
+            2 * binary_prec * binary_rec / (binary_prec + binary_rec)
+            if (binary_prec + binary_rec) > 0
+            else 0.0
+        )
 
         return {
             "binary_iou": binary_iou,
@@ -304,9 +312,9 @@ class MetricRecomputer:
     ) -> float:
         """
         Compute Cohen's Kappa coefficient.
-        
+
         Kappa = (p_o - p_e) / (1 - p_e)
-        
+
         where p_o is observed agreement and p_e is expected agreement.
         """
         total = confusion_matrix.sum()
@@ -334,12 +342,12 @@ class MetricRecomputer:
     ) -> dict[str, Any]:
         """
         Recompute all metrics from a confusion matrix.
-        
+
         Args:
             confusion_matrix: Non-normalized confusion matrix
             class_names: Optional list of class names
             compute_all: If True, compute all metrics
-        
+
         Returns:
             Dictionary of computed metrics
         """
@@ -358,12 +366,8 @@ class MetricRecomputer:
         }
 
         # Per-class IoU
-        per_class_iou, absent_classes = MetricRecomputer.compute_per_class_iou(
-            confusion_matrix
-        )
-        results["per_class_iou"] = {
-            class_names[c]: float(v) for c, v in per_class_iou.items()
-        }
+        per_class_iou, absent_classes = MetricRecomputer.compute_per_class_iou(confusion_matrix)
+        results["per_class_iou"] = {class_names[c]: float(v) for c, v in per_class_iou.items()}
         results["absent_classes"] = absent_classes
 
         # All-class mIoU (classes 0-6)
@@ -376,9 +380,7 @@ class MetricRecomputer:
 
         # Per-class accuracy
         per_class_acc = MetricRecomputer.compute_per_class_accuracy(confusion_matrix)
-        results["per_class_accuracy"] = {
-            class_names[c]: float(v) for c, v in per_class_acc.items()
-        }
+        results["per_class_accuracy"] = {class_names[c]: float(v) for c, v in per_class_acc.items()}
 
         # Mean accuracy
         m_acc = MetricRecomputer.compute_mean_accuracy(confusion_matrix)
@@ -396,15 +398,11 @@ class MetricRecomputer:
 
         # Per-class recall
         per_class_rec = MetricRecomputer.compute_per_class_recall(confusion_matrix)
-        results["per_class_recall"] = {
-            class_names[c]: float(v) for c, v in per_class_rec.items()
-        }
+        results["per_class_recall"] = {class_names[c]: float(v) for c, v in per_class_rec.items()}
 
         # Per-class F1
         per_class_f1 = MetricRecomputer.compute_per_class_f1(confusion_matrix)
-        results["per_class_f1"] = {
-            class_names[c]: float(v) for c, v in per_class_f1.items()
-        }
+        results["per_class_f1"] = {class_names[c]: float(v) for c, v in per_class_f1.items()}
 
         # Binary change metrics
         change_classes = list(range(1, num_classes))

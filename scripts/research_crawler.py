@@ -24,14 +24,15 @@ Usage:
     from research_crawler import ResearchCrawler, PaperSearch
     c = ResearchCrawler(search_plan_path="templates/search_plan.yaml")
     pages = c.fetch(["https://arxiv.org/abs/2401.12345", ...])
-    
+
     # ArXiv search
     search = PaperSearch()
     papers = search.search_arxiv("transformer architecture", max_results=10)
-    
+
     # Semantic Scholar search
     papers = search.search_semantic_scholar("deep learning", max_results=10)
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -58,10 +59,11 @@ except ImportError:
 
 # ── Result schema ──────────────────────────────────────────────────────────────
 
+
 @dataclass
 class CrawlResult:
     url: str
-    status: str   # ok | blocked_by_robots | out_of_whitelist | too_deep | rate_limited | too_large | timeout | error
+    status: str  # ok | blocked_by_robots | out_of_whitelist | too_deep | rate_limited | too_large | timeout | error
     http_status: int = 0
     bytes: int = 0
     duration_s: float = 0.0
@@ -73,15 +75,23 @@ class CrawlResult:
 
 # ── Implementation ─────────────────────────────────────────────────────────────
 
+
 class ResearchCrawler:
     """Constrained web crawler honoring all 11 P10_T03 constraints."""
 
     def __init__(self, search_plan_path: Path | None = None, cache_dir: Path | None = None):
         self._constraints_implemented = {
-            "user_agent": False, "robots_txt": False, "domain_whitelist": False,
-            "depth_limit": False, "rate_limit": False, "exponential_backoff": False,
-            "etag_cache": False, "max_response_size": False, "max_total_runtime": False,
-            "max_pages_per_host": False, "max_retries": False,
+            "user_agent": False,
+            "robots_txt": False,
+            "domain_whitelist": False,
+            "depth_limit": False,
+            "rate_limit": False,
+            "exponential_backoff": False,
+            "etag_cache": False,
+            "max_response_size": False,
+            "max_total_runtime": False,
+            "max_pages_per_host": False,
+            "max_retries": False,
         }
         self.user_agent = "dl-paper-repro-crawler/1.0 (+research-only)"
         self.respect_robots = True
@@ -104,12 +114,21 @@ class ResearchCrawler:
         self._etag_index: dict = {}
         if search_plan_path and search_plan_path.exists():
             self._load_plan(search_plan_path)
-        self._constraints_implemented.update({
-            "user_agent": True, "robots_txt": True, "domain_whitelist": True,
-            "depth_limit": True, "rate_limit": True, "exponential_backoff": True,
-            "etag_cache": True, "max_response_size": True, "max_total_runtime": True,
-            "max_pages_per_host": True, "max_retries": True,
-        })
+        self._constraints_implemented.update(
+            {
+                "user_agent": True,
+                "robots_txt": True,
+                "domain_whitelist": True,
+                "depth_limit": True,
+                "rate_limit": True,
+                "exponential_backoff": True,
+                "etag_cache": True,
+                "max_response_size": True,
+                "max_total_runtime": True,
+                "max_pages_per_host": True,
+                "max_retries": True,
+            }
+        )
 
     # ── plan loader ──
     def _load_plan(self, path: Path) -> None:
@@ -135,7 +154,9 @@ class ResearchCrawler:
         self.max_pages_per_domain = int(s.get("max_pages_per_domain", 100))
         self.max_total_pages = int(s.get("max_total_pages", 1000))
         self.max_response_bytes = int(s.get("max_response_bytes", self.max_response_bytes))
-        self.max_total_runtime_seconds = int(s.get("max_total_runtime_seconds", self.max_total_runtime_seconds))
+        self.max_total_runtime_seconds = int(
+            s.get("max_total_runtime_seconds", self.max_total_runtime_seconds)
+        )
         self.rate_limit_per_second = float(s.get("rate_limit_per_second", 2.0))
         self.retry_max = int(s.get("retry_max", 3))
         self.retry_initial_backoff_seconds = float(s.get("retry_initial_backoff_seconds", 1.0))
@@ -223,7 +244,9 @@ class ResearchCrawler:
         if not self._in_whitelist(url):
             return CrawlResult(url=url, status="out_of_whitelist", timestamp=ts)
         if self._matches_forbid(url):
-            return CrawlResult(url=url, status="out_of_whitelist", timestamp=ts, error="forbid_pattern")
+            return CrawlResult(
+                url=url, status="out_of_whitelist", timestamp=ts, error="forbid_pattern"
+            )
         if self._per_host_count.get(host, 0) >= self.max_pages_per_domain:
             return CrawlResult(url=url, status="rate_limited", timestamp=ts, error="per-host cap")
         if not self._robots_allowed(url):
@@ -241,28 +264,48 @@ class ResearchCrawler:
         last_err = ""
         while attempt <= self.retry_max:
             try:
-                req = _urlreq.Request(url, headers={
-                    "User-Agent": self.user_agent,
-                    **({"If-None-Match": cached_etag} if cached_etag else {}),
-                })
+                req = _urlreq.Request(
+                    url,
+                    headers={
+                        "User-Agent": self.user_agent,
+                        **({"If-None-Match": cached_etag} if cached_etag else {}),
+                    },
+                )
                 with _urlreq.urlopen(req, timeout=15) as resp:
                     data = resp.read(self.max_response_bytes + 1)
                     if len(data) > self.max_response_bytes:
-                        return CrawlResult(url=url, status="too_large", timestamp=ts,
-                                           bytes=len(data), error=f">{self.max_response_bytes}")
+                        return CrawlResult(
+                            url=url,
+                            status="too_large",
+                            timestamp=ts,
+                            bytes=len(data),
+                            error=f">{self.max_response_bytes}",
+                        )
                     new_etag = resp.headers.get("ETag", "")
                     cache_path.write_bytes(data)
                     if new_etag:
                         etag_path.write_text(new_etag)
-                    return CrawlResult(url=url, status="ok", http_status=resp.status,
-                                       bytes=len(data), duration_s=time.time() - (self._start_ts or time.time()),
-                                       etag=new_etag, cached=False, timestamp=ts)
+                    return CrawlResult(
+                        url=url,
+                        status="ok",
+                        http_status=resp.status,
+                        bytes=len(data),
+                        duration_s=time.time() - (self._start_ts or time.time()),
+                        etag=new_etag,
+                        cached=False,
+                        timestamp=ts,
+                    )
             except Exception as e:
                 # 304 Not Modified
                 if hasattr(e, "code") and e.code == 304:
-                    return CrawlResult(url=url, status="ok", http_status=304,
-                                       bytes=cache_path.stat().st_size if cache_path.exists() else 0,
-                                       cached=True, timestamp=ts)
+                    return CrawlResult(
+                        url=url,
+                        status="ok",
+                        http_status=304,
+                        bytes=cache_path.stat().st_size if cache_path.exists() else 0,
+                        cached=True,
+                        timestamp=ts,
+                    )
                 last_err = str(e)
                 if attempt == self.retry_max:
                     break
@@ -280,8 +323,10 @@ class ResearchCrawler:
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
 
+
 def build_parser():
     import argparse
+
     p = argparse.ArgumentParser(description="Constrained web crawler for dl-paper-repro")
     p.add_argument("--plan", default="templates/search_plan.yaml", help="path to search_plan.yaml")
     p.add_argument("--urls", nargs="+", required=True, help="one or more URLs to fetch")
@@ -309,10 +354,11 @@ if __name__ == "__main__":
 
 # ── NORA-style Paper Search ────────────────────────────────────────────────────
 
+
 class PaperSearch:
     """
     NORA-style paper search for ArXiv and Semantic Scholar.
-    
+
     Supports:
     - ArXiv API search
     - Semantic Scholar API search
@@ -332,21 +378,23 @@ class PaperSearch:
     def _rate_limit(self) -> None:
         """Enforce rate limiting between requests."""
         import time
+
         elapsed = time.time() - self._last_request
         if elapsed < self.rate_limit_delay:
             time.sleep(self.rate_limit_delay - elapsed)
         self._last_request = time.time()
 
-    def search_arxiv(self, query: str, max_results: int = 10,
-                    categories: list[str] | None = None) -> list[dict]:
+    def search_arxiv(
+        self, query: str, max_results: int = 10, categories: list[str] | None = None
+    ) -> list[dict]:
         """
         Search ArXiv for papers.
-        
+
         Args:
             query: Search query
             max_results: Maximum number of results (1-100)
             categories: Optional list of ArXiv categories to filter
-        
+
         Returns:
             List of paper dictionaries with metadata
         """
@@ -373,6 +421,7 @@ class PaperSearch:
 
         try:
             import urllib.request
+
             req = urllib.request.Request(url, headers={"User-Agent": "dl-paper-repro/1.0"})
             with urllib.request.urlopen(req, timeout=30) as resp:
                 xml_data = resp.read().decode("utf-8")
@@ -393,11 +442,19 @@ class PaperSearch:
 
             for entry in root.findall("atom:entry", ns):
                 paper = {
-                    "id": entry.find("atom:id", ns).text if entry.find("atom:id", ns) is not None else "",
-                    "title": entry.find("atom:title", ns).text.strip() if entry.find("atom:title", ns) is not None else "",
-                    "summary": entry.find("atom:summary", ns).text.strip() if entry.find("atom:summary", ns) is not None else "",
+                    "id": entry.find("atom:id", ns).text
+                    if entry.find("atom:id", ns) is not None
+                    else "",
+                    "title": entry.find("atom:title", ns).text.strip()
+                    if entry.find("atom:title", ns) is not None
+                    else "",
+                    "summary": entry.find("atom:summary", ns).text.strip()
+                    if entry.find("atom:summary", ns) is not None
+                    else "",
                     "authors": [],
-                    "published": entry.find("atom:published", ns).text if entry.find("atom:published", ns) is not None else "",
+                    "published": entry.find("atom:published", ns).text
+                    if entry.find("atom:published", ns) is not None
+                    else "",
                     "categories": [],
                     "pdf_url": "",
                     "arxiv_url": "",
@@ -428,16 +485,17 @@ class PaperSearch:
 
         return papers
 
-    def search_semantic_scholar(self, query: str, max_results: int = 10,
-                                year: int | None = None) -> list[dict]:
+    def search_semantic_scholar(
+        self, query: str, max_results: int = 10, year: int | None = None
+    ) -> list[dict]:
         """
         Search Semantic Scholar for papers.
-        
+
         Args:
             query: Search query
             max_results: Maximum number of results (1-100)
             year: Optional year filter
-        
+
         Returns:
             List of paper dictionaries with metadata
         """
@@ -461,10 +519,14 @@ class PaperSearch:
 
         try:
             import urllib.request
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "dl-paper-repro/1.0",
-                "Accept": "application/json",
-            })
+
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "dl-paper-repro/1.0",
+                    "Accept": "application/json",
+                },
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except Exception as e:
@@ -481,7 +543,9 @@ class PaperSearch:
                 "citationCount": item.get("citationCount", 0),
                 "influentialCitationCount": item.get("influentialCitationCount", 0),
                 "url": item.get("url", ""),
-                "pdf_url": item.get("openAccessPdf", {}).get("url") if item.get("openAccessPdf") else "",
+                "pdf_url": item.get("openAccessPdf", {}).get("url")
+                if item.get("openAccessPdf")
+                else "",
             }
             papers.append(paper)
 
@@ -490,11 +554,11 @@ class PaperSearch:
     def get_paper_by_id(self, paper_id: str, source: str = "semantic_scholar") -> dict | None:
         """
         Get paper details by ID.
-        
+
         Args:
             paper_id: Paper ID (ArXiv ID or Semantic Scholar PaperId)
             source: "arxiv" or "semantic_scholar"
-        
+
         Returns:
             Paper dictionary or None if not found
         """
@@ -514,6 +578,7 @@ class PaperSearch:
 
         try:
             import urllib.request
+
             req = urllib.request.Request(url, headers={"User-Agent": "dl-paper-repro/1.0"})
             with urllib.request.urlopen(req, timeout=30) as resp:
                 xml_data = resp.read().decode("utf-8")
@@ -534,10 +599,14 @@ class PaperSearch:
 
         try:
             import urllib.request
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "dl-paper-repro/1.0",
-                "Accept": "application/json",
-            })
+
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "dl-paper-repro/1.0",
+                    "Accept": "application/json",
+                },
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except Exception:
@@ -546,11 +615,11 @@ class PaperSearch:
     def get_citations(self, paper_id: str, max_results: int = 50) -> list[dict]:
         """
         Get citations for a paper.
-        
+
         Args:
             paper_id: Semantic Scholar PaperId
             max_results: Maximum number of citations
-        
+
         Returns:
             List of citing papers
         """
@@ -563,10 +632,14 @@ class PaperSearch:
 
         try:
             import urllib.request
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "dl-paper-repro/1.0",
-                "Accept": "application/json",
-            })
+
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "dl-paper-repro/1.0",
+                    "Accept": "application/json",
+                },
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
 
@@ -577,11 +650,11 @@ class PaperSearch:
     def get_references(self, paper_id: str, max_results: int = 50) -> list[dict]:
         """
         Get references for a paper.
-        
+
         Args:
             paper_id: Semantic Scholar PaperId
             max_results: Maximum number of references
-        
+
         Returns:
             List of referenced papers
         """
@@ -594,10 +667,14 @@ class PaperSearch:
 
         try:
             import urllib.request
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "dl-paper-repro/1.0",
-                "Accept": "application/json",
-            })
+
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "dl-paper-repro/1.0",
+                    "Accept": "application/json",
+                },
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
 
@@ -608,11 +685,11 @@ class PaperSearch:
     def download_pdf(self, pdf_url: str, output_dir: Path | None = None) -> Path | None:
         """
         Download PDF from URL.
-        
+
         Args:
             pdf_url: PDF URL
             output_dir: Output directory
-        
+
         Returns:
             Path to downloaded PDF or None
         """
@@ -643,11 +720,11 @@ class PaperSearch:
     def search_both(self, query: str, max_results: int = 10) -> dict[str, list[dict]]:
         """
         Search both ArXiv and Semantic Scholar.
-        
+
         Args:
             query: Search query
             max_results: Max results per source
-        
+
         Returns:
             Dict with "arxiv" and "semantic_scholar" keys
         """
@@ -667,13 +744,16 @@ class PaperSearch:
 
 # ── CLI extensions ─────────────────────────────────────────────────────────────
 
+
 def paper_search_cli():
     """CLI for paper search."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Paper search for dl-paper-repro")
     parser.add_argument("--query", "-q", required=True, help="Search query")
-    parser.add_argument("--source", "-s", choices=["arxiv", "semantic_scholar", "both"], default="both")
+    parser.add_argument(
+        "--source", "-s", choices=["arxiv", "semantic_scholar", "both"], default="both"
+    )
     parser.add_argument("--max-results", "-n", type=int, default=10)
     parser.add_argument("--output", "-o", type=Path, help="Output file (JSON)")
     parser.add_argument("--download-pdf", action="store_true", help="Download PDFs")

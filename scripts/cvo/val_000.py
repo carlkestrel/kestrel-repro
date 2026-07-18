@@ -2,6 +2,7 @@
 VAL-000 BOOTSTRAP — Confirm project root, create audit directory, check disk space,
                      check git status, create audit_id.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -27,8 +28,15 @@ def run(project_root=None):
 
     audit_id = str(uuid.uuid4())
 
-    for subdir in ["nodes", "state/heartbeats", "locks", "logs",
-                   "evidence", "checkpoints", "reports"]:
+    for subdir in [
+        "nodes",
+        "state/heartbeats",
+        "locks",
+        "logs",
+        "evidence",
+        "checkpoints",
+        "reports",
+    ]:
         (audit_dir / subdir).mkdir(parents=True, exist_ok=True)
 
     # disk space
@@ -42,12 +50,22 @@ def run(project_root=None):
     git_commit = ""
     git_dirty = False
     try:
-        r = subprocess.run(["git", "rev-parse", "HEAD"],
-                          capture_output=True, text=True, cwd=str(project), timeout=10)
+        r = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            cwd=str(project),
+            timeout=10,
+        )
         if r.returncode == 0:
             git_commit = r.stdout.strip()[:12]
-        r2 = subprocess.run(["git", "status", "--porcelain"],
-                           capture_output=True, text=True, cwd=str(project), timeout=10)
+        r2 = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            cwd=str(project),
+            timeout=10,
+        )
         git_dirty = bool(r2.stdout.strip())
     except Exception:
         pass
@@ -64,8 +82,7 @@ def run(project_root=None):
     }
 
     manifest_path = audit_dir / "audit_manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False),
-                             encoding="utf-8")
+    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
     node_state = {
         "node_id": "VAL-000",
@@ -73,9 +90,7 @@ def run(project_root=None):
         "finished_at": datetime.now(timezone.utc).isoformat(),
         "evidence_files": [str(manifest_path.relative_to(project))],
         "output_hashes": {
-            "audit_manifest": hashlib.sha256(
-                manifest_path.read_bytes()
-            ).hexdigest()[:16],
+            "audit_manifest": hashlib.sha256(manifest_path.read_bytes()).hexdigest()[:16],
         },
         "extra": manifest,
     }
@@ -95,6 +110,7 @@ def run(project_root=None):
 
 if __name__ == "__main__":
     import sys
+
     result = run()
     print(json.dumps(result, indent=2))
     sys.exit(0 if result["status"] == "PASSED" else 1)

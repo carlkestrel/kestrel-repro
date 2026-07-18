@@ -9,6 +9,7 @@ This script runs L0 → L1 → L2 → L3 automatically:
 
 Each stage must pass before the next begins.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,8 +40,13 @@ L3_SCRIPT = THIS.parent / "checkpoint_resume_test.py"
 class L0L3Loop:
     """Automated L0-L3 verification loop."""
 
-    def __init__(self, project_root: Path, primary: Path | None = None,
-                 conda_env: str = "t4", skip_doctor: bool = False):
+    def __init__(
+        self,
+        project_root: Path,
+        primary: Path | None = None,
+        conda_env: str = "t4",
+        skip_doctor: bool = False,
+    ):
         self.project_root = project_root.resolve()
         self.primary = (primary or self.project_root / "primary").resolve()
         self.conda_env = conda_env
@@ -193,9 +199,7 @@ class L0L3Loop:
 
         return result
 
-    def run_all(self, stop_on_fail: bool = True,
-                l1_steps: int = 50,
-                l2_epochs: int = 3) -> dict:
+    def run_all(self, stop_on_fail: bool = True, l1_steps: int = 50, l2_epochs: int = 3) -> dict:
         """
         Run the complete L0-L3 loop.
 
@@ -276,24 +280,17 @@ class L0L3Loop:
 
 def main():
     parser = argparse.ArgumentParser(description="Run L0-L3 automated verification loop")
-    parser.add_argument("--project", default=".",
-                       help="Project root directory")
-    parser.add_argument("--primary",
-                       help="Primary repository directory")
-    parser.add_argument("--conda-env", default="t4",
-                       help="Conda environment with torch")
-    parser.add_argument("--skip-doctor", action="store_true",
-                       help="Skip preflight doctor check")
-    parser.add_argument("--l1-steps", type=int, default=50,
-                       help="L1: number of overfit steps")
-    parser.add_argument("--l2-epochs", type=int, default=3,
-                       help="L2: number of mini loop epochs")
-    parser.add_argument("--continue-on-fail", action="store_true",
-                       help="Continue to next stage on failure")
-    parser.add_argument("--output",
-                       help="Output path for results JSON")
-    parser.add_argument("--save-only", action="store_true",
-                       help="Only save results, don't print")
+    parser.add_argument("--project", default=".", help="Project root directory")
+    parser.add_argument("--primary", help="Primary repository directory")
+    parser.add_argument("--conda-env", default="t4", help="Conda environment with torch")
+    parser.add_argument("--skip-doctor", action="store_true", help="Skip preflight doctor check")
+    parser.add_argument("--l1-steps", type=int, default=50, help="L1: number of overfit steps")
+    parser.add_argument("--l2-epochs", type=int, default=3, help="L2: number of mini loop epochs")
+    parser.add_argument(
+        "--continue-on-fail", action="store_true", help="Continue to next stage on failure"
+    )
+    parser.add_argument("--output", help="Output path for results JSON")
+    parser.add_argument("--save-only", action="store_true", help="Only save results, don't print")
 
     args = parser.parse_args()
 

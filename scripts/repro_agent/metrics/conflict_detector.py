@@ -3,6 +3,7 @@ Conflict Detection Module
 
 Detects conflicts between metric definitions, observations, and sources.
 """
+
 from __future__ import annotations
 
 import json
@@ -173,7 +174,7 @@ class ConflictDetector:
     ) -> None:
         """
         Detect mIoU vs mIoU_ch confusion.
-        
+
         mIoU_ch should be mean of classes 1-6 (excluding Unchanged/class 0).
         """
         if miou_value is not None and miou_ch_value is not None:
@@ -241,13 +242,15 @@ class ConflictDetector:
             # Check for exact match or near-match
             patterns = [
                 rf"\b{value}\b",  # Exact
-                rf"= *{value}",    # Assignment
+                rf"= *{value}",  # Assignment
                 rf"\[{value}\]",  # In array
             ]
 
             for pattern in patterns:
                 if re.search(pattern, plotting_code):
-                    issues.append(f"Hardcoded value {value} for {metric_name} found in plotting code")
+                    issues.append(
+                        f"Hardcoded value {value} for {metric_name} found in plotting code"
+                    )
                     self.add_conflict(
                         ConflictType.HARDCODED_IN_PLOTTING,
                         f"Paper target {metric_name}={value} appears in plotting code",

@@ -1,4 +1,5 @@
 """Tests for the OSTAR module."""
+
 from __future__ import annotations
 
 import json
@@ -18,20 +19,30 @@ sys.path.insert(0, str(_SCRIPTS))
 # Constants tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_exit_codes_are_distinct():
     from scripts.ostar import constants as C
+
     codes = [
-        C.EXIT_OK, C.EXIT_BAD_CONFIG, C.EXIT_GUARD_FAIL,
-        C.EXIT_ALREADY_RUNNING, C.EXIT_REHEARSAL_FAIL,
-        C.EXIT_TEST_FAILED, C.EXIT_REPAIR_EXHAUSTED,
-        C.EXIT_RESUME_FAILED, C.EXIT_HARDWARE_SAFETY,
-        C.EXIT_INTERNAL, C.EXIT_MANUAL_STOP, C.EXIT_DURATION_ENDED,
+        C.EXIT_OK,
+        C.EXIT_BAD_CONFIG,
+        C.EXIT_GUARD_FAIL,
+        C.EXIT_ALREADY_RUNNING,
+        C.EXIT_REHEARSAL_FAIL,
+        C.EXIT_TEST_FAILED,
+        C.EXIT_REPAIR_EXHAUSTED,
+        C.EXIT_RESUME_FAILED,
+        C.EXIT_HARDWARE_SAFETY,
+        C.EXIT_INTERNAL,
+        C.EXIT_MANUAL_STOP,
+        C.EXIT_DURATION_ENDED,
     ]
     assert len(codes) == len(set(codes)), "exit codes must be distinct"
 
 
 def test_verdict_values():
     from scripts.ostar import constants as C
+
     verdicts = [
         C.VERDICT_SOAK_VERIFIED,
         C.VERDICT_REPAIRED_NOT_SOAK_VERIFIED,
@@ -44,6 +55,7 @@ def test_verdict_values():
 
 def test_error_classes_no_overlap():
     from scripts.ostar import constants as C
+
     blocked = C.BLOCKED_CLASSES
     allowed = C.AUTO_REPAIR_CLASSES
     overlap = blocked & allowed
@@ -52,6 +64,7 @@ def test_error_classes_no_overlap():
 
 def test_duration_parsing():
     from scripts.ostar.config import OSTARConfig
+
     assert OSTARConfig._parse_duration("8h") == 8 * 3600
     assert OSTARConfig._parse_duration("30m") == 30 * 60
     assert OSTARConfig._parse_duration("480m") == 480 * 60
@@ -61,12 +74,14 @@ def test_duration_parsing():
 
 def test_duration_parsing_invalid():
     from scripts.ostar.config import OSTARConfig
+
     assert OSTARConfig._parse_duration("") == 8 * 3600  # default
     assert OSTARConfig._parse_duration("xyz") == 8 * 3600  # fallback
 
 
 def test_config_validate():
     from scripts.ostar.config import OSTARConfig
+
     cfg = OSTARConfig(auto_repair_level="invalid")
     errors = cfg.validate()
     assert any("auto_repair_level" in e for e in errors)
@@ -78,6 +93,7 @@ def test_config_validate():
 
 def test_config_to_dict_roundtrip():
     from scripts.ostar.config import OSTARConfig
+
     cfg = OSTARConfig(
         timezone="UTC",
         duration_seconds=7200,
@@ -93,6 +109,7 @@ def test_config_to_dict_roundtrip():
 
 def test_config_from_args():
     from scripts.ostar.config import OSTARConfig
+
     args = {
         "project": "/tmp/proj",
         "duration": "4h",
@@ -120,8 +137,10 @@ def test_config_from_args():
 # SoakStateStore tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_soak_state_init_run(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({"duration": 7200})
     assert run_id.startswith("soak_")
@@ -131,6 +150,7 @@ def test_soak_state_init_run(tmp_path):
 
 def test_soak_state_heartbeat(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({})
     store.heartbeat(run_id, os.getpid(), {"test": True})
@@ -142,6 +162,7 @@ def test_soak_state_heartbeat(tmp_path):
 
 def test_soak_state_cycle_record(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({})
     cycle_id = store.record_cycle(run_id, seq=1, status="PASS")
@@ -153,6 +174,7 @@ def test_soak_state_cycle_record(tmp_path):
 
 def test_soak_state_bug_upsert(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({})
     bug_id = store.upsert_bug(run_id, "abc123", "CODE")
@@ -164,6 +186,7 @@ def test_soak_state_bug_upsert(tmp_path):
 
 def test_soak_state_bug_upsert_increments(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({})
     store.upsert_bug(run_id, "abc123", "CODE")
@@ -175,6 +198,7 @@ def test_soak_state_bug_upsert_increments(tmp_path):
 
 def test_soak_state_ci_result(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({})
     cycle_id = store.record_cycle(run_id, 1, "PASS")
@@ -188,11 +212,14 @@ def test_soak_state_ci_result(tmp_path):
 
 def test_soak_state_repair(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     run_id = store.init_run({})
     bug_id = store.upsert_bug(run_id, "xyz", "CODE")
     repair_id = store.record_repair(
-        run_id, bug_id, 1,
+        run_id,
+        bug_id,
+        1,
         patch={"file": "test.py", "line": 10},
         status="PASS",
         target_test_passed=True,
@@ -206,6 +233,7 @@ def test_soak_state_repair(tmp_path):
 
 def test_soak_state_checkpoints(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     store.init_run({})
     ckpt = store.write_checkpoint({"seq": 42, "test": True}, seq=42)
@@ -216,6 +244,7 @@ def test_soak_state_checkpoints(tmp_path):
 
 def test_soak_state_status_summary(tmp_path):
     from scripts.ostar import soak_state
+
     store = soak_state.SoakStateStore(tmp_path)
     store.init_run({})
     summary = store.status_summary()
@@ -227,8 +256,10 @@ def test_soak_state_status_summary(tmp_path):
 # Hardware monitor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_hardware_monitor_snapshot(tmp_path):
     from scripts.ostar import hardware_monitor
+
     hw = hardware_monitor.HardwareMonitor(project_root=tmp_path)
     snap = hw.snapshot()
     assert "timestamp_utc" in snap.to_dict()
@@ -239,6 +270,7 @@ def test_hardware_monitor_snapshot(tmp_path):
 def test_hardware_monitor_policy_defaults():
     from scripts.ostar import constants as C
     from scripts.ostar import hardware_monitor
+
     policy = hardware_monitor.HardwarePolicy()
     assert policy.gpu_warn_temp_c == C.DEFAULT_GPU_WARN_TEMP_C
     assert policy.gpu_critical_temp_c == C.DEFAULT_GPU_CRITICAL_TEMP_C
@@ -247,6 +279,7 @@ def test_hardware_monitor_policy_defaults():
 
 def test_hardware_monitor_check_safe(tmp_path):
     from scripts.ostar import hardware_monitor
+
     hw = hardware_monitor.HardwareMonitor(project_root=tmp_path)
     safe, violations = hw.check()
     assert isinstance(safe, bool)
@@ -257,8 +290,10 @@ def test_hardware_monitor_check_safe(tmp_path):
 # Guard tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_guard_result_to_dict():
     from scripts.ostar import guard
+
     result = guard.GuardResult(
         passed=True,
         timestamp_utc=datetime.now(timezone.utc).isoformat(),
@@ -275,6 +310,7 @@ def test_guard_result_to_dict():
 
 def test_guard_run(tmp_path):
     from scripts.ostar import guard
+
     g = guard.Guard(tmp_path)
     # Initialize git in tmp_path so the git check passes
     subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
@@ -288,8 +324,10 @@ def test_guard_run(tmp_path):
 # Repair node tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_repair_node_fingerprint():
     from scripts.ostar import repair_node
+
     node = repair_node.RepairNode(
         project_root=Path("/tmp"),
         failure_log='File "test.py", line 10\nAttributeError: module has no attribute',
@@ -302,6 +340,7 @@ def test_repair_node_fingerprint():
 
 def test_repair_node_classify():
     from scripts.ostar import repair_node
+
     node = repair_node.RepairNode(
         project_root=Path("/tmp"),
         failure_log="",
@@ -313,6 +352,7 @@ def test_repair_node_classify():
 
 def test_repair_node_classify_oom():
     from scripts.ostar import repair_node
+
     node = repair_node.RepairNode(
         project_root=Path("/tmp"),
         failure_log="",
@@ -324,6 +364,7 @@ def test_repair_node_classify_oom():
 
 def test_repair_node_classify_file_not_found():
     from scripts.ostar import repair_node
+
     node = repair_node.RepairNode(
         project_root=Path("/tmp"),
         failure_log="",
@@ -335,6 +376,7 @@ def test_repair_node_classify_file_not_found():
 
 def test_repair_node_classify_blocked():
     from scripts.ostar import repair_node
+
     node = repair_node.RepairNode(
         project_root=Path("/tmp"),
         failure_log="",
@@ -348,8 +390,10 @@ def test_repair_node_classify_blocked():
 # Test suites tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_run_subprocess_timeout():
     from scripts.ostar import test_suites
+
     rc, stdout, stderr = test_suites._run_subprocess(
         [sys.executable, "-c", "import time; time.sleep(10)"],
         timeout_seconds=2,
@@ -360,6 +404,7 @@ def test_run_subprocess_timeout():
 
 def test_run_subprocess_success():
     from scripts.ostar import test_suites
+
     rc, stdout, stderr = test_suites._run_subprocess(
         [sys.executable, "-c", "print('hello')"],
         timeout_seconds=5,
@@ -370,6 +415,7 @@ def test_run_subprocess_success():
 
 def test_resource_sample():
     from scripts.ostar import test_suites
+
     sample = test_suites._sample_resources(Path("/tmp"))
     assert "timestamp" in sample
     assert "ram_used_mb" in sample
@@ -380,8 +426,10 @@ def test_resource_sample():
 # Exit validator tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_exit_validator_no_run():
     from scripts.ostar import exit_validator, soak_state
+
     tmp = Path(tempfile.mkdtemp())
     store = soak_state.SoakStateStore(tmp)
     validator = exit_validator.ExitValidator(store)
@@ -392,6 +440,7 @@ def test_exit_validator_no_run():
 def test_verdict_badges():
     from scripts.ostar import constants as C
     from scripts.ostar import reporter
+
     badges = reporter._VERDICT_BADGES
     assert C.VERDICT_SOAK_VERIFIED in badges
     assert C.VERDICT_FAILED_UNRESOLVED in badges
@@ -401,6 +450,7 @@ def test_verdict_badges():
 def test_verdict_colors():
     from scripts.ostar import constants as C
     from scripts.ostar import reporter
+
     colors = reporter._VERDICT_COLORS
     assert C.VERDICT_SOAK_VERIFIED in colors
     assert colors[C.VERDICT_SOAK_VERIFIED] == "#28a745"
@@ -410,13 +460,15 @@ def test_verdict_colors():
 # CLI smoke tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_cli_help():
     # Use reproctl.py dispatch so it tests the actual integration
     plugin_root = Path(__file__).resolve().parents[1]
     reproctl = plugin_root / "scripts" / "reproctl.py"
     result = subprocess.run(
         [sys.executable, str(reproctl), "soak", "--help"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0, result.stderr
     assert "OSTAR" in result.stdout
@@ -424,6 +476,7 @@ def test_cli_help():
 
 def test_cli_subcommands():
     from scripts.ostar import cli
+
     parser = cli.build_parser()
     for cmd in ["plan", "start", "status", "pause", "resume", "stop", "report"]:
         args = parser.parse_args([cmd, "--project", "/tmp"])

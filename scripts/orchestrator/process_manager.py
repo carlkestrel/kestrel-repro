@@ -15,8 +15,14 @@ class ProcessManager:
     def __init__(self):
         self._processes: dict[int, tuple[subprocess.Popen, IO[bytes] | None]] = {}
 
-    def start(self, command: str | Sequence[str], *, cwd: str | Path,
-              log_path: str | Path, env: dict[str, str] | None = None) -> subprocess.Popen:
+    def start(
+        self,
+        command: str | Sequence[str],
+        *,
+        cwd: str | Path,
+        log_path: str | Path,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.Popen:
         path = Path(log_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         handle = path.open("ab", buffering=0)
@@ -127,9 +133,15 @@ class ProcessManager:
         if managed and managed[1]:
             managed[1].close()
 
-    def run(self, command: str | Sequence[str], *, cwd: str | Path,
-            log_path: str | Path, timeout: float | None = None,
-            env: dict[str, str] | None = None) -> int:
+    def run(
+        self,
+        command: str | Sequence[str],
+        *,
+        cwd: str | Path,
+        log_path: str | Path,
+        timeout: float | None = None,
+        env: dict[str, str] | None = None,
+    ) -> int:
         proc = self.start(command, cwd=cwd, log_path=log_path, env=env)
         try:
             return proc.wait(timeout=timeout)
@@ -177,9 +189,15 @@ class ProcessManager:
             return f"non-zero exit ({exit_code})"
         return f"exit code {exit_code}"
 
-    def start_daemon(self, argv: Sequence[str], *, cwd: str | Path,
-                     log_path: str | Path, pid_path: str | Path,
-                     env: dict[str, str] | None = None) -> int:
+    def start_daemon(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: str | Path,
+        log_path: str | Path,
+        pid_path: str | Path,
+        env: dict[str, str] | None = None,
+    ) -> int:
         proc = self.start(list(argv), cwd=cwd, log_path=log_path, env=env)
         pid_file = Path(pid_path)
         pid_file.parent.mkdir(parents=True, exist_ok=True)

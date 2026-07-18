@@ -19,6 +19,7 @@ R3-0 acceptance criteria (16 tests):
 15. pause/resume/recovery use same DB.
 16. >1 active SQLite → self-check fails (test_single_state_authority).
 """
+
 from __future__ import annotations
 
 import json
@@ -57,6 +58,7 @@ from scripts.startup.state_store import StateStore as StartupStateStore
 
 # ─── Fixtures ─────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def fresh_project(tmp_path):
     """A fresh project_root where .repro/ doesn't exist yet."""
@@ -64,6 +66,7 @@ def fresh_project(tmp_path):
 
 
 # ─── 1. Single StateStore implementation ────────────────────────────
+
 
 def test_01_single_state_store_implementation():
     """All three import paths return the same class."""
@@ -81,20 +84,20 @@ def test_01_single_state_store_implementation():
 
 # ─── 2. New project creates exactly one SQLite ─────────────────────
 
+
 def test_02_new_project_creates_one_sqlite(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
 
     active = find_active_state_dbs(str(fresh_project))
     # No legacy, no double DB
-    assert len(active) == 1, (
-        f"expected exactly 1 active SQLite, found {len(active)}: {active}"
-    )
+    assert len(active) == 1, f"expected exactly 1 active SQLite, found {len(active)}: {active}"
     # Canonical path
     assert active[0] == canonical_db_path(fresh_project)
 
 
 # ─── 3. Startup write, orchestrator read ────────────────────────────
+
 
 def test_03_startup_writes_orchestrator_reads(fresh_project):
     startup = StartupStateStore(str(fresh_project))
@@ -109,6 +112,7 @@ def test_03_startup_writes_orchestrator_reads(fresh_project):
 
 # ─── 4. Orchestrator write, startup read ────────────────────────────
 
+
 def test_04_orchestrator_writes_startup_reads(fresh_project):
     orch = OrchStateStore(str(fresh_project))
     orch.init_project("p1", str(fresh_project))
@@ -120,24 +124,34 @@ def test_04_orchestrator_writes_startup_reads(fresh_project):
 
 # ─── 5. plan + authorization commit in same transaction ────────────
 
+
 def test_05_plan_and_authorization_same_transaction(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
 
     plan_hash = "phash123"
-    auth_hash = compute_authorization_bound_hash(
-        plan_hash, "2.0", CURRENT_CANONICALIZATION_VERSION
-    )
+    auth_hash = compute_authorization_bound_hash(plan_hash, "2.0", CURRENT_CANONICALIZATION_VERSION)
 
     store.record_plan(
-        "plan1", "p1", plan_hash, plan_hash, "2.0",
+        "plan1",
+        "p1",
+        plan_hash,
+        plan_hash,
+        "2.0",
         authorization_bound_hash=auth_hash,
     )
     store.upsert_authorization(
-        "auth1", "p1", plan_hash, "g1", auth_hash,
-        granted=["task:run"], denied=[],
+        "auth1",
+        "p1",
+        plan_hash,
+        "g1",
+        auth_hash,
+        granted=["task:run"],
+        denied=[],
         write_roots=["outputs/"],
-        policies={}, budgets={}, other={},
+        policies={},
+        budgets={},
+        other={},
     )
 
     # Both writes are visible together
@@ -146,6 +160,7 @@ def test_05_plan_and_authorization_same_transaction(fresh_project):
 
 
 # ─── 6. Transaction failure completely rolls back ───────────────────
+
 
 def test_06_transaction_failure_rolls_back(fresh_project):
     store = CoreStateStore(str(fresh_project))
@@ -170,13 +185,14 @@ def test_06_transaction_failure_rolls_back(fresh_project):
         pass
 
     # The plan insert must have been rolled back
-    row_count = store._connect().execute(
-        "SELECT COUNT(*) FROM plan WHERE plan_id='p1'"
-    ).fetchone()[0]
+    row_count = (
+        store._connect().execute("SELECT COUNT(*) FROM plan WHERE plan_id='p1'").fetchone()[0]
+    )
     assert row_count == 0, "transaction failure should rollback plan insert"
 
 
 # ─── 7. Two old DBs migrate without conflict ───────────────────────
+
 
 def test_07_two_old_dbs_no_conflict_migrate(tmp_path):
     """Two legacy DBs with no conflict should merge into the canonical one."""
@@ -187,9 +203,7 @@ def test_07_two_old_dbs_no_conflict_migrate(tmp_path):
         conn = sqlite3.connect(str(db))
         conn.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, name TEXT)")
         conn.execute("INSERT INTO tasks VALUES('T1', 'Task 1')")
-        conn.execute(
-            "CREATE TABLE plan (id INTEGER PRIMARY KEY, plan_hash TEXT)"
-        )
+        conn.execute("CREATE TABLE plan (id INTEGER PRIMARY KEY, plan_hash TEXT)")
         conn.execute("INSERT INTO plan(plan_hash) VALUES(?)", (plan_hash,))
         conn.commit()
         conn.close()
@@ -226,11 +240,13 @@ def test_07_two_old_dbs_no_conflict_migrate(tmp_path):
 
 # ─── 8. Two old DBs with conflict block ────────────────────────────
 
+
 def test_08_state_conflict_blocks(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
-    store.record_plan("p1", "p1", "sqlite_hash", "src_hash", "2.0",
-                     authorization_bound_hash="bound_hash_1")
+    store.record_plan(
+        "p1", "p1", "sqlite_hash", "src_hash", "2.0", authorization_bound_hash="bound_hash_1"
+    )
 
     with pytest.raises(StateConflict):
         store.detect_conflict({"plan_hash": "different_legacy_hash"})
@@ -238,18 +254,29 @@ def test_08_state_conflict_blocks(fresh_project):
 
 # ─── 9. Legacy JSON migrates one-way only ─────────────────────────
 
+
 def test_09_legacy_json_one_way_migration(fresh_project):
     legacy_json = fresh_project / "execution_state.json"
     legacy_json.parent.mkdir(parents=True, exist_ok=True)
-    legacy_json.write_text(json.dumps({
-        "project_state": "RUNNING",
-        "plan_hash": "legacy_phash",
-        "tasks": [
-            {"id": "T1", "name": "T1", "status": "PASS",
-             "gate": "g", "deps": [],
-             "command": "echo", "acceptance_tests": ["x"]},
-        ],
-    }))
+    legacy_json.write_text(
+        json.dumps(
+            {
+                "project_state": "RUNNING",
+                "plan_hash": "legacy_phash",
+                "tasks": [
+                    {
+                        "id": "T1",
+                        "name": "T1",
+                        "status": "PASS",
+                        "gate": "g",
+                        "deps": [],
+                        "command": "echo",
+                        "acceptance_tests": ["x"],
+                    },
+                ],
+            }
+        )
+    )
 
     store = CoreStateStore(str(fresh_project))
     # Move legacy json into .repro/execution/execution_state.json so migration
@@ -269,22 +296,21 @@ def test_09_legacy_json_one_way_migration(fresh_project):
 
 # ─── 10. Snapshot cannot reverse-write ─────────────────────────────
 
+
 def test_10_snapshot_is_export_only(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
-    store.record_plan("p1", "p1", "h1", "h1", "2.0",
-                     authorization_bound_hash="bh1")
+    store.record_plan("p1", "p1", "h1", "h1", "2.0", authorization_bound_hash="bh1")
 
     paths = store.export_snapshots()
     json_path = Path(paths["json"])
     assert json_path.exists()
     # Confirm no method exists to import snapshots back
-    assert not hasattr(store, "import_snapshots"), (
-        "snapshot must be export-only; no import method"
-    )
+    assert not hasattr(store, "import_snapshots"), "snapshot must be export-only; no import method"
 
 
 # ─── 11. Authorization hash includes schema_version ───────────────
+
 
 def test_11_auth_hash_includes_schema_version():
     """A change in schema_version MUST produce a different auth hash."""
@@ -299,6 +325,7 @@ def test_11_auth_hash_includes_schema_version():
 
 # ─── 12. Schema upgrade invalidates old authorization ──────────────
 
+
 def test_12_schema_upgrade_invalidates_authorization(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
@@ -307,19 +334,28 @@ def test_12_schema_upgrade_invalidates_authorization(fresh_project):
     auth_hash_v1 = compute_authorization_bound_hash(
         plan_hash, "2.0", CURRENT_CANONICALIZATION_VERSION
     )
-    store.record_plan("plan1", "p1", plan_hash, plan_hash, "2.0",
-                     authorization_bound_hash=auth_hash_v1)
+    store.record_plan(
+        "plan1", "p1", plan_hash, plan_hash, "2.0", authorization_bound_hash=auth_hash_v1
+    )
     store.upsert_authorization(
-        "auth1", "p1", plan_hash, "g1", auth_hash_v1,
-        granted=["task:run"], denied=[],
+        "auth1",
+        "p1",
+        plan_hash,
+        "g1",
+        auth_hash_v1,
+        granted=["task:run"],
+        denied=[],
         write_roots=[],
-        policies={}, budgets={}, other={},
+        policies={},
+        budgets={},
+        other={},
     )
     assert store.is_authorized("auth1", "task:run") is True
 
     # Upgrade schema
-    n = upgrade_schema_with_hash_reset(store, new_schema_version="2.1",
-                                       new_canonicalization_version="2")
+    n = upgrade_schema_with_hash_reset(
+        store, new_schema_version="2.1", new_canonicalization_version="2"
+    )
     assert n >= 1, "should mark at least one contract"
 
     # Old authorization must now be invalid
@@ -330,24 +366,31 @@ def test_12_schema_upgrade_invalidates_authorization(fresh_project):
 
 # ─── 13. Plan lineage preserved without inheriting authorization ──
 
+
 def test_13_plan_lineage_no_inheritance(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
     # Two plans: A and B (different IDs but linked)
     auth_hash_a = compute_authorization_bound_hash("planA", "2.0", "1")
     auth_hash_b = compute_authorization_bound_hash("planB", "2.0", "1")
-    store.record_plan("planA", "p1", "planA", "planA", "2.0",
-                     authorization_bound_hash=auth_hash_a)
+    store.record_plan("planA", "p1", "planA", "planA", "2.0", authorization_bound_hash=auth_hash_a)
     store.upsert_authorization(
-        "authA", "p1", "planA", "g", auth_hash_a,
-        granted=["task:run"], denied=[], write_roots=[],
-        policies={}, budgets={}, other={},
+        "authA",
+        "p1",
+        "planA",
+        "g",
+        auth_hash_a,
+        granted=["task:run"],
+        denied=[],
+        write_roots=[],
+        policies={},
+        budgets={},
+        other={},
     )
     assert store.is_authorized("authA", "task:run") is True
 
     # Switch to planB
-    store.record_plan("planB", "p1", "planB", "planB", "2.0",
-                     authorization_bound_hash=auth_hash_b)
+    store.record_plan("planB", "p1", "planB", "planB", "2.0", authorization_bound_hash=auth_hash_b)
     # PlanA's auth no longer valid for planB
     assert store.is_authorized("authA", "task:run") is False, (
         "planB must NOT inherit planA's authorization"
@@ -356,11 +399,11 @@ def test_13_plan_lineage_no_inheritance(fresh_project):
 
 # ─── 14. Concurrent writes produce no state drift ──────────────────
 
+
 def test_14_concurrent_writes_no_state_drift(fresh_project):
     store = CoreStateStore(str(fresh_project))
     store.init_project("p1", str(fresh_project))
-    store.record_plan("plan1", "p1", "h1", "h1", "2.0",
-                     authorization_bound_hash="bh1")
+    store.record_plan("plan1", "p1", "h1", "h1", "2.0", authorization_bound_hash="bh1")
 
     errors: list[Exception] = []
 
@@ -368,11 +411,17 @@ def test_14_concurrent_writes_no_state_drift(fresh_project):
         try:
             for i in range(20):
                 store.upsert_authorization(
-                    f"auth_{thread_id}_{i}", "p1", "h1", "g",
+                    f"auth_{thread_id}_{i}",
+                    "p1",
+                    "h1",
+                    "g",
                     "bh1",
-                    granted=["task:run"], denied=[],
+                    granted=["task:run"],
+                    denied=[],
                     write_roots=[],
-                    policies={}, budgets={}, other={},
+                    policies={},
+                    budgets={},
+                    other={},
                 )
         except Exception as e:
             errors.append(e)
@@ -386,29 +435,29 @@ def test_14_concurrent_writes_no_state_drift(fresh_project):
     assert not errors, f"concurrent writes produced errors: {errors}"
 
     # All writes should be visible
-    rows = store._connect().execute(
-        "SELECT COUNT(*) FROM authorization WHERE contract_id LIKE 'auth_%'"
-    ).fetchone()[0]
+    rows = (
+        store._connect()
+        .execute("SELECT COUNT(*) FROM authorization WHERE contract_id LIKE 'auth_%'")
+        .fetchone()[0]
+    )
     assert rows == 100  # 5 threads × 20 writes
 
 
 # ─── 15. pause/resume/recovery use same DB ─────────────────────────
 
+
 def test_15_pause_resume_uses_same_db(fresh_project):
     # Initial session
     s1 = CoreStateStore(str(fresh_project))
     s1.init_project("p1", str(fresh_project))
-    s1.record_plan("plan1", "p1", "h1", "h1", "2.0",
-                  authorization_bound_hash="bh1")
+    s1.record_plan("plan1", "p1", "h1", "h1", "2.0", authorization_bound_hash="bh1")
     s1.set_control_state("PAUSED")
 
     # Pause + reopen
     db_at_close = str(s1.db_path)
     s2 = CoreStateStore(str(fresh_project))
     assert s2.control_state() == "PAUSED"
-    assert str(s2.db_path) == db_at_close, (
-        "DB path must be identical across pause/resume"
-    )
+    assert str(s2.db_path) == db_at_close, "DB path must be identical across pause/resume"
 
     # Resume
     s2.set_control_state("RUNNING")
@@ -417,6 +466,7 @@ def test_15_pause_resume_uses_same_db(fresh_project):
 
 
 # ─── 16. >1 active SQLite → self-check fails (test_single_state_authority) ─
+
 
 def test_16_single_state_authority_self_check(tmp_path):
     """Place TWO active SQLite DBs under a project tree; self-check must fail."""
@@ -447,6 +497,7 @@ def test_16_single_state_authority_self_check(tmp_path):
 
 
 # ─── Helper: JUnit-like text summary (for CI reports) ───────────────
+
 
 def test_summary_r3_0():
     """Meta-test: collect pass/fail counts for R3-0 sub-tests.

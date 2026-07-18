@@ -18,6 +18,7 @@ State lives at:
   ├── checkpoints/
   └── reports/
 """
+
 from __future__ import annotations
 
 import json
@@ -41,8 +42,16 @@ class CVOStateStore:
 
     # Valid statuses
     VALID_STATUSES = {
-        "PENDING", "READY", "RUNNING", "PASSED", "FAILED",
-        "PARTIAL", "BLOCKED", "PAUSED", "STALE", "SKIPPED",
+        "PENDING",
+        "READY",
+        "RUNNING",
+        "PASSED",
+        "FAILED",
+        "PARTIAL",
+        "BLOCKED",
+        "PAUSED",
+        "STALE",
+        "SKIPPED",
         "CANCELLED",
     }
 
@@ -62,9 +71,16 @@ class CVOStateStore:
         self._reports_dir = self._audit_dir / "reports"
 
         # Ensure directories exist
-        for d in (self._nodes_dir, self._state_dir, self._heartbeat_dir,
-                  self._locks_dir, self._logs_dir, self._evidence_dir,
-                  self._checkpoints_dir, self._reports_dir):
+        for d in (
+            self._nodes_dir,
+            self._state_dir,
+            self._heartbeat_dir,
+            self._locks_dir,
+            self._logs_dir,
+            self._evidence_dir,
+            self._checkpoints_dir,
+            self._reports_dir,
+        ):
             d.mkdir(parents=True, exist_ok=True)
 
     # ── Node state file helpers ────────────────────────────────────────────────
@@ -113,11 +129,16 @@ class CVOStateStore:
         data = self._read_node(node_id)
         return data.get("status", "PENDING")
 
-    def set_status(self, node_id: str, status: str,
-                   error_type: str = "", error_message: str = "",
-                   evidence_files: list[str] | None = None,
-                   output_hashes: dict[str, str] | None = None,
-                   extra: dict[str, Any] | None = None) -> None:
+    def set_status(
+        self,
+        node_id: str,
+        status: str,
+        error_type: str = "",
+        error_message: str = "",
+        evidence_files: list[str] | None = None,
+        output_hashes: dict[str, str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> None:
         """Atomically update node status."""
         if status not in self.VALID_STATUSES:
             raise ValueError(f"Invalid status: {status!r}")
@@ -129,8 +150,7 @@ class CVOStateStore:
             data["attempt"] = data.get("attempt", 0) + 1
             data["started_at"] = utc_now()
             data["heartbeat_at"] = utc_now()
-        elif status in ("PASSED", "FAILED", "PARTIAL", "BLOCKED",
-                        "SKIPPED", "CANCELLED"):
+        elif status in ("PASSED", "FAILED", "PARTIAL", "BLOCKED", "SKIPPED", "CANCELLED"):
             data["finished_at"] = utc_now()
             data["updated_at"] = utc_now()
             if error_type:
@@ -213,8 +233,7 @@ class CVOStateStore:
             "reports_dir": str(self._reports_dir),
         }
         path = self._audit_dir / "audit_manifest.json"
-        path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False),
-                       encoding="utf-8")
+        path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
         return manifest
 
     def read_manifest(self) -> dict[str, Any]:
@@ -238,12 +257,18 @@ class CVOStateStore:
             # Lock is stale — remove it
             lock_file.unlink(missing_ok=True)
 
-        lock_file.write_text(json.dumps({
-            "node_id": node_id,
-            "pid": pid,
-            "acquired_at": utc_now(),
-            "heartbeat_ts": utc_now_ts(),
-        }, indent=2), encoding="utf-8")
+        lock_file.write_text(
+            json.dumps(
+                {
+                    "node_id": node_id,
+                    "pid": pid,
+                    "acquired_at": utc_now(),
+                    "heartbeat_ts": utc_now_ts(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         return True
 
     def release_gpu_lock(self, node_id: str) -> None:
