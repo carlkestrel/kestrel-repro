@@ -2,7 +2,7 @@
 
 name: evidence-verifier
 description: Read-only agent that verifies the complete evidence chain for deep-learning paper reproduction — from commit to checkpoint to final metrics.
-model: claude-sonnet-4-20250514
+model: Fable5
 readonly: true
 
 > **Generator–Evaluator separation (P5_T03)**: this agent is a *verifier*.

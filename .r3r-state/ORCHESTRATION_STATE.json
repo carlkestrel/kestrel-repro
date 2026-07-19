@@ -152,7 +152,30 @@
     ],
     "subagent_report_channel": "Subagent output returned directly to Lead agent in Task tool response; Lead agent then writes structured report to USER_DECISIONS.md / TASK_LEDGER.md",
     "parallel_execution": "Multiple Task tool calls in single message → parallel subagent execution",
-    "isolation_strategy": "Subagents operate on read-only filesystem sections by default; writing Subagents declare their writable_paths upfront and Lead agent audits writes before commit"
+    "isolation_strategy": "Subagents operate on read-only filesystem sections by default; writing Subagents declare their writable_paths upfront and Lead agent audits writes before commit",
+    "model_tier_plan": {
+      "schema_version": "1.0",
+      "decided_at": "2026-07-19",
+      "decided_in": "策划 file '.cursor/plans/model_tier_planning_for_7_agents_09c8854e.plan.md' + tmp 副本 'projects/tmp-fb7c752b-a9e5-4e32-9847-8347f7406273/plan_model_tier_kestrel_repro_v1.md'",
+      "tier_framework": {
+        "Fable5_max": "编排型 / 跨阶段协调 / 多 agent 调度 / 决策阻断 / 独立审计带 CRITICAL 阻断权 / 跨文件 trace",
+        "Sol_max": "单 agent 深度审计 / 公式理解 / 三方交叉核对 / 最大算力",
+        "Terra_max": "大量查询/扫描工作（144+ 查询变体）",
+        "Terra_high": "中等对比分析（profile+parity 多组对比）",
+        "Terra_medium": "单次结构化扫描（命令输出 + 矩阵 + 推荐）"
+      },
+      "agent_assignments": [
+        {"agent": "repro-lead", "model": "Fable5", "effort": "max", "context": "1M", "granularity": "Wave-level"},
+        {"agent": "evidence-verifier", "model": "Fable5", "effort": "max", "context": "1M", "granularity": "per-call"},
+        {"agent": "review-auditor", "model": "Fable5", "effort": "max", "context": "1M", "granularity": "per-call"},
+        {"agent": "data-metric-auditor", "model": "GPT-5.6 Sol", "effort": "max", "context": "1M", "granularity": "per-call", "note": "用户确认 Sol max（从原始 v1.1 方案）"},
+        {"agent": "repo-scout", "model": "GPT-5.6 Terra", "effort": "max", "context": "1M", "granularity": "per-call"},
+        {"agent": "runtime-optimizer", "model": "GPT-5.6 Terra", "effort": "high", "context": "800K", "granularity": "per-call"},
+        {"agent": "hardware-fit-auditor", "model": "GPT-5.6 Terra", "effort": "medium", "context": "500K", "granularity": "per-call"}
+      ],
+      "file_targets": "每个 agent 文件在两个位置同步更新 (agents/*.md + scripts/agents/*.md)",
+      "applied_changes": "Step 2 of plan — 14 files (7 agents × 2 locations) updated"
+    }
   },
 
   "decision_log_pointer": "USER_DECISIONS.md D-2026-07-19-001 至 011",

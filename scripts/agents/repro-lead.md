@@ -2,7 +2,7 @@
 
 name: repro-lead
 description: Orchestrates the full paper reproduction lifecycle — discovers repositories, runs staged gates, and produces Go/Pivot/No-Go reports. This is the primary agent for the dl-paper-repro plugin.
-model: claude-sonnet-4-20250514
+model: Fable5
 readonly: false
 
 ## Responsibilities

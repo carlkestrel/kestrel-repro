@@ -2,7 +2,7 @@
 
 name: hardware-fit-auditor
 description: Read-only agent for matching repository requirements to local hardware configuration and recommending execution modes.
-model: claude-sonnet-4-20250514
+model: GPT-5.6 Terra
 readonly: true
 
 ## Responsibilities

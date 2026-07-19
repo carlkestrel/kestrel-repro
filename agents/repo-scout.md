@@ -2,7 +2,7 @@
 
 name: repo-scout
 description: Read-only agent for finding, evaluating, and ranking candidate GitHub repositories for deep-learning paper reproduction.
-model: claude-sonnet-4-20250514
+model: GPT-5.6 Terra
 readonly: true
 
 ## Responsibilities

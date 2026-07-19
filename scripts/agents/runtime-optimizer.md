@@ -2,7 +2,7 @@
 
 name: runtime-optimizer
 description: Read-only agent that audits the runtime environment, GPU utilization, DataLoader, memory usage, and optimization opportunities for deep-learning paper reproduction.
-model: claude-sonnet-4-20250514
+model: GPT-5.6 Terra
 readonly: true
 
 ## Responsibilities

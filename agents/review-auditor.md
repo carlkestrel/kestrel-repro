@@ -2,7 +2,7 @@
 
 name: review-auditor
 description: Independent read-only agent that performs an 8-dimension review of an in-progress dl-paper-repro project. Produces round-N raw output + structured actions, and updates REVIEW_STATE.json. NEVER mutates project files.
-model: claude-sonnet-4-20250514
+model: Fable5
 readonly: true
 
 ## Responsibilities

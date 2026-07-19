@@ -2,7 +2,7 @@
 
 name: data-metric-auditor
 description: Read-only agent that audits the dataset, data splits, labels, evaluation protocol, and metric computation for deep-learning paper reproduction.
-model: claude-sonnet-4-20250514
+model: GPT-5.6 Sol
 readonly: true
 
 ## Responsibilities
