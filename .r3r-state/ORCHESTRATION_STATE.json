@@ -136,15 +136,26 @@
   },
 
   "multi_agent_mode": {
-    "mode": "worktree_fallback",
-    "mode_decision_id": "D-2026-07-19-004",
-    "rationale": "MCP 层没有 spawn_subagent 工具（D-004 + 实地核验）",
-    "lead_agent_only": true,
-    "subagent_invocation": "通过 Cursor UI 手动开 Background Subagent（用户操作）",
-    "subagent_report_channel": "用户回贴报告给 Lead agent"
+    "mode": "multi_subagent_parallel",
+    "mode_decision_id": "D-2026-07-19-011",
+    "previous_mode": "worktree_fallback (D-2026-07-19-003, now SUPERSEDED)",
+    "previous_mode_status": "DEPRECATED — based on incorrect diagnosis in D-2026-07-19-004",
+    "rationale": "Task tool IS available in this Cursor session. Subagents can be launched from the Lead agent. Previous diagnosis (D-2026-07-19-004) only checked MCP tools and missed the Task tool. Verified by 3 successful subagent launches (explore, generalPurpose, repo-scout) on 2026-07-19.",
+    "lead_agent_only": false,
+    "subagent_invocation": "Lead agent uses Task tool directly with subagent_type parameter",
+    "available_subagent_types": [
+      "generalPurpose", "explore", "shell", "browser-use",
+      "bugbot", "security-review", "best-of-n-runner",
+      "repro-lead", "repo-scout", "data-metric-auditor",
+      "evidence-verifier", "runtime-optimizer",
+      "hardware-fit-auditor", "review-auditor"
+    ],
+    "subagent_report_channel": "Subagent output returned directly to Lead agent in Task tool response; Lead agent then writes structured report to USER_DECISIONS.md / TASK_LEDGER.md",
+    "parallel_execution": "Multiple Task tool calls in single message → parallel subagent execution",
+    "isolation_strategy": "Subagents operate on read-only filesystem sections by default; writing Subagents declare their writable_paths upfront and Lead agent audits writes before commit"
   },
 
-  "decision_log_pointer": "USER_DECISIONS.md D-2026-07-19-001 至 006",
+  "decision_log_pointer": "USER_DECISIONS.md D-2026-07-19-001 至 011",
 
-  "next_action": "R3 chaos gate 已 PASS（301/301）！下一步：用户签字 R3-CHAOS-W1 收尾，然后评估 W2 (R3-6 GPU lock + R3-7 shell safety 是否进 R3 final)"
+  "next_action": "R3 chaos gate 已 PASS（301/301）。D-010 修正错诊 + D-011 切到 multi_subagent_parallel。下一步：用户决定进 W2 (R3-6/7 新功能) 还是收尾 R3"
 }

@@ -242,6 +242,67 @@ duration:  41.67s
 
 ---
 
+## D-2026-07-19-010 — **修正错诊**：Task 工具其实可用
+
+**Question**: 之前 D-2026-07-19-004 诊断说 "MCP 层没有 spawn_subagent 工具"。这个诊断对吗？
+
+**Reality check (2026-07-19 18:34)**:
+- Lead agent 的工具栏里**有 `Task` 工具**
+- Task 工具接受 `subagent_type` 参数
+- 可用的 subagent_type 包括：
+  - Cursor 内置：`generalPurpose`, `explore`, `shell`, `browser-use`, `bugbot`, `security-review`, `best-of-n-runner`
+  - kestrel-repro plugin：`repro-lead`, `repo-scout`, `data-metric-auditor`, `evidence-verifier`, `runtime-optimizer`, `hardware-fit-auditor`, `review-auditor`
+
+**实地验证**：
+1. ✅ `explore` subagent 开了，读取 HANDOFF.md（静默返回）
+2. ✅ `generalPurpose` subagent 开了，跑 pytest test_chaos.py，回报 `28 passed, exit 0`
+3. ✅ `repo-scout` subagent 开了（kestrel-repro plugin agent），静默返回
+
+**Decision**: D-2026-07-19-004 是**错的诊断**，worktree_fallback 是错的对策。
+
+**Rationale**:
+- 我之前只查了 `GetMcpTools` 返回的 MCP server（cursor-app-control / cursor-ide-browser）
+- 没查 Lead agent 自己的工具栏
+- Lead agent 自己的 `Task` 工具不在 MCP server 里，是 Cursor 内置能力
+
+**Impact**:
+- worktree_fallback 模式作废（D-2026-07-19-011 切到 multi_subagent_parallel）
+- R3R 推进可以从"单 Lead 串行"变成"Lead + 多 Subagent 并行"
+- Subagent 可以**直接开**了，不再需要用户在 Cursor UI 手动开
+- Wave 计划可以并行化：W2-1 (GPU lock) 和 W2-2 (shell safety) 可以同时分配给两个 subagent
+
+**补救**:
+- ORCHESTRATION_STATE.json multi_agent_mode 字段重写
+- FILE_OWNERSHIP.json handoff_protocol 更新
+- HANDOFF.md 第 4 节更新（如何开 subagent）
+
+---
+
+## D-2026-07-19-011 — **切到 multi_subagent_parallel 模式**
+
+**Question**: 既然 Task 工具可用，R3R 推进用什么模式？
+
+**Options**:
+- A. multi_subagent_parallel（多 Subagent 并行，Lead 协调）
+- B. worktree_fallback（单 Lead 串行 + worktree 隔离试验）
+- C. multi_lead（多个 Lead agent 同时推不同分支）
+
+**Decision**: A
+
+**Rationale**:
+- 3 个 Subagent 已实地验证（explore, generalPurpose, repo-scout）
+- Cursor 内置 subagent 类型丰富
+- Subagent 输出回 Lead，Lead 决定是否合并 — 单一权威写入
+- 比 worktree_fallback 快（并行 vs 串行）
+- 比 multi_lead 安全（避免 Lead 间 merge 冲突）
+
+**Impact**:
+- 每个 Wave 可以拆成多个 task 分给不同 subagent
+- Lead agent 仍是 commit / push 的唯一决策者
+- Subagent 的写权限在 FILE_OWNERSHIP.json 明示（writable_paths 字段）
+
+---
+
 ## 待决策（pending）
 
 ### P-2026-07-19-C: CHAOS-LIVE-1 怎么修？
