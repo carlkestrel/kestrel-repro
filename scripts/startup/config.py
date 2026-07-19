@@ -12,6 +12,7 @@ Env vars (lower than CLI but above YAML):
 
 Never hard-codes user paths.
 """
+
 from __future__ import annotations
 
 import os
@@ -76,7 +77,7 @@ def _mini_yaml(text: str) -> dict:
         k = k.strip()
         v = v.strip()
         if v.lower() in ("true", "false"):
-            out[k] = (v.lower() == "true")
+            out[k] = v.lower() == "true"
         elif v.lower() in ("null", "~", ""):
             out[k] = None
         else:
@@ -90,8 +91,7 @@ def _mini_yaml(text: str) -> dict:
     return out
 
 
-def resolve(*, project_root: Path, plan_path: Path,
-            cli: dict | None = None) -> dict:
+def resolve(*, project_root: Path, plan_path: Path, cli: dict | None = None) -> dict:
     """Build the merged configuration.
 
     Priority order: cli > env > yaml (project-local) > defaults.

@@ -43,15 +43,11 @@ Commands (legacy, retained for backward compatibility):
 import argparse
 import json
 import os
-import sys
 import subprocess
-import shutil
+import sys
 import uuid
-import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
-
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 
@@ -71,45 +67,86 @@ EXPERIMENTS_DIR = Path("experiments")
 # ONLY consulted for backward-compatible commands.
 
 _NEW_SUBCOMMANDS = {
-    "start", "doctor", "resume", "stop", "version",
+    "start",
+    "doctor",
+    "resume",
+    "stop",
+    "version",
     # `status` and `verify` are also new; they have legacy equivalents
     # but the new versions are richer and preferred. The dispatcher
     # forwards them to startup/cli.py.
-    "status", "verify",
+    "status",
+    "verify",
     # Storage governance (disk policy + retention)
     "storage",
 }
 
 _ORCHESTRATOR_SUBCOMMANDS = {
-    "run", "pause", "continue", "stop", "status",
-    "approve", "reject", "events", "next", "daemon",
-    "migrate", "backup", "restore", "integrity-check", "rollback-version",
+    "run",
+    "pause",
+    "continue",
+    "stop",
+    "status",
+    "approve",
+    "reject",
+    "events",
+    "next",
+    "daemon",
+    "migrate",
+    "backup",
+    "restore",
+    "integrity-check",
+    "rollback-version",
 }
 
 _AUDIT_SUBCOMMANDS = {
-    "init", "plan", "status", "run-next", "run-node",
-    "run-stage", "retry", "report", "validate",
+    "init",
+    "plan",
+    "status",
+    "run-next",
+    "run-node",
+    "run-stage",
+    "retry",
+    "report",
+    "validate",
 }
 
 _SOAK_SUBCOMMANDS = {
-    "plan", "start", "status", "pause", "resume", "stop", "report",
+    "plan",
+    "start",
+    "status",
+    "pause",
+    "resume",
+    "stop",
+    "report",
 }
 
 _REPROCTL_SUBCOMMANDS = {
-    "init", "can-launch", "launch", "run-short-loop",
-    "verify", "report", "update-gate", "record-experiment",
-    "update-experiment", "get-experiments", "human-checkpoint",
-    "check-principles", "integrity-check", "help",
+    "init",
+    "can-launch",
+    "launch",
+    "run-short-loop",
+    "verify",
+    "report",
+    "update-gate",
+    "record-experiment",
+    "update-experiment",
+    "get-experiments",
+    "human-checkpoint",
+    "check-principles",
+    "integrity-check",
+    "help",
 }
 
 # Legacy subcommands that also exist as new unified commands
 _LEGACY_MAPPED_TO_NEW = {
-    "status": "startup",   # reproctl status → startup/cli.py
-    "verify": "startup",   # reproctl verify → startup/cli.py
+    "status": "startup",  # reproctl status → startup/cli.py
+    "verify": "startup",  # reproctl verify → startup/cli.py
+    "watchdog": "startup",  # reproctl watchdog → startup/cli.py
 }
 
 
-def _dispatch_to_audit() -> Optional[int]:
+def _dispatch_to_audit() -> int | None:
     """Route `reproctl audit ...` commands to scripts/cvo/audit_cli.py."""
     if len(sys.argv) < 2 or sys.argv[1] != "audit":
         return None
@@ -124,13 +161,41 @@ def _dispatch_to_audit() -> Optional[int]:
     try:
         from cvo.audit_cli import main as audit_main
     except Exception as e:
-        print(f"[reproctl] could not import CVO audit subsystem: {e}",
-              file=sys.stderr)
+        print(f"[reproctl] could not import CVO audit subsystem: {e}", file=sys.stderr)
         return 10
     return audit_main()
 
 
-def _dispatch_to_orchestrator() -> Optional[int]:
+def _dispatch_startup_subcommand(args) -> int | None:
+    """Forward startup subcommands to ``scripts/startup/cli.py``.
+
+    Used for ``start | doctor | resume | stop | watchdog | verify``.
+    """
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS_DIR))
+    # Build the startup argv: keep only --project / --log-level and pass them
+    # through so the startup CLI sees the same arguments. Skip --once unless
+    # explicitly true (the startup CLI doesn't accept --once False).
+    forwarded = [args.command]
+    v = getattr(args, "project", None)
+    if v not in (None, ""):
+        forwarded.extend(["--project", str(v)])
+    once = getattr(args, "once", None)
+    if once:
+        forwarded.append("--once")
+    v = getattr(args, "log_level", None)
+    if v not in (None, ""):
+        forwarded.extend(["--log-level", str(v)])
+    sys.argv = ["reproctl"] + forwarded
+    try:
+        from startup.cli import main as startup_main
+    except Exception as e:
+        print(f"[reproctl] could not import startup CLI: {e}", file=sys.stderr)
+        return 10
+    return startup_main(forwarded)
+
+
+def _dispatch_to_orchestrator() -> int | None:
     """Route orchestrator subcommands to ``scripts/orchestrator/cli.py``.
 
     The orchestrator owns ``run``, ``pause``, ``continue``, ``status``,
@@ -161,8 +226,7 @@ def _dispatch_to_orchestrator() -> Optional[int]:
     try:
         from orchestrator.cli import main as orchestrator_main
     except Exception as e:
-        print(f"[reproctl] could not import orchestrator subsystem: {e}",
-              file=sys.stderr)
+        print(f"[reproctl] could not import orchestrator subsystem: {e}", file=sys.stderr)
         return 10  # EXIT_INTERNAL
     return orchestrator_main(sys.argv[1:])
 
@@ -176,7 +240,7 @@ def _find_project_arg(argv: list[str]) -> str | None:
     return None
 
 
-def _dispatch_to_startup() -> Optional[int]:
+def _dispatch_to_startup() -> int | None:
     """If argv matches a new subcommand, run startup/cli.py and return its
     exit code. Otherwise return None (fall through to legacy handling)."""
     if len(sys.argv) < 2:
@@ -200,13 +264,12 @@ def _dispatch_to_startup() -> Optional[int]:
     try:
         from startup.cli import main as startup_main
     except Exception as e:
-        print(f"[reproctl] could not import startup subsystem: {e}",
-              file=sys.stderr)
+        print(f"[reproctl] could not import startup subsystem: {e}", file=sys.stderr)
         return 10  # EXIT_INTERNAL
     return startup_main(sys.argv[1:])
 
 
-def _dispatch_to_soak() -> Optional[int]:
+def _dispatch_to_soak() -> int | None:
     """Route `reproctl soak ...` commands to scripts/ostar/cli.py."""
     if len(sys.argv) < 2 or sys.argv[1] != "soak":
         return None
@@ -225,8 +288,7 @@ def _dispatch_to_soak() -> Optional[int]:
     try:
         from scripts.ostar.cli import main as soak_main
     except Exception as e:
-        print(f"[reproctl] could not import OSTAR subsystem: {e}",
-              file=sys.stderr)
+        print(f"[reproctl] could not import OSTAR subsystem: {e}", file=sys.stderr)
         return 10
     return soak_main()
 
@@ -234,6 +296,7 @@ def _dispatch_to_soak() -> Optional[int]:
 def _dispatch_storage() -> int:
     """Handle `reproctl storage <action>` via storage_governance.py."""
     import argparse
+
     parent = str(SCRIPTS_DIR)
     if parent not in sys.path:
         sys.path.insert(0, parent)
@@ -243,8 +306,7 @@ def _dispatch_storage() -> int:
     try:
         from startup import storage_governance as sg
     except Exception as e:
-        print(f"[reproctl] storage: could not import storage_governance: {e}",
-              file=sys.stderr)
+        print(f"[reproctl] storage: could not import storage_governance: {e}", file=sys.stderr)
         return 10
 
     # Build a minimal parser for the storage subcommands.
@@ -259,8 +321,9 @@ def _dispatch_storage() -> int:
 
     p_cleanup = sub.add_parser("cleanup", help="Execute approved cleanup plan")
     p_cleanup.add_argument("--project", default=".")
-    p_cleanup.add_argument("--approved-plan", required=True,
-                          help="Path to JSON cleanup plan from plan-cleanup")
+    p_cleanup.add_argument(
+        "--approved-plan", required=True, help="Path to JSON cleanup plan from plan-cleanup"
+    )
 
     p_apply = sub.add_parser("apply", help="Apply retention + disk_policy from config")
     p_apply.add_argument("--project", default=".")
@@ -289,8 +352,7 @@ def _dispatch_storage() -> int:
             with open(args.approved_plan) as f:
                 plan = json.load(f)
         except Exception as e:
-            print(f"[reproctl] storage cleanup: failed to load plan: {e}",
-                  file=sys.stderr)
+            print(f"[reproctl] storage cleanup: failed to load plan: {e}", file=sys.stderr)
             return 1
         result = sg.plan_cleanup(project_root, dry_run=False)
         # Override with files from approved plan if provided
@@ -321,8 +383,7 @@ def _dispatch_storage() -> int:
                 with open(args.config) as f:
                     config = json.load(f)
             except Exception as e:
-                print(f"[reproctl] storage apply: failed to load config: {e}",
-                      file=sys.stderr)
+                print(f"[reproctl] storage apply: failed to load config: {e}", file=sys.stderr)
                 return 1
         result = sg.apply_retention_config(project_root, config)
         print(json.dumps(result, indent=2))
@@ -355,20 +416,26 @@ BLUE = "\033[94m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
+
 def colored(text: str, color: str) -> str:
     return f"{color}{text}{RESET}"
+
 
 def ok(text: str) -> str:
     return colored(f"[OK]   {text}", GREEN)
 
+
 def info(text: str) -> str:
     return colored(f"[INFO] {text}", BLUE)
+
 
 def warn(text: str) -> str:
     return colored(f"[WARN] {text}", YELLOW)
 
+
 def fail(text: str) -> str:
     return colored(f"[FAIL] {text}", RED)
+
 
 def step(text: str) -> str:
     return colored(f"[STEP] {text}", BOLD)
@@ -376,8 +443,10 @@ def step(text: str) -> str:
 
 # ── State Management ─────────────────────────────────────────────────────────
 
+
 def get_state_path() -> Path:
     return REPRO_DIR / "state.json"
+
 
 def load_state() -> dict:
     """Load reproduction state from .repro/state.json."""
@@ -387,6 +456,7 @@ def load_state() -> dict:
     with open(path) as f:
         return json.load(f)
 
+
 def save_state(state: dict) -> None:
     """Save reproduction state to .repro/state.json."""
     path = get_state_path()
@@ -395,6 +465,7 @@ def save_state(state: dict) -> None:
     with open(tmp, "w") as f:
         json.dump(state, f, indent=2)
     tmp.replace(path)
+
 
 def get_default_state() -> dict:
     """Return the default state structure."""
@@ -408,13 +479,13 @@ def get_default_state() -> dict:
                 "status": "pending",
                 "timestamp": "",
                 "evidence": "",
-                "failure_reasons": []
+                "failure_reasons": [],
             },
             "gate_1_preflight": {
                 "status": "pending",
                 "timestamp": "",
                 "evidence": "",
-                "failure_reasons": []
+                "failure_reasons": [],
             },
             "gate_2_short_loop": {
                 "status": "pending",
@@ -425,8 +496,8 @@ def get_default_state() -> dict:
                     "l0_smoke": "pending",
                     "l1_overfit": "pending",
                     "l2_mini_loop": "pending",
-                    "l3_checkpoint_resume": "pending"
-                }
+                    "l3_checkpoint_resume": "pending",
+                },
             },
             "gate_3_parity": {
                 "status": "pending",
@@ -436,21 +507,21 @@ def get_default_state() -> dict:
                 "parity_results": {
                     "amp_parity": "not_tested",
                     "ddp_parity": "not_tested",
-                    "batch_size_parity": "not_tested"
-                }
+                    "batch_size_parity": "not_tested",
+                },
             },
             "gate_4_full_training": {
                 "status": "pending",
                 "timestamp": "",
                 "evidence": "",
-                "failure_reasons": []
+                "failure_reasons": [],
             },
             "gate_5_evidence": {
                 "status": "pending",
                 "timestamp": "",
                 "evidence": "",
-                "failure_reasons": []
-            }
+                "failure_reasons": [],
+            },
         },
         "current_mode": "strict_repro",
         "project_mode": "reproduce",
@@ -461,14 +532,14 @@ def get_default_state() -> dict:
             "EXTERNAL_REVIEW": False,
             "REVIEW_DIFFICULTY": "hard",
             "COMPUTE_BUDGET_GPU_HOURS": None,
-            "STORAGE_BUDGET_GB": None
+            "STORAGE_BUDGET_GB": None,
         },
         "repositories": {
             "primary": {"url": "", "commit": "", "role": "primary", "local_path": ""},
-            "references": []
+            "references": [],
         },
         "runs": [],
-        "hardware": {}
+        "hardware": {},
     }
 
 
@@ -481,7 +552,7 @@ def now_iso() -> str:
 VALID_PROJECT_MODES = ("reproduce", "diagnose", "extend")
 
 
-def get_project_mode(state: Optional[dict] = None) -> str:
+def get_project_mode(state: dict | None = None) -> str:
     """Return the current project mode. Default: 'reproduce'.
 
     Backward compatible: if state is None, try to load from disk;
@@ -498,34 +569,29 @@ def get_project_mode(state: Optional[dict] = None) -> str:
     return state.get("project_mode", "reproduce")
 
 
-def set_project_mode(mode: str, reason: str = "", state: Optional[dict] = None) -> dict:
+def set_project_mode(mode: str, reason: str = "", state: dict | None = None) -> dict:
     """Switch project mode and append an entry to mode_switches audit trail.
 
     Writes a row to repro_audit/DECISION_LOG.md with timestamp + reason.
     Returns the updated state dict (also persisted to disk).
     """
     if mode not in VALID_PROJECT_MODES:
-        raise ValueError(
-            f"Invalid project_mode: {mode!r}. Must be one of {VALID_PROJECT_MODES}"
-        )
+        raise ValueError(f"Invalid project_mode: {mode!r}. Must be one of {VALID_PROJECT_MODES}")
     if state is None:
         state = load_state()
     old = state.get("project_mode", "reproduce")
     if old == mode:
         return state
     state["project_mode"] = mode
-    state.setdefault("mode_switches", []).append({
-        "timestamp": now_iso(),
-        "from": old,
-        "to": mode,
-        "reason": reason
-    })
+    state.setdefault("mode_switches", []).append(
+        {"timestamp": now_iso(), "from": old, "to": mode, "reason": reason}
+    )
     save_state(state)
     _append_decision_log(old, mode, reason)
     return state
 
 
-def require_mode(required: str, state: Optional[dict] = None) -> None:
+def require_mode(required: str, state: dict | None = None) -> None:
     """Exit with code 1 unless current project mode equals `required`.
 
     Used by functions that must not run in a different mode
@@ -533,9 +599,7 @@ def require_mode(required: str, state: Optional[dict] = None) -> None:
     """
     current = get_project_mode(state)
     if current != required:
-        sys.stderr.write(
-            f"[require_mode] FAIL: current={current!r}, required={required!r}\n"
-        )
+        sys.stderr.write(f"[require_mode] FAIL: current={current!r}, required={required!r}\n")
         sys.exit(1)
 
 
@@ -589,9 +653,7 @@ def _append_decision_log(
             if m
         ]
         next_id = (max(ids) + 1) if ids else 0
-        before_after = (
-            f"{old_mode} → {new_mode}" if (old_mode or new_mode) else "—"
-        )
+        before_after = f"{old_mode} → {new_mode}" if (old_mode or new_mode) else "—"
         ts = now_iso()
         row = (
             f"| D{next_id:03d} | {ts} | {actor} | {phase or '—'} | "
@@ -617,9 +679,18 @@ def _append_decision_log(
 # ── Experiment Tracker (Phase 2) ───────────────────────────────────────────────
 
 TRACKER_COLUMNS = (
-    "experiment_id", "module", "status", "run_id", "support_claim",
-    "parent_run_id", "start_time", "end_time", "duration_min",
-    "gpu_hours", "metric_value", "status_detail",
+    "experiment_id",
+    "module",
+    "status",
+    "run_id",
+    "support_claim",
+    "parent_run_id",
+    "start_time",
+    "end_time",
+    "duration_min",
+    "gpu_hours",
+    "metric_value",
+    "status_detail",
 )
 
 
@@ -632,6 +703,7 @@ def _tracker_path() -> Path:
 def _ensure_tracker_file() -> Path:
     """Make sure the tracker file exists with the canonical header; return path."""
     import csv
+
     p = _tracker_path()
     if not p.exists():
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -642,7 +714,8 @@ def _ensure_tracker_file() -> Path:
 
 def _read_tracker_rows(p: Path) -> list:
     import csv
-    with open(p, "r", newline="", encoding="utf-8") as f:
+
+    with open(p, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
@@ -663,13 +736,12 @@ def record_experiment(
 ) -> Path:
     """Append a new row to experiments/experiment_tracker.csv (header auto-created)."""
     import csv
+
     p = _ensure_tracker_file()
     # Idempotency: if experiment_id already present, do not append a duplicate.
     existing_ids = {r.get("experiment_id") for r in _read_tracker_rows(p)}
     if experiment_id in existing_ids:
-        sys.stderr.write(
-            f"[warn] experiment_id {experiment_id!r} already in tracker; skipping\n"
-        )
+        sys.stderr.write(f"[warn] experiment_id {experiment_id!r} already in tracker; skipping\n")
         return p
     row = {
         "experiment_id": experiment_id,
@@ -689,10 +761,13 @@ def record_experiment(
         w = csv.DictWriter(f, fieldnames=TRACKER_COLUMNS)
         w.writerow(row)
     _append_decision_log(
-        old_mode="", new_mode="",
+        old_mode="",
+        new_mode="",
         reason=f"record_experiment: {experiment_id} ({module}) → {status}",
-        actor="agent", phase="P2_claim_evidence",
-        task_id=module, decision_type="checkpoint",
+        actor="agent",
+        phase="P2_claim_evidence",
+        task_id=module,
+        decision_type="checkpoint",
         links=f"experiments/experiment_tracker.csv#{experiment_id}",
     )
     return p
@@ -701,6 +776,7 @@ def record_experiment(
 def update_experiment(experiment_id: str, **fields) -> bool:
     """Update one or more fields of an existing tracker row. Returns True if updated."""
     import csv
+
     p = _tracker_path()
     if not p.exists():
         sys.stderr.write(f"[warn] tracker missing: {p}\n")
@@ -722,9 +798,11 @@ def update_experiment(experiment_id: str, **fields) -> bool:
         w.writeheader()
         w.writerows(rows)
     _append_decision_log(
-        old_mode="", new_mode="",
+        old_mode="",
+        new_mode="",
         reason=f"update_experiment: {experiment_id} fields={list(fields)}",
-        actor="agent", phase="P2_claim_evidence",
+        actor="agent",
+        phase="P2_claim_evidence",
         decision_type="checkpoint",
         links=f"experiments/experiment_tracker.csv#{experiment_id}",
     )
@@ -776,8 +854,11 @@ def cmd_record_experiment(args: argparse.Namespace) -> None:
 
 
 def cmd_update_experiment(args: argparse.Namespace) -> None:
-    fields = {k: v for k, v in vars(args).items()
-              if k not in {"command", "experiment_id"} and v not in (None, "")}
+    fields = {
+        k: v
+        for k, v in vars(args).items()
+        if k not in {"command", "experiment_id"} and v not in (None, "")
+    }
     ok = update_experiment(args.experiment_id, **fields)
     if ok:
         print(f"[ok] updated {args.experiment_id}")
@@ -798,7 +879,7 @@ def cmd_get_experiments(args: argparse.Namespace) -> None:
         return
     print(f"{len(rows)} row(s):")
     for r in rows:
-        print(" | ".join(f"{k}={r.get(k,'')}" for k in TRACKER_COLUMNS))
+        print(" | ".join(f"{k}={r.get(k, '')}" for k in TRACKER_COLUMNS))
 
 
 # ── Human Checkpoint (Phase 3) ────────────────────────────────────────────────
@@ -834,8 +915,12 @@ def _load_state() -> dict:
         script_dir = Path(__file__).resolve().parent.parent
         tpl = script_dir / "templates" / "control_flags.md"
         flags = {
-            "HUMAN_CHECKPOINT": True, "AUTO_RETRY": False, "ALLOW_NETWORK": True,
-            "REQUIRE_GIT_PIN": True, "TOLERANCE_MIOU": 0.5, "WIP_LIMIT": 1,
+            "HUMAN_CHECKPOINT": True,
+            "AUTO_RETRY": False,
+            "ALLOW_NETWORK": True,
+            "REQUIRE_GIT_PIN": True,
+            "TOLERANCE_MIOU": 0.5,
+            "WIP_LIMIT": 1,
             "EVIDENCE_REQUIRED": True,
         }
         if tpl.exists():
@@ -844,7 +929,7 @@ def _load_state() -> dict:
                 if m and m.group(1) in flags:
                     raw = m.group(2)
                     if raw.lower() in ("true", "false"):
-                        flags[m.group(1)] = (raw.lower() == "true")
+                        flags[m.group(1)] = raw.lower() == "true"
                     else:
                         try:
                             flags[m.group(1)] = float(raw) if "." in raw else int(raw)
@@ -889,7 +974,9 @@ def human_checkpoint(
             print("[human-checkpoint] The 12 mandatory pause-and-ask behaviors:")
             for line in HUMAN_CHECKPOINT_ITEMS:
                 print(f"  {line}")
-            print("[human-checkpoint] To proceed, set flags.HUMAN_CHECKPOINT=false with a risk_override decision row.")
+            print(
+                "[human-checkpoint] To proceed, set flags.HUMAN_CHECKPOINT=false with a risk_override decision row."
+            )
             return 1
         else:
             print("[human-checkpoint] PASS — HUMAN_CHECKPOINT=false")
@@ -897,12 +984,16 @@ def human_checkpoint(
 
     if action == "override":
         if not approved_by:
-            print("[human-checkpoint] FAIL — override requires --approved-by <name>", file=sys.stderr)
+            print(
+                "[human-checkpoint] FAIL — override requires --approved-by <name>", file=sys.stderr
+            )
             return 2
         _append_decision_log(
-            old_mode="", new_mode="",
+            old_mode="",
+            new_mode="",
             reason=f"human_checkpoint override: {reason or 'unspecified'}",
-            actor="human", phase="P3_human_checkpoint",
+            actor="human",
+            phase="P3_human_checkpoint",
             task_id=item or "P3_T02",
             decision_type="risk_override",
             links=f"override approved_by={approved_by}",
@@ -956,6 +1047,7 @@ def require_strict_mode(mode: str) -> None:
 def require_raw_metrics(metrics_path) -> None:
     """Principle: a reported number must trace to a raw metrics file on disk."""
     from pathlib import Path
+
     p = Path(metrics_path) if metrics_path else None
     if p is None or not p.exists():
         raise AssertionError(
@@ -967,6 +1059,7 @@ def require_raw_metrics(metrics_path) -> None:
 def require_provenance(commit_sha: str) -> None:
     """Principle: every run must record a commit SHA (not just a branch)."""
     import re
+
     if not commit_sha or not re.match(r"^[0-9a-f]{7,40}$", str(commit_sha)):
         raise AssertionError(
             f"PRINCIPLE require_provenance: commit_sha={commit_sha!r}. "
@@ -991,6 +1084,7 @@ def require_reproducibility(recompute_value, reported_value, tolerance_pp: float
 def cmd_check_principles(args: argparse.Namespace) -> None:
     """CLI: run all 5 principle checks against a JSON spec from stdin or --spec-file."""
     import json as _json
+
     spec = {}
     if args.spec_file:
         spec = _json.loads(open(args.spec_file).read())
@@ -998,18 +1092,24 @@ def cmd_check_principles(args: argparse.Namespace) -> None:
         spec = _json.loads(sys.stdin.read() or "{}")
     checks = [
         ("require_official_first", lambda: require_official_first(spec.get("repo_meta", {}))),
-        ("require_strict_mode",    lambda: require_strict_mode(spec.get("mode", "strict_repro"))),
-        ("require_raw_metrics",    lambda: require_raw_metrics(spec.get("metrics_path"))),
-        ("require_provenance",     lambda: require_provenance(spec.get("commit_sha", ""))),
-        ("require_reproducibility",lambda: require_reproducibility(
-            spec.get("recompute_value"), spec.get("reported_value"),
-            float(spec.get("tolerance_pp", 0.5)))),
+        ("require_strict_mode", lambda: require_strict_mode(spec.get("mode", "strict_repro"))),
+        ("require_raw_metrics", lambda: require_raw_metrics(spec.get("metrics_path"))),
+        ("require_provenance", lambda: require_provenance(spec.get("commit_sha", ""))),
+        (
+            "require_reproducibility",
+            lambda: require_reproducibility(
+                spec.get("recompute_value"),
+                spec.get("reported_value"),
+                float(spec.get("tolerance_pp", 0.5)),
+            ),
+        ),
     ]
     passed = 0
     failed = []
     for name, fn in checks:
         try:
-            fn(); passed += 1
+            fn()
+            passed += 1
         except AssertionError as e:
             failed.append((name, str(e)))
     for name, msg in failed:
@@ -1021,7 +1121,6 @@ def cmd_check_principles(args: argparse.Namespace) -> None:
 
 def cmd_integrity_check(args: argparse.Namespace) -> None:
     """Verify schema files and core artifact integrity."""
-    import hashlib
     plugin_root = PLUGIN_ROOT
     schemas_dir = plugin_root / "schemas"
     results = {"schemas": {}, "warnings": [], "errors": []}
@@ -1055,11 +1154,18 @@ def cmd_integrity_check(args: argparse.Namespace) -> None:
         results["storage_governance"] = "present"
         try:
             import importlib.util
+
             spec = importlib.util.spec_from_file_location("storage_governance", sg_path)
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
-            funcs = ["check_disk_policy", "plan_cleanup", "apply_retention_config",
-                     "scan_checkpoints", "DiskPolicy", "RetentionPolicy"]
+            funcs = [
+                "check_disk_policy",
+                "plan_cleanup",
+                "apply_retention_config",
+                "scan_checkpoints",
+                "DiskPolicy",
+                "RetentionPolicy",
+            ]
             missing = [f for f in funcs if not hasattr(mod, f)]
             if missing:
                 results["storage_governance"] = f"missing attrs: {missing}"
@@ -1076,13 +1182,15 @@ def cmd_integrity_check(args: argparse.Namespace) -> None:
     # Summary
     print(json.dumps(results, indent=2))
     if results["errors"]:
-        print(f"\n{fail(f'{len(results["errors"])} error(s) found')}")
+        n_err = len(results["errors"])
+        print(f"\n{fail(f'{n_err} error(s) found')}")
         sys.exit(1)
     elif results["schemas"]:
         missing = expected_schemas - set(results["schemas"].keys())
         if missing:
             results["warnings"].extend(f"Missing schema: {m}" for m in missing)
-            print(f"\n{warn(f'{len(missing)} schema(s) missing')}")
+            n_err = len(missing)
+            print(f"\n{warn(f'{n_err} schema(s) missing')}")
         else:
             print(f"\n{ok('All 8 schemas valid and storage_governance.py functional')}")
         sys.exit(0 if not results["warnings"] else 0)
@@ -1104,19 +1212,19 @@ def check_gate(gate_name: str, state: dict, required: bool = True) -> bool:
         return False
     return status == "passed"
 
+
 def require_gate(gate_name: str, state: dict) -> None:
     """Require a gate to be passed or die."""
     if not check_gate(gate_name, state):
         print(f"\n{fail('Cannot proceed: required gate not passed.')}")
         sys.exit(1)
 
+
 def get_gate_status_summary(state: dict) -> list[tuple[str, str]]:
     """Return list of (gate_name, status) tuples."""
     gates = state.get("gates", {})
-    return [
-        (name, gate.get("status", "pending"))
-        for name, gate in gates.items()
-    ]
+    return [(name, gate.get("status", "pending")) for name, gate in gates.items()]
+
 
 def print_gate_status(state: dict) -> None:
     """Print a colored gate status table."""
@@ -1141,7 +1249,8 @@ def print_gate_status(state: dict) -> None:
 
 # ── Short-Loop Tests ─────────────────────────────────────────────────────────
 
-def run_smoke_test(primary_path: Path, config_path: Optional[Path] = None) -> dict:
+
+def run_smoke_test(primary_path: Path, config_path: Path | None = None) -> dict:
     """L0: Run real forward/backward pass on one batch."""
     print(step("Running L0 Smoke Test (forward + backward pass)..."))
 
@@ -1161,9 +1270,9 @@ def run_smoke_test(primary_path: Path, config_path: Optional[Path] = None) -> di
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L0 Smoke Test passed"))
+        print(ok("L0 Smoke Test passed"))
     else:
-        print(fail(f"L0 Smoke Test failed"))
+        print(fail("L0 Smoke Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1172,12 +1281,11 @@ def run_smoke_test(primary_path: Path, config_path: Optional[Path] = None) -> di
         "stdout": result.stdout,
         "stderr": result.stderr,
         "returncode": result.returncode,
-        "timestamp": now_iso()
+        "timestamp": now_iso(),
     }
 
 
-def run_overfit_test(primary_path: Path, config_path: Optional[Path] = None,
-                     steps: int = 100) -> dict:
+def run_overfit_test(primary_path: Path, config_path: Path | None = None, steps: int = 100) -> dict:
     """L1: Overfit a single batch to random labels."""
     print(step("Running L1 Overfit Test (memorize single batch)..."))
 
@@ -1196,9 +1304,9 @@ def run_overfit_test(primary_path: Path, config_path: Optional[Path] = None,
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L1 Overfit Test passed"))
+        print(ok("L1 Overfit Test passed"))
     else:
-        print(fail(f"L1 Overfit Test failed"))
+        print(fail("L1 Overfit Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1207,12 +1315,13 @@ def run_overfit_test(primary_path: Path, config_path: Optional[Path] = None,
         "stdout": result.stdout,
         "stderr": result.stderr,
         "returncode": result.returncode,
-        "timestamp": now_iso()
+        "timestamp": now_iso(),
     }
 
 
-def run_mini_loop_test(primary_path: Path, config_path: Optional[Path] = None,
-                       epochs: int = 3) -> dict:
+def run_mini_loop_test(
+    primary_path: Path, config_path: Path | None = None, epochs: int = 3
+) -> dict:
     """L2: Run end-to-end loop on mini dataset."""
     print(step(f"Running L2 Mini-Loop Test ({epochs} epochs)..."))
 
@@ -1231,9 +1340,9 @@ def run_mini_loop_test(primary_path: Path, config_path: Optional[Path] = None,
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L2 Mini-Loop Test passed"))
+        print(ok("L2 Mini-Loop Test passed"))
     else:
-        print(fail(f"L2 Mini-Loop Test failed"))
+        print(fail("L2 Mini-Loop Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1242,17 +1351,17 @@ def run_mini_loop_test(primary_path: Path, config_path: Optional[Path] = None,
         "stdout": result.stdout,
         "stderr": result.stderr,
         "returncode": result.returncode,
-        "timestamp": now_iso()
+        "timestamp": now_iso(),
     }
 
 
-def run_checkpoint_resume_test(primary_path: Path, config_path: Optional[Path] = None) -> dict:
+def run_checkpoint_resume_test(primary_path: Path, config_path: Path | None = None) -> dict:
     """L3: Verify checkpoint save/load produces identical results."""
     print(step("Running L3 Checkpoint Resume Test..."))
 
     resume_script = SCRIPTS_DIR / "checkpoint_resume_test.py"
     if not resume_script.exists():
-        print(warn(f"checkpoint_resume_test.py not found, skipping"))
+        print(warn("checkpoint_resume_test.py not found, skipping"))
         return {"status": "skipped", "reason": "checkpoint_resume_test.py not found"}
 
     cmd = [sys.executable, str(resume_script)]
@@ -1265,9 +1374,9 @@ def run_checkpoint_resume_test(primary_path: Path, config_path: Optional[Path] =
     status = "passed" if passed else "failed"
 
     if passed:
-        print(ok(f"L3 Checkpoint Resume Test passed"))
+        print(ok("L3 Checkpoint Resume Test passed"))
     else:
-        print(fail(f"L3 Checkpoint Resume Test failed"))
+        print(fail("L3 Checkpoint Resume Test failed"))
         print(result.stdout)
         print(result.stderr)
 
@@ -1276,11 +1385,12 @@ def run_checkpoint_resume_test(primary_path: Path, config_path: Optional[Path] =
         "stdout": result.stdout,
         "stderr": result.stderr,
         "returncode": result.returncode,
-        "timestamp": now_iso()
+        "timestamp": now_iso(),
     }
 
 
 # ── Launch ────────────────────────────────────────────────────────────────────
+
 
 def can_launch(mode: str = "strict_repro") -> bool:
     """Check if full training can be launched for the given mode."""
@@ -1311,9 +1421,14 @@ def can_launch(mode: str = "strict_repro") -> bool:
     return all_ok
 
 
-def launch_training(run_id: str, mode: str, seed: int, epochs: int,
-                    config_override: Optional[str] = None,
-                    extra_args: Optional[list[str]] = None) -> None:
+def launch_training(
+    run_id: str,
+    mode: str,
+    seed: int,
+    epochs: int,
+    config_override: str | None = None,
+    extra_args: list[str] | None = None,
+) -> None:
     """Launch full training with gate enforcement."""
 
     state = load_state()
@@ -1379,15 +1494,14 @@ def launch_training(run_id: str, mode: str, seed: int, epochs: int,
         "working_dir": str(primary_path),
         "phase": "training",
         "status": "running",
-        "run_dir": str(run_dir)
+        "run_dir": str(run_dir),
     }
 
     # Save environment snapshot
     env_file = run_dir / "artifacts" / "environment.txt"
     env_file.parent.mkdir(exist_ok=True)
     env_result = subprocess.run(
-        [sys.executable, "-m", "torch.utils.collect_env"],
-        capture_output=True, text=True
+        [sys.executable, "-m", "torch.utils.collect_env"], capture_output=True, text=True
     )
     with open(env_file, "w") as f:
         f.write(env_result.stdout)
@@ -1415,11 +1529,7 @@ def launch_training(run_id: str, mode: str, seed: int, epochs: int,
     log_file = run_dir / "logs" / "train.log"
     with open(log_file, "w") as log:
         proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            cwd=str(primary_path)
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=str(primary_path)
         )
         for line in proc.stdout:
             log.write(line)
@@ -1447,7 +1557,7 @@ def launch_training(run_id: str, mode: str, seed: int, epochs: int,
     sys.exit(exit_code)
 
 
-def _find_train_script(repo_path: Path) -> Optional[Path]:
+def _find_train_script(repo_path: Path) -> Path | None:
     """Find the training script in the repository."""
     candidates = [
         repo_path / "train.py",
@@ -1460,6 +1570,7 @@ def _find_train_script(repo_path: Path) -> Optional[Path]:
             return p
     return None
 
+
 def _get_git_commit(path: Path) -> str:
     try:
         return subprocess.check_output(
@@ -1468,11 +1579,11 @@ def _get_git_commit(path: Path) -> str:
     except subprocess.CalledProcessError:
         return "unknown"
 
+
 def _get_git_branch(path: Path) -> str:
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            stderr=subprocess.DEVNULL, text=True
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.DEVNULL, text=True
         ).strip()
     except subprocess.CalledProcessError:
         return "unknown"
@@ -1480,7 +1591,8 @@ def _get_git_branch(path: Path) -> str:
 
 # ── Metric Verification ──────────────────────────────────────────────────────
 
-def verify_metrics(run_id: Optional[str] = None) -> dict:
+
+def verify_metrics(run_id: str | None = None) -> dict:
     """Verify that metrics can be reproduced from checkpoints."""
     state = load_state()
 
@@ -1520,14 +1632,16 @@ def verify_metrics(run_id: Optional[str] = None) -> dict:
         has_raw_metrics = len(metrics_files) > 0
 
         # For now, just record what we found
-        results.append({
-            "run_id": rid,
-            "status": "verified",
-            "checkpoints_found": len(checkpoints),
-            "metrics_found": len(metrics_files),
-            "has_raw_metrics": has_raw_metrics,
-            "timestamp": now_iso()
-        })
+        results.append(
+            {
+                "run_id": rid,
+                "status": "verified",
+                "checkpoints_found": len(checkpoints),
+                "metrics_found": len(metrics_files),
+                "has_raw_metrics": has_raw_metrics,
+                "timestamp": now_iso(),
+            }
+        )
 
         print(f"    Checkpoints: {len(checkpoints)}")
         print(f"    Raw metrics: {'yes' if has_raw_metrics else 'no'}")
@@ -1537,6 +1651,7 @@ def verify_metrics(run_id: Optional[str] = None) -> dict:
 
 
 # ── Commands ─────────────────────────────────────────────────────────────────
+
 
 def cmd_init(args: argparse.Namespace) -> None:
     """Initialize a new reproduction project."""
@@ -1555,7 +1670,7 @@ def cmd_init(args: argparse.Namespace) -> None:
     print(ok(f"Initialized at {REPRO_DIR}"))
     print(f"  Paper URL: {state['paper_url'] or '(none set)'}")
     print(f"  Target:    {state['target_metrics'] or '(none set)'}")
-    print(f"\n  Next: Run '/repro-discover' to find candidate repositories.")
+    print("\n  Next: Run '/repro-discover' to find candidate repositories.")
 
 
 def cmd_status(args: argparse.Namespace) -> None:
@@ -1567,10 +1682,16 @@ def cmd_status(args: argparse.Namespace) -> None:
     if runs:
         print(f"\n  Runs: {len(runs)}")
         for r in runs[-3:]:
-            status_str = ok(r.get("status", "unknown")) if r.get("status") == "success" \
-                else fail(r.get("status", "unknown")) if r.get("status") == "failed" \
+            status_str = (
+                ok(r.get("status", "unknown"))
+                if r.get("status") == "success"
+                else fail(r.get("status", "unknown"))
+                if r.get("status") == "failed"
                 else warn(r.get("status", "unknown"))
-            print(f"    {status_str}  {r.get('run_id', '?')}  mode={r.get('mode')}  seed={r.get('seed')}")
+            )
+            print(
+                f"    {status_str}  {r.get('run_id', '?')}  mode={r.get('mode')}  seed={r.get('seed')}"
+            )
 
 
 def cmd_can_launch(args: argparse.Namespace) -> None:
@@ -1588,7 +1709,7 @@ def cmd_launch(args: argparse.Namespace) -> None:
         seed=args.seed,
         epochs=args.epochs,
         config_override=args.config,
-        extra_args=args.extra
+        extra_args=args.extra,
     )
 
 
@@ -1596,7 +1717,9 @@ def cmd_run_short_loop(args: argparse.Namespace) -> None:
     """Run short-loop validation tests."""
     state = load_state()
 
-    primary_path = Path(state.get("repositories", {}).get("primary", {}).get("local_path", "primary"))
+    primary_path = Path(
+        state.get("repositories", {}).get("primary", {}).get("local_path", "primary")
+    )
     if not primary_path.exists():
         die(f"Primary repository not found at: {primary_path}")
 
@@ -1613,7 +1736,9 @@ def cmd_run_short_loop(args: argparse.Namespace) -> None:
     if args.level in ("L0", "all", None):
         results["l0_smoke"] = run_smoke_test(primary_path, config_path)
     if args.level in ("L1", "all", None):
-        results["l1_overfit"] = run_overfit_test(primary_path, config_path, steps=args.overfit_steps)
+        results["l1_overfit"] = run_overfit_test(
+            primary_path, config_path, steps=args.overfit_steps
+        )
     if args.level in ("L2", "all", None):
         results["l2_mini_loop"] = run_mini_loop_test(primary_path, config_path, epochs=args.epochs)
     if args.level in ("L3", "all", None):
@@ -1624,9 +1749,7 @@ def cmd_run_short_loop(args: argparse.Namespace) -> None:
     none_failed = all(r.get("status") in ("passed", "skipped") for r in results.values() if r)
 
     gate_2 = state["gates"]["gate_2_short_loop"]
-    gate_2["details"] = {
-        k: v.get("status", "unknown") for k, v in results.items()
-    }
+    gate_2["details"] = {k: v.get("status", "unknown") for k, v in results.items()}
 
     if all_passed or none_failed:
         gate_2["status"] = "passed" if none_failed else "failed"
@@ -1683,7 +1806,9 @@ def cmd_report(args: argparse.Namespace) -> None:
         for r in runs:
             status = r.get("status", "unknown")
             sym = ok("✓") if status == "success" else fail("✗") if status == "failed" else warn("○")
-            print(f"  {sym} {r.get('run_id')}  mode={r.get('mode')}  seed={r.get('seed')}  epochs={r.get('epochs')}  phase={r.get('phase')}")
+            print(
+                f"  {sym} {r.get('run_id')}  mode={r.get('mode')}  seed={r.get('seed')}  epochs={r.get('epochs')}  phase={r.get('phase')}"
+            )
 
 
 def cmd_update_gate(args: argparse.Namespace) -> None:
@@ -1716,12 +1841,13 @@ def die(msg: str) -> None:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reproctl.py",
         description="Deep Learning Paper Reproduction Controller",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__
+        epilog=__doc__,
     )
 
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1736,13 +1862,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     # can-launch
     p_can = sub.add_parser("can-launch", help="Check if training can be launched")
-    p_can.add_argument("--mode", default="strict_repro",
-                       choices=["strict_repro", "optimized_repro_safe", "experimental_fast"])
+    p_can.add_argument(
+        "--mode",
+        default="strict_repro",
+        choices=["strict_repro", "optimized_repro_safe", "experimental_fast"],
+    )
 
     # launch
     p_launch = sub.add_parser("launch", help="Launch full training")
-    p_launch.add_argument("--mode", default="strict_repro",
-                         choices=["strict_repro", "optimized_repro_safe", "experimental_fast"])
+    p_launch.add_argument(
+        "--mode",
+        default="strict_repro",
+        choices=["strict_repro", "optimized_repro_safe", "experimental_fast"],
+    )
     p_launch.add_argument("--seed", type=int, default=42)
     p_launch.add_argument("--epochs", type=int, default=300)
     p_launch.add_argument("--config")
@@ -1772,7 +1904,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("help", help="Show this help message")
 
     # record-experiment
-    p_rec = sub.add_parser("record-experiment", help="Append a row to experiments/experiment_tracker.csv")
+    p_rec = sub.add_parser(
+        "record-experiment", help="Append a row to experiments/experiment_tracker.csv"
+    )
     p_rec.add_argument("experiment_id")
     p_rec.add_argument("module")
     p_rec.add_argument("status")
@@ -1816,11 +1950,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_hc.add_argument("--item", default="")
 
     # check-principles
-    p_cp = sub.add_parser("check-principles", help="Run the 5 highest principles against a JSON spec")
+    p_cp = sub.add_parser(
+        "check-principles", help="Run the 5 highest principles against a JSON spec"
+    )
     p_cp.add_argument("--spec-file", default="", help="path to JSON spec; stdin if absent")
 
     # integrity-check
     sub.add_parser("integrity-check", help="Verify schema files and core artifact integrity")
+
+    # watchdog — single-pass task / heartbeat inspection
+    p_wd = sub.add_parser(
+        "watchdog", help="Inspect running tasks and report heartbeat / log status"
+    )
+    p_wd.add_argument("--project", default="", help="project root path")
+    p_wd.add_argument("--once", action="store_true", help="single-pass inspection (default)")
 
     return parser
 
@@ -1859,8 +2002,12 @@ def main() -> None:
     cmd_fn = commands.get(args.command)
     if cmd_fn:
         cmd_fn(args)
-    else:
-        parser.print_help()
+        return
+    # Forward to startup CLI for unified commands (R3F-3)
+    if args.command in {"start", "doctor", "resume", "stop", "watchdog"}:
+        rc = _dispatch_startup_subcommand(args)
+        sys.exit(int(rc) if rc is not None else 0)
+    parser.print_help()
 
 
 if __name__ == "__main__":

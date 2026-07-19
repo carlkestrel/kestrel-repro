@@ -13,21 +13,17 @@ Each node executes:
  10. Mark VERIFIED or ROLLBACK
  11. Return to soak loop
 """
+
 from __future__ import annotations
 
 import hashlib
-import json
-import os
 import re
-import subprocess
 import sys
 import time
 import traceback
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from . import constants as _C
 from . import test_suites as _ts
@@ -36,8 +32,9 @@ from . import test_suites as _ts
 @dataclass
 class RepairNodeResult:
     """Result of executing one repair node."""
+
     bug_id: str
-    status: str         # VERIFIED | ROLLBACK | BLOCKED | EXHAUSTED
+    status: str  # VERIFIED | ROLLBACK | BLOCKED | EXHAUSTED
     repair_id: str
     fingerprint: str
     error_class: str
@@ -88,8 +85,9 @@ class RepairNode:
         self._plugin_root = project_root / ".cursor" / "plugins" / "local" / "dl-paper-repro"
         self._start_time = time.monotonic()
 
-    def run(self, max_retries: int = _C.DEFAULT_MAX_RETRIES_PER_BUG,
-            auto_repair_level: str = "safe") -> RepairNodeResult:
+    def run(
+        self, max_retries: int = _C.DEFAULT_MAX_RETRIES_PER_BUG, auto_repair_level: str = "safe"
+    ) -> RepairNodeResult:
         """Execute the full repair node pipeline."""
         result = RepairNodeResult(
             bug_id=self.bug_id,
@@ -155,15 +153,18 @@ class RepairNode:
 
             # Step 9: Run module test
             result.module_test_passed = self._run_module_test()
-            result.notes.append(f"Step 9: Module test {'PASSED' if result.module_test_passed else 'FAILED'}")
+            result.notes.append(
+                f"Step 9: Module test {'PASSED' if result.module_test_passed else 'FAILED'}"
+            )
 
             # Step 10: Run core CI
             result.core_ci_passed = self._run_core_ci()
-            result.notes.append(f"Step 10: Core CI {'PASSED' if result.core_ci_passed else 'FAILED'}")
+            result.notes.append(
+                f"Step 10: Core CI {'PASSED' if result.core_ci_passed else 'FAILED'}"
+            )
 
             # Step 11: Final verdict
-            all_pass = (target_passed == 3 and result.module_test_passed
-                        and result.core_ci_passed)
+            all_pass = target_passed == 3 and result.module_test_passed and result.core_ci_passed
             if all_pass:
                 result.status = "VERIFIED"
                 result.notes.append("VERIFIED — all checks passed")
@@ -182,16 +183,15 @@ class RepairNode:
 
     def _compute_fingerprint(self) -> str:
         """Stable hash of error type + location + key parameters."""
-        combined = (
-            self.failure_log[:2000] + "\n" + self.error_output[:2000]
-        )
+        combined = self.failure_log[:2000] + "\n" + self.error_output[:2000]
         # Extract error type and location
         type_match = re.search(
             r"(Error|Exception|AssertionError|CUDA|OOM|Timeout):\s*(\S+)",
             combined,
         )
         loc_match = re.search(
-            r'File "([^"]+)", line (\d+)', combined,
+            r'File "([^"]+)", line (\d+)',
+            combined,
         )
         type_str = type_match.group(2) if type_match else "unknown"
         loc_str = f"{loc_match.group(1)}:{loc_match.group(2)}" if loc_match else "unknown"
@@ -325,7 +325,7 @@ class RepairNode:
             f"import pytest\n\n\n"
             f"def test_{self.bug_id.lower()}():\n"
             f'    """Regression: {self.fingerprint[:16]}"""  \n'
-            f'    # TODO: write actual regression assertion\n'
+            f"    # TODO: write actual regression assertion\n"
             f'    assert True, "Regression placeholder"\n'
         )
         try:
@@ -339,8 +339,7 @@ class RepairNode:
         passed = 0
         for _ in range(runs):
             rc, _, _ = _ts._run_subprocess(
-                [sys.executable, "-m", "pytest", "tests/", "-q", "--tb=short",
-                 "-x"],
+                [sys.executable, "-m", "pytest", "tests/", "-q", "--tb=short", "-x"],
                 timeout_seconds=120,
                 cwd=str(self.project_root),
             )
@@ -351,9 +350,14 @@ class RepairNode:
     def _run_module_test(self) -> bool:
         """Run module-level tests (e.g., test_startup.py)."""
         rc, _, _ = _ts._run_subprocess(
-            [sys.executable, "-m", "pytest",
-             str(self._plugin_root / "tests" / "test_startup.py"),
-             "-q", "--tb=short"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                str(self._plugin_root / "tests" / "test_startup.py"),
+                "-q",
+                "--tb=short",
+            ],
             timeout_seconds=120,
             cwd=str(self.project_root),
         )
@@ -362,9 +366,14 @@ class RepairNode:
     def _run_core_ci(self) -> bool:
         """Run core CI on the affected module."""
         rc, _, _ = _ts._run_subprocess(
-            [sys.executable, "-m", "pytest",
-             str(self._plugin_root / "tests" / "test_startup.py"),
-             "-q", "--tb=short"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                str(self._plugin_root / "tests" / "test_startup.py"),
+                "-q",
+                "--tb=short",
+            ],
             timeout_seconds=180,
             cwd=str(self.project_root),
         )

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 import os
 import time
 import uuid
 from pathlib import Path
-from typing import Any
 
 try:
     import yaml
@@ -33,28 +31,97 @@ EXIT_STATES = {COMPLETE, BLOCKED, WAITING_APPROVAL, PAUSED, STOPPED}
 
 
 def load_plan(path: str | Path) -> dict:
-    plan_path = Path(path).resolve()
-    if not plan_path.exists():
-        raise FileNotFoundError(plan_path)
-    text = plan_path.read_text(encoding="utf-8")
-    if yaml is not None:
-        plan = yaml.safe_load(text)
-    else:
-        plan = json.loads(text)
-    if not isinstance(plan, dict):
-        raise ValueError("plan must be a mapping")
-    return plan
+    """R3F-4 + R3R-2: delegate to the canonical plan schema loader, with legacy
+    fallback.
+
+    The Controller expects a ``dict`` (legacy format) and uses:
+      - ``self.plan.get("mode")`` for mode override
+      - ``self.plan.get("mandatory_task_ids", [])`` for mandatory tasks
+      - ``task["retry_policy"]["max_retries"]`` for retry decisions
+
+    Behaviour:
+      1. Try canonical load first. If it succeeds, convert PlanSchema → dict
+         via ``to_runtime_dict()`` (R3R-2 fix: canonical plans previously raised
+         AttributeError because Controller accessed PlanSchema as a dict).
+      2. If canonical fails because the file is in legacy JSON / non-frontmatter
+         format, attempt ``migrate_legacy_plan`` and re-validate.
+      3. If migration also fails, raise ``ValueError`` listing the validation
+         errors.
+    """
+    from pathlib import Path as _P
+
+    from startup.plan_schema import (
+        PlanSchema,
+        _dict_to_plan,
+        migrate_legacy_plan,
+        validate_plan,
+    )
+    from startup.plan_schema import (
+        load_plan as _canonical_load,
+    )
+
+    p = _P(path)
+    try:
+        result = _canonical_load(p)
+        # R3R-2: canonical load returns PlanSchema. Convert to dict for the
+        # Controller, which accesses self.plan via .get() and [].
+        if isinstance(result, PlanSchema):
+            return result.to_runtime_dict()
+        # Legacy fallback already returns a plain dict.
+        return result
+    except SystemExit as exc:
+        # _canonical_load sys.exits with code 5 on validation/format errors.
+        # We catch it here and attempt legacy migration.
+        if exc.code != 5:
+            raise
+    except Exception:
+        # Any other error: re-raise; we only swallow the legacy-format case.
+        raise
+
+    # Legacy fallback: read raw, attempt migration, re-validate.
+    text = p.read_text(encoding="utf-8")
+    try:
+        import json as _json
+
+        legacy = _json.loads(text)
+    except Exception:
+        import yaml as _yaml
+
+        legacy = _yaml.safe_load(text)
+    if not isinstance(legacy, dict):
+        raise ValueError(f"plan must be a mapping; got {type(legacy).__name__}")
+    migrated = migrate_legacy_plan(legacy)
+    # Schema-level validation: enforce mode, schema_version, mode review,
+    # acceptance_tests (with non_evidentiary opt-out). Cycle and unknown-dep
+    # detection is the Controller's job — see ``scheduler.detect_cycles`` —
+    # so we filter those out here to keep responsibility split.
+    plan = _dict_to_plan(migrated, text.encode("utf-8"), loaded_from=p)
+    errors = [e for e in validate_plan(plan) if e.field != "tasks" or "circular" not in e.message]
+    errors = [e for e in errors if not (e.field == "deps" and "unknown task" in e.message)]
+    if errors:
+        raise ValueError(
+            "plan validation failed (legacy migration did not produce a valid plan): "
+            + "; ".join(str(e) for e in errors)
+        )
+    return migrated
 
 
 class Controller:
     """Persistent blocked-or-complete run loop over explicit task transitions."""
 
-    def __init__(self, *, project_root: str | Path, plan_path: str | Path,
-                 mode: str | None = None, automation: str = "safe-auto",
-                 policy_path: str | Path | None = None, resume: bool = False,
-                 poll_interval: float = 0.05,
-                 process_manager: ProcessManager | None = None,
-                 clear_control_state_on_resume: bool = True):
+    def __init__(
+        self,
+        *,
+        project_root: str | Path,
+        plan_path: str | Path,
+        mode: str | None = None,
+        automation: str = "safe-auto",
+        policy_path: str | Path | None = None,
+        resume: bool = False,
+        poll_interval: float = 0.05,
+        process_manager: ProcessManager | None = None,
+        clear_control_state_on_resume: bool = True,
+    ):
         self.project_root = Path(project_root).resolve()
         self.plan_path = Path(plan_path).resolve()
         self.plan = load_plan(self.plan_path)
@@ -81,9 +148,7 @@ class Controller:
         self.stop_hook = StopHook(self.project_root, self.store, self.journal)
         self.owner = f"controller-{os.getpid()}-{uuid.uuid4().hex[:8]}"
         self.poll_interval = max(0.01, poll_interval)
-        self.max_parallel = max(1, int(self.plan.get("budgets", {}).get(
-            "max_parallel_tasks", 4
-        )))
+        self.max_parallel = max(1, int(self.plan.get("budgets", {}).get("max_parallel_tasks", 4)))
         self.resume_requested = resume
         self.approval_wait_seconds = float(
             (self.plan.get("budgets") or {}).get("approval_wait_seconds", 30.0)
@@ -145,7 +210,9 @@ class Controller:
                 self._fail(task, "task timeout")
             elif code == 0:
                 self.store.transition(
-                    task["id"], "VERIFYING", expected="RUNNING",
+                    task["id"],
+                    "VERIFYING",
+                    expected="RUNNING",
                     fields={"pid": None, "finished_at": utc_now()},
                 )
             else:
@@ -157,14 +224,32 @@ class Controller:
         progressed = False
         for task in self.store.list_tasks({"VERIFYING"}):
             passed, detail = self.verifier.verify(task)
-            if passed:
+            if detail == "_NEEDS_WAIVER_":
+                # R3R-4: non_evidentiary tasks must not be auto-PASSED.
+                # Create approval BEFORE transitioning to WAITING_APPROVAL so the
+                # approval exists while the task is still in READY/APPROVED state
+                # (approval_gate.request() only works for those states; once
+                # VERIFYING or WAITING_APPROVAL, it returns "" without creating).
+                self.approvals.request(task, "non-evidentiary result needs human waiver")
                 self.store.transition(
-                    task["id"], "PASS", expected="VERIFYING",
+                    task["id"],
+                    "WAITING_APPROVAL",
+                    expected="VERIFYING",
+                    fields={"finished_at": utc_now()},
+                    event_type="WAIVER_REQUIRED",
+                )
+                progressed = True
+            elif passed:
+                self.store.transition(
+                    task["id"],
+                    "PASSED",
+                    expected="VERIFYING",
                     fields={"finished_at": utc_now(), "failure_reason": None},
                 )
+                progressed = True
             else:
                 self._fail(task, detail)
-            progressed = True
+                progressed = True
         return progressed
 
     def _fail(self, task: dict, reason: str) -> None:
@@ -172,15 +257,23 @@ class Controller:
         if current is None or current["status"] not in {"RUNNING", "VERIFYING"}:
             return
         failed = self.store.transition(
-            task["id"], "FAIL", expected=current["status"],
+            task["id"],
+            "FAILED",
+            expected=current["status"],
             fields={"pid": None, "finished_at": utc_now(), "failure_reason": reason},
         )
         retry = failed.get("retry_policy") or {}
         max_retries = int(retry.get("max_retries", 0))
+        # NOTE: using ``<=`` here matches the test expectations in the orchestrator
+        # test suite. With max_retries=1: attempts=1 -> 1 <= 1 -> schedules retry
+        # (attempts becomes 2); attempts=2 -> 2 <= 1 -> False (stop).
+        # See R3F-5 note in test_4 re: assertion update.
         if int(failed["attempts"]) <= max_retries:
             delay = float(retry.get("delay_seconds", retry.get("backoff_seconds", 0)))
             self.store.transition(
-                task["id"], "RETRY_WAIT", expected="FAIL",
+                task["id"],
+                "RETRY_WAIT",
+                expected="FAILED",
                 fields={"retry_at": time.time() + max(0.0, delay)},
                 event_type="TASK_RETRY_SCHEDULED",
             )
@@ -190,19 +283,35 @@ class Controller:
         progressed = False
         for task in candidates:
             decision, reason = self.policy.evaluate(task)
-            self.store.record_event("POLICY_DECISION", task["id"], {
-                "decision": decision, "reason": reason
-            })
+            self.store.record_event(
+                "POLICY_DECISION", task["id"], {"decision": decision, "reason": reason}
+            )
+            # R3F-5 fix: APPROVED tasks (from auto_approve_low_risk or a prior
+            # approval) bypass the REQUIRE_APPROVAL path and go straight to claim.
             if task["status"] == "APPROVED":
-                decision = "AUTO_EXECUTE"
+                decision = AUTO_EXECUTE
                 reason = f"{reason} (already approved)"
             if decision == REQUIRE_APPROVAL:
-                self.approvals.request(task, reason)
-                progressed = True
-                continue
+                # R3F-5: try auto-approve for low-risk gates.
+                if self.approvals.auto_approve_low_risk(task):
+                    refreshed = self.store.get_task(task["id"])
+                    if refreshed:
+                        task.update(refreshed)
+                    # If auto-approve worked, task is now APPROVED.  Fall through
+                    # to the claim/launch path below.
+                    if task["status"] == "APPROVED":
+                        decision = AUTO_EXECUTE
+                        reason = f"{reason} (auto-approved low-risk)"
+                else:
+                    # Still needs human approval — stay in WAITING_APPROVAL state.
+                    self.approvals.request(task, reason)
+                    progressed = True
+                    continue
             if decision == REJECT:
                 self.store.transition(
-                    task["id"], "REJECTED", expected={"READY", "APPROVED"},
+                    task["id"],
+                    "REJECTED",
+                    expected={"READY", "APPROVED"},
                     fields={"failure_reason": reason, "finished_at": utc_now()},
                     event_type="TASK_POLICY_REJECTED",
                 )
@@ -221,23 +330,21 @@ class Controller:
         return progressed
 
     def _terminal_result(self, tasks: list[dict], recovery: dict) -> dict | None:
-        if any(task["status"] in {"RUNNING", "VERIFYING", "READY", "APPROVED"}
-               for task in tasks):
+        if any(task["status"] in {"RUNNING", "VERIFYING", "READY", "APPROVED"} for task in tasks):
             self._waiting_since = None
             return None
         if any(task["status"] == "WAITING_APPROVAL" for task in tasks):
             approvals = self.store.pending_approvals()
             if not approvals:
-                return self._exit(BLOCKED, "waiting approval but no pending approval",
-                                  recovery)
+                return self._exit(BLOCKED, "waiting approval but no pending approval", recovery)
             # Stay in the loop briefly so the operator can decide; the loop's
             # default poll interval caps how long we wait.
             now = time.time()
             self._waiting_since = self._waiting_since or now
             if now - self._waiting_since >= self.approval_wait_seconds:
-                return self._exit(WAITING_APPROVAL,
-                                  ", ".join(a["approval_id"] for a in approvals),
-                                  recovery)
+                return self._exit(
+                    WAITING_APPROVAL, ", ".join(a["approval_id"] for a in approvals), recovery
+                )
             return None
         self._waiting_since = None
         if any(task["status"] == "RETRY_WAIT" for task in tasks):
@@ -245,8 +352,11 @@ class Controller:
         mandatory = set(self.plan.get("mandatory_task_ids", []))
         by_id = {task["id"]: task for task in tasks}
         missing = sorted(task_id for task_id in mandatory if task_id not in by_id)
-        failed_mandatory = sorted(task_id for task_id in mandatory
-                                  if task_id in by_id and by_id[task_id]["status"] != "PASS")
+        failed_mandatory = sorted(
+            task_id
+            for task_id in mandatory
+            if task_id in by_id and by_id[task_id]["status"] != "PASSED"
+        )
         final_failures = [task for task in tasks if task["status"] == "FAIL"]
         if missing or failed_mandatory or final_failures:
             reasons = []
@@ -260,13 +370,16 @@ class Controller:
         deadlock = self.scheduler.deadlock_reason()
         if deadlock:
             return self._exit(BLOCKED, deadlock, recovery)
-        if all(task["status"] in {"PASS", "REJECTED"} for task in tasks):
+        if all(task["status"] in {"PASSED", "REJECTED"} for task in tasks):
             return self._exit(COMPLETE, "all mandatory tasks passed", recovery)
         return self._exit(BLOCKED, "no executable tasks remain", recovery)
 
     def _wait_without_spinning(self, tasks: list[dict]) -> None:
-        retry_times = [task["retry_at"] for task in tasks
-                       if task["status"] == "RETRY_WAIT" and task.get("retry_at")]
+        retry_times = [
+            task["retry_at"]
+            for task in tasks
+            if task["status"] == "RETRY_WAIT" and task.get("retry_at")
+        ]
         delay = self.poll_interval
         if retry_times:
             delay = min(delay, max(0.01, min(retry_times) - time.time()))
@@ -275,10 +388,14 @@ class Controller:
     def _exit(self, status: str, reason: str, recovery: dict) -> dict:
         if status not in EXIT_STATES:
             raise ValueError(f"invalid controller exit state: {status}")
-        self.store.record_event("CONTROLLER_EXIT", payload={"status": status,
-                                                            "reason": reason})
+        self.store.record_event("CONTROLLER_EXIT", payload={"status": status, "reason": reason})
         snapshots = self.store.export_snapshots()
-        return {"status": status, "reason": reason,
-                "project_root": str(self.project_root), "recovery": recovery,
-                "snapshots": snapshots, "tasks": self.store.list_tasks(),
-                "pending_approvals": self.store.pending_approvals()}
+        return {
+            "status": status,
+            "reason": reason,
+            "project_root": str(self.project_root),
+            "recovery": recovery,
+            "snapshots": snapshots,
+            "tasks": self.store.list_tasks(),
+            "pending_approvals": self.store.pending_approvals(),
+        }

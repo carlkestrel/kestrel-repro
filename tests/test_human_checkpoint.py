@@ -1,5 +1,7 @@
 """Test the 12-item human checkpoint (P3_T02 surface)."""
-import sys, importlib.util
+
+import importlib.util
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -8,6 +10,7 @@ mod = importlib.util.module_from_spec(spec)
 sys.modules["reproctl"] = mod
 spec.loader.exec_module(mod)
 import os  # noqa: E402
+
 os.chdir(str(REPO))
 m = mod
 
@@ -48,7 +51,20 @@ def test_twelve_items_listed():
     """The 12-item list is exposed and non-empty."""
     assert len(m.HUMAN_CHECKPOINT_ITEMS) == 12
     items_text = " ".join(m.HUMAN_CHECKPOINT_ITEMS).lower()
-    for kw in ["synthesize","split","metric","oom","loss","batch","amp","checkpoint","cherry","extend","budget","cannot"]:
+    for kw in [
+        "synthesize",
+        "split",
+        "metric",
+        "oom",
+        "loss",
+        "batch",
+        "amp",
+        "checkpoint",
+        "cherry",
+        "extend",
+        "budget",
+        "cannot",
+    ]:
         assert kw in items_text, f"missing: {kw}"
 
 

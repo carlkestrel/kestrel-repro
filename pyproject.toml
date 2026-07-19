@@ -1,0 +1,215 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kestrel-repro"
+# R1 INVARIANT: this is the SINGLE SOURCE OF TRUTH for the version.
+# Mirrored in:
+#   - scripts/_version.py::__version__
+#   - .cursor-plugin/plugin.json -> "version"
+# tests/test_version_sync.py cross-checks all three locations at
+# test time, so a drift will break the suite on purpose.
+version = "0.2.0"
+description = "Evidence-driven deep learning paper reproduction and auditing system"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Research Automation"}
+]
+keywords = [
+    "deep-learning",
+    "paper-reproduction",
+    "benchmark",
+    "pytorch",
+    "point-cloud",
+    "reproducibility",
+    "evidence-chain"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+# R1 INVARIANT: core deps are minimal. PyTorch is OPTIONAL, not part
+# of the core install. Downstream consumers (R4 paper adapters) get
+# torch via the ``torch`` extra or a per-repo environment contract.
+dependencies = [
+    "pyyaml>=6.0",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# test only — used by `pip install -e .[test]` in CI / dev
+test = [
+    "pytest>=7.0",
+    "pytest-timeout>=2.0",
+    "numpy>=1.24",
+]
+# dev — full developer experience (lint + tests + coverage)
+dev = [
+    "pytest>=7.0",
+    "pytest-timeout>=2.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "numpy>=1.24",
+]
+# torch — PyTorch runtime, NOT a core dep
+torch = [
+    "torch>=2.0",
+    "numpy>=1.24",
+]
+# pointcloud — opens 3D specific deps (depends on torch)
+pointcloud = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "open3d>=0.17",
+    "numpy>=1.24",
+]
+# full — convenience for users who want everything
+full = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "open3d>=0.17",
+    "numpy>=1.24",
+]
+
+[project.scripts]
+# Public console entry point. Resolves to scripts/reproctl/__init__.py:main
+# which dispatches into scripts/reproctl.py. Version printed by
+# `reproctl version` is kept in lockstep with [project].version above.
+reproctl = "scripts.reproctl:main"
+
+[project.urls]
+Homepage = "https://github.com/research-automation/dl-paper-repro"
+
+# ── Setuptools configuration ────────────────────────────────────────────────
+#
+# R1 invariants:
+#  1. Packages are flatly discovered from the project root.
+#  2. tests/, docs/, audits/, ci_reports/ are EXCLUDED from install
+#     (they live in the repo, not in the wheel).
+#  3. package_data includes the runtime data files used by reproctl.
+#  4. data files live next to their packages (fixtures/, templates/,
+#     commands/, skills/, rules/, agents/) so that
+#     importlib.resources.files("scripts") works for upgrades.
+[tool.setuptools.packages.find]
+# R1 INVARIANT: only install the actual Python code. Data-only
+# directories (fixtures/, templates/, commands/, skills/, rules/,
+# agents/) are NOT Python packages; they are shipped as
+# package_data below so they can be located with
+# ``importlib.resources.files("scripts").parent / "fixtures"`` etc.
+where = ["."]
+include = ["scripts*"]
+exclude = [
+    "tests*", "tests.*",
+    "docs*", "docs.*",
+    "audits*", "audits.*",
+    "ci_reports*",
+    "github_prep*",
+    "primary*", "references*", "performance*", "tooling*",
+    "artifacts*",
+    "_reproctl_shim*",
+]
+
+[tool.setuptools.package-data]
+# Anything inside the installed package gets these extensions.
+"*" = ["*.yaml", "*.yml", "*.json", "*.csv", "*.md", "*.txt", "*.cff"]
+# Data directories that live next to the ``scripts`` package and
+# must be visible to ``importlib.resources`` for fixtures/templates/
+# skills resolution at runtime.
+"scripts" = [
+    "templates/*.md", "templates/*.csv", "templates/*.json",
+    "templates/*.yaml", "templates/*.yml",
+    "templates/**/*.md", "templates/**/*.csv",
+    "templates/**/*.json", "templates/**/*.yaml",
+    "templates/**/*.yml",
+    "fixtures/**/*.py", "fixtures/**/*.json",
+    "fixtures/**/*.yaml", "fixtures/**/*.yml",
+    "fixtures/**/*.md",
+]
+# Cursor plugin assets (commands/agents/skills/rules) are installed
+# next to scripts/ so importlib.resources.files("scripts").parent /
+# "commands" etc. resolves both in editable and wheel installs.
+"scripts.commands" = ["**/*.md"]
+"scripts.agents" = ["**/*.md"]
+"scripts.skills" = ["**/*.md"]
+"scripts.rules" = ["**/*.md", "**/*.mdc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = [
+    "E501",   # line-length handled by formatter
+    "B008",   # intentional default-arg side-effects in CLI helpers
+    "F841",   # unused local vars — add per-file ignore with reason
+    "W293",   # trailing whitespace on blank lines — formatter handles
+    "E402",   # module-level imports not at top — add per-file ignore with reason
+    "UP031",  # prefer format specifiers — f-strings are readable and Python 3.10+ compatible
+]
+[tool.ruff.lint.per-file-ignores]
+"scripts/ostar/*.py" = ["N812", "E402", "N806"]
+"scripts/ostar/soak_engine.py" = ["N812", "E402", "N806", "E701"]
+"scripts/ostar/soak_state.py" = ["N812", "E402", "N806"]
+"scripts/ostar/test_suites.py" = ["N812", "E402", "N806", "B007"]
+"scripts/ostar/exit_validator.py" = ["N812", "E402"]
+"scripts/ostar/guard.py" = ["N812", "E402"]
+"scripts/ostar/hardware_monitor.py" = ["N812", "E402"]
+"scripts/ostar/repair_node.py" = ["N812", "E402"]
+"scripts/ostar/reporter.py" = ["N812", "E402"]
+"scripts/ostar/cli.py" = ["N812", "N806", "E402", "I001"]
+"scripts/ostar/config.py" = ["N812", "E402", "F401"]
+"scripts/orchestrator/*.py" = ["N812", "E402"]
+"scripts/orchestrator/controller.py" = ["N812", "E402", "N814"]
+"scripts/orchestrator/event_journal.py" = ["E402", "B904"]
+"scripts/orchestrator/migrate.py" = ["E402", "N812"]
+"scripts/orchestrator/report_generator.py" = ["E402", "W291"]
+"scripts/repro_agent/**/*.py" = ["N812", "E402"]
+"scripts/repro_agent/metrics/*.py" = ["N812", "E402", "B007", "B905", "B006", "C401"]
+"scripts/reproctl.py" = ["N812", "E402", "N806", "E702"]
+"scripts/repro_perf_tuner.py" = ["N812", "E402", "B905"]
+"scripts/hardware_profile.py" = ["E402", "E741"]
+"scripts/startup/*.py" = ["N812", "N806", "N818", "E402", "B007"]
+"scripts/research_crawler.py" = ["E402", "B007"]
+"tests/*.py" = ["N812", "E402", "E702", "E712", "F811", "B011", "B904"]
+"scripts/cvo/**" = ["E402", "F401"]
+"scripts/cvo/runner.py" = ["B004"]
+"scripts/artifact_verify.py" = ["E701"]
+"scripts/autopilot.py" = ["E402"]
+"scripts/fixture_locator.py" = ["UP007"]
+"scripts/core/state_store.py" = ["N818"]
+"scripts/startup/migration.py" = ["F811"]
+"**/fixtures/**" = ["N802", "N812", "N806", "E701", "E702", "B007", "F401", "E741"]
+"scripts/repro_agent/__init__.py" = ["F401", "I001"]
+
+[tool.coverage.run]
+source = ["scripts"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+]

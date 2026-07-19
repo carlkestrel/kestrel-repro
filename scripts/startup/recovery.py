@@ -1,4 +1,5 @@
 """Resume: re-validate state, skip PASS tasks, claim the next READY."""
+
 from __future__ import annotations
 
 import json
@@ -6,7 +7,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import lock as _lock
 from . import state_machine as _sm
 
 EXIT_RESUME_FAILED = 8
@@ -36,8 +36,7 @@ def run(*, project_root: Path, plan_path: Path) -> dict:
     es_path = exec_dir / "execution_state.json"
 
     if not es_path.exists():
-        print("[startup] no execution state to resume from",
-              file=sys.stderr)
+        print("[startup] no execution state to resume from", file=sys.stderr)
         sys.exit(EXIT_RESUME_FAILED)
 
     try:
@@ -71,6 +70,7 @@ def run(*, project_root: Path, plan_path: Path) -> dict:
 
 
 def _completed_tasks(state: dict) -> set[str]:
-    return set((state.get("completed_tasks") or []) +
-               ([state["last_completed_task"]]
-                if state.get("last_completed_task") else []))
+    return set(
+        (state.get("completed_tasks") or [])
+        + ([state["last_completed_task"]] if state.get("last_completed_task") else [])
+    )

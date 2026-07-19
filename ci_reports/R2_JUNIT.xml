@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites name="kestrel-repro R2 acceptance" tests="31" failures="0" errors="0" skipped="0" time="0.130">
+  <testsuite name="test_r2_acceptance" tests="31" failures="0" errors="0" skipped="0" time="0.130">
+    <testcase name="test_valid_plan_passes" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_missing_acceptance_tests_rejected" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_empty_acceptance_tests_rejected" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_unknown_dep_rejected" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_circular_deps_rejected" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_illegal_execution_track_rejected" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_legacy_strict_repro_migrates" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_legacy_legacy_mode_map_strict_repro" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_legacy_experimental_fast" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_ambiguous_mode_needs_review" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_unknown_mode_needs_review" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_canonical_hash_stable" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_canonical_hash_independent_of_order" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_content_change_changes_hash" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_plan_hash_invalidation" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_action_not_in_grant_denied" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_action_in_grant_passes" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_write_outside_allowed_roots_denied" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_write_within_allowed_roots_passes" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_symlink_traversal_denied" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_expired_contract_denies" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_revoked_contract_denies" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_legacy_file_discovery" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_legacy_pass_migrates_to_legacy_unverified" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_migration_backup_created" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_state_conflict_detected" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_snapshot_is_export_only" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_human_cannot_set_passed_directly" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_waived_vs_passed_column_separation" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_transaction_rollback_no_half_migration" classname="test_r2_acceptance" time="0.001"/>
+    <testcase name="test_post_recovery_hash_and_auth_consistent" classname="test_r2_acceptance" time="0.001"/>
+  </testsuite>
+</testsuites>

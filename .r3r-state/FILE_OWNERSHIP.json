@@ -1,0 +1,137 @@
+{
+  "version": "1.2",
+  "schema_date": "2026-07-19",
+  "policy": "Lead agent owns exclusive write access to orchestrator source. Subagents are explicitly allowed to write only the files listed below. Lead agent audits and merges subagent patches before commit.",
+
+  "agent_files": {
+    "lead_agent": {
+      "id": "lead-agent-current",
+      "role": "Lead / Orchestrator",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/**"
+      ],
+      "readable_paths": ["**/*"],
+      "exclusive_writes": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.r3r-state/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/scripts/orchestrator/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/R3_*.xml",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/R3_*.json"
+      ],
+      "approval_for_write": {
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.execution/state.sqlite3": "NEVER_DIRECT (managed by StateStore)",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/artifacts/runs/**/checkpoints/**": "NEVER_DIRECT (managed by EvidenceManager)",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.git/**": "git-only"
+      }
+    },
+
+    "subagent_data_metric_auditor": {
+      "id": "subagent-data-metric-auditor",
+      "role": "Audit data contracts and metric protocols",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/audit_data_*.md",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/audit_metric_*.md"
+      ],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=data-metric-auditor)",
+      "deliverable_format": "Markdown audit report returned to Lead agent via Task output"
+    },
+
+    "subagent_runtime_optimizer": {
+      "id": "subagent-runtime-optimizer",
+      "role": "Profile runtime, suggest optimizations",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/performance/optimization_*.md"
+      ],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=runtime-optimizer)",
+      "deliverable_format": "Markdown recommendation report returned to Lead agent"
+    },
+
+    "subagent_evidence_verifier": {
+      "id": "subagent-evidence-verifier",
+      "role": "Verify evidence chain completeness",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/artifacts/verification_*.json"
+      ],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=evidence-verifier)",
+      "deliverable_format": "JSON verification report returned to Lead agent"
+    },
+
+    "subagent_repo_scout": {
+      "id": "subagent-repo-scout",
+      "role": "Discover candidate repositories for a paper",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/candidate_repositories.csv"
+      ],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=repo-scout)",
+      "deliverable_format": "CSV candidate list + Markdown summary returned to Lead agent"
+    },
+
+    "subagent_hardware_fit_auditor": {
+      "id": "subagent-hardware-fit-auditor",
+      "role": "Match repository requirements to local hardware",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/hardware_fit_report.md"
+      ],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=hardware-fit-auditor)",
+      "deliverable_format": "Markdown hardware fit report"
+    },
+
+    "subagent_explore": {
+      "id": "subagent-explore",
+      "role": "Quick read-only codebase exploration",
+      "writable_paths": [],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=explore)",
+      "deliverable_format": "Verbatim answer returned to Lead agent"
+    },
+
+    "subagent_general_purpose": {
+      "id": "subagent-general-purpose",
+      "role": "General-purpose agent for any task the Lead cannot do directly",
+      "writable_paths": [
+        "/tmp/kestrel-r3r-subagent-*.md"
+      ],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=generalPurpose)",
+      "deliverable_format": "Free-form; Lead agent parses and decides what to keep"
+    },
+
+    "subagent_bugbot": {
+      "id": "subagent-bugbot",
+      "role": "Bugbot review of changes",
+      "writable_paths": [],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=bugbot)",
+      "deliverable_format": "Bugbot review report returned to Lead agent"
+    },
+
+    "subagent_security_review": {
+      "id": "subagent-security-review",
+      "role": "Security review",
+      "writable_paths": [],
+      "readable_paths": ["**/*"],
+      "invocation_mode": "Task tool (subagent_type=security-review)",
+      "deliverable_format": "Security review report returned to Lead agent"
+    }
+  },
+
+  "lock_rules": [
+    "Lead agent holds exclusive write lock on scripts/orchestrator/**",
+    "Subagents do NOT modify scripts/orchestrator/** — they propose patches via reports",
+    "User owns .git/, push operations",
+    ".execution/state.sqlite3 is exclusively StateStore-managed (no agent writes)",
+    "artifacts/runs/<run_id>/checkpoints/** is exclusively EvidenceManager-managed (no agent writes)"
+  ],
+
+  "handoff_protocol": {
+    "subagent_to_lead": "Subagent output returned directly via Task tool response",
+    "lead_to_subagent": "Lead agent constructs Task tool call with detailed prompt",
+    "lead_to_user": "Lead posts structured STATUS_REPORT.md or DECISION_PROPOSAL.md in main conversation",
+    "user_to_lead": "USER_DECISIONS.md appended decisions, read on next cycle",
+    "parallel_execution": "Lead can invoke multiple Task calls in single message for parallel subagent execution"
+  }
+}

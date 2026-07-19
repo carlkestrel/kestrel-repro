@@ -7,6 +7,7 @@ This module implements NORA's auto-review-loop adapted for paper reproduction:
 - Failure analysis and fix suggestions
 - Automatic progression or stop on repeated failures
 """
+
 from __future__ import annotations
 
 import json
@@ -16,10 +17,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .state_store import StateStore
 from .event_journal import EventJournal
+from .state_store import StateStore
 from .verifier import Verifier
-from .task_executor import TaskExecutor
 
 
 def utc_now() -> str:
@@ -29,6 +29,7 @@ def utc_now() -> str:
 @dataclass
 class ReviewResult:
     """Result of a review iteration."""
+
     iteration: int
     status: str  # "pass", "fail", "block"
     verdict: str  # "GO", "PIVOT", "NO-GO"
@@ -42,6 +43,7 @@ class ReviewResult:
 @dataclass
 class ReviewLoopConfig:
     """Configuration for the review loop."""
+
     max_iterations: int = 3
     auto_stop_on_fail: bool = True
     block_on_repeated_fail: bool = True
@@ -69,11 +71,14 @@ class ReviewLoop:
     - NO-GO: Reproduction failed, stop further attempts
     """
 
-    def __init__(self, project_root: str | Path,
-                 state_store: StateStore,
-                 event_journal: EventJournal | None = None,
-                 verifier: Verifier | None = None,
-                 config: ReviewLoopConfig | None = None):
+    def __init__(
+        self,
+        project_root: str | Path,
+        state_store: StateStore,
+        event_journal: EventJournal | None = None,
+        verifier: Verifier | None = None,
+        config: ReviewLoopConfig | None = None,
+    ):
         self.project_root = Path(project_root).resolve()
         self.state_store = state_store
         self.event_journal = event_journal
@@ -119,7 +124,7 @@ class ReviewLoop:
                     "verdict": result.verdict,
                     "failures": result.failures,
                     "suggestions": result.suggestions,
-                }
+                },
             )
 
             if result.verdict == "GO":
@@ -131,7 +136,10 @@ class ReviewLoop:
             if result.status == "block":
                 break
 
-            if self.config.auto_stop_on_fail and self._consecutive_fails >= self.config.consecutive_fail_threshold:
+            if (
+                self.config.auto_stop_on_fail
+                and self._consecutive_fails >= self.config.consecutive_fail_threshold
+            ):
                 result.verdict = "NO-GO"
                 result.suggestions.append(
                     f"Stopped after {self._consecutive_fails} consecutive failures"
@@ -142,10 +150,13 @@ class ReviewLoop:
 
         return self._aggregate_results()
 
-    def _review_iteration(self, iteration: int,
-                          task_ids: list[str],
-                          required_metrics: dict[str, float],
-                          evidence_patterns: list[str]) -> ReviewResult:
+    def _review_iteration(
+        self,
+        iteration: int,
+        task_ids: list[str],
+        required_metrics: dict[str, float],
+        evidence_patterns: list[str],
+    ) -> ReviewResult:
         """Execute a single review iteration."""
         evidence = self._collect_evidence(task_ids)
         failures = self._analyze_failures(evidence, required_metrics, evidence_patterns)
@@ -206,48 +217,60 @@ class ReviewLoop:
         evidence["pass_rate"] = self._calculate_pass_rate(evidence["tasks"])
         return evidence
 
-    def _analyze_failures(self, evidence: dict[str, Any],
-                          required_metrics: dict[str, float],
-                          evidence_patterns: list[str]) -> list[dict[str, Any]]:
+    def _analyze_failures(
+        self,
+        evidence: dict[str, Any],
+        required_metrics: dict[str, float],
+        evidence_patterns: list[str],
+    ) -> list[dict[str, Any]]:
         """Analyze failures and missing evidence."""
         failures: list[dict[str, Any]] = []
 
         failed_tasks = [t for t in evidence.get("tasks", []) if not t.get("passed")]
         for task in failed_tasks:
-            failures.append({
-                "type": "task_failure",
-                "task_id": task["task_id"],
-                "reason": task.get("failure_reason", "unknown"),
-            })
+            failures.append(
+                {
+                    "type": "task_failure",
+                    "task_id": task["task_id"],
+                    "reason": task.get("failure_reason", "unknown"),
+                }
+            )
 
         if required_metrics:
             for metric_name, threshold in required_metrics.items():
                 actual = evidence.get("metrics", {}).get(metric_name)
                 if actual is None:
-                    failures.append({
-                        "type": "missing_metric",
-                        "metric": metric_name,
-                        "required": threshold,
-                    })
+                    failures.append(
+                        {
+                            "type": "missing_metric",
+                            "metric": metric_name,
+                            "required": threshold,
+                        }
+                    )
                 elif actual < threshold:
-                    failures.append({
-                        "type": "metric_below_threshold",
-                        "metric": metric_name,
-                        "actual": actual,
-                        "required": threshold,
-                    })
+                    failures.append(
+                        {
+                            "type": "metric_below_threshold",
+                            "metric": metric_name,
+                            "actual": actual,
+                            "required": threshold,
+                        }
+                    )
 
         for pattern in evidence_patterns:
             if not self._pattern_exists(evidence, pattern):
-                failures.append({
-                    "type": "missing_evidence",
-                    "pattern": pattern,
-                })
+                failures.append(
+                    {
+                        "type": "missing_evidence",
+                        "pattern": pattern,
+                    }
+                )
 
         return failures
 
-    def _generate_suggestions(self, failures: list[dict[str, Any]],
-                              evidence: dict[str, Any]) -> list[str]:
+    def _generate_suggestions(
+        self, failures: list[dict[str, Any]], evidence: dict[str, Any]
+    ) -> list[str]:
         """Generate fix suggestions based on failures."""
         suggestions: list[str] = []
 
@@ -266,14 +289,10 @@ class ReviewLoop:
                     f"current={failure['actual']:.4f}, required={failure['required']:.4f}"
                 )
             elif failure["type"] == "missing_evidence":
-                suggestions.append(
-                    f"Generate evidence matching pattern: {failure['pattern']}"
-                )
+                suggestions.append(f"Generate evidence matching pattern: {failure['pattern']}")
 
         if evidence.get("pass_rate", 0) < 0.8:
-            suggestions.append(
-                f"Pass rate {evidence['pass_rate']:.1%} below 80% threshold"
-            )
+            suggestions.append(f"Pass rate {evidence['pass_rate']:.1%} below 80% threshold")
 
         return suggestions
 
@@ -291,8 +310,7 @@ class ReviewLoop:
 
         return metrics
 
-    def _should_pivot(self, failures: list[dict[str, Any]],
-                      evidence: dict[str, Any]) -> bool:
+    def _should_pivot(self, failures: list[dict[str, Any]], evidence: dict[str, Any]) -> bool:
         """Determine if strategy should pivot based on failure patterns."""
         failure_types = [f["type"] for f in failures]
 

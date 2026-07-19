@@ -10,6 +10,7 @@ Produces:
   - soak/reports/unresolved_issues.md
   - soak/reports/final_gate.json
 """
+
 from __future__ import annotations
 
 import csv
@@ -17,16 +18,15 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from . import constants as _C
 from . import exit_validator
 from . import soak_state as _state
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Data containers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class OvernightSummary:
@@ -101,6 +101,7 @@ _VERDICT_EXPLANATIONS = {
 # Markdown report
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def generate_markdown_report(summary: OvernightSummary) -> str:
     """Generate the overnight_summary.md report."""
     hours = summary.duration_seconds / 3600
@@ -112,18 +113,18 @@ def generate_markdown_report(summary: OvernightSummary) -> str:
     ci_bar = "█" * int(ci_pct / 5) + "░" * (20 - int(ci_pct / 5))
 
     lines = [
-        f"# Overnight Soak Test Report",
-        f"",
+        "# Overnight Soak Test Report",
+        "",
         f"**Run ID**: `{summary.run_id}`",
         f"**Verdict**: {verdict_badge}",
         f"**Started**: {summary.started_at}",
         f"**Ended**: {summary.ended_at}",
         f"**Duration**: {hours:.1f}h {minutes:.0f}m ({summary.duration_seconds:.0f}s)",
-        f"",
-        f"## Executive Summary",
-        f"",
-        f"| Metric | Value |",
-        f"|---|---|",
+        "",
+        "## Executive Summary",
+        "",
+        "| Metric | Value |",
+        "|---|---|",
         f"| Cycles Completed | {summary.cycles_completed} |",
         f"| CI Success Rate | {ci_pct:.1f}% `{ci_bar}` |",
         f"| Bugs Found | {summary.bugs_found} |",
@@ -137,53 +138,59 @@ def generate_markdown_report(summary: OvernightSummary) -> str:
         f"| Min Disk Free | {summary.min_disk_free_gb:.1f} GB |",
         f"| GPU Memory Leak | {'YES' if summary.gpu_memory_leak else 'NO'} |",
         f"| CPU Memory Leak | {'YES' if summary.cpu_memory_leak else 'NO'} |",
-        f"",
-        f"## Startup Readiness",
-        f"",
+        "",
+        "## Startup Readiness",
+        "",
         f"**FAST mode**: {'✅ CAN START' if summary.fast_can_start else '❌ BLOCKED'}",
         f"**STRICT mode**: {'✅ CAN START' if summary.strict_can_start else '❌ BLOCKED'}",
-        f"",
+        "",
     ]
 
     if summary.unresolved_issues:
-        lines.extend([
-            f"## Unresolved Issues ({len(summary.unresolved_issues)})",
-            f"",
-        ])
+        lines.extend(
+            [
+                f"## Unresolved Issues ({len(summary.unresolved_issues)})",
+                "",
+            ]
+        )
         for issue in summary.unresolved_issues:
             severity = issue.get("severity", "?").upper()
             lines.append(
-                f"- **[{severity}]** `{issue.get('bug_id', '?')}` — "
-                f"{issue.get('description', '?')}"
+                f"- **[{severity}]** `{issue.get('bug_id', '?')}` — {issue.get('description', '?')}"
             )
 
     if summary.flaky_tests:
-        lines.extend([
-            f"## Flaky Tests ({len(summary.flaky_tests)})",
-            f"",
-        ])
+        lines.extend(
+            [
+                f"## Flaky Tests ({len(summary.flaky_tests)})",
+                "",
+            ]
+        )
         for fl in summary.flaky_tests:
             lines.append(
                 f"- `{fl.get('suite', '?')}` — {fl.get('description', '?')} "
                 f"(flaky rate: {fl.get('rate', '?')}%)"
             )
 
-    lines.extend([
-        f"",
-        f"## Verdict Explanation",
-        f"",
-        f"```",
-        _VERDICT_EXPLANATIONS.get(summary.verdict, f"Unknown: {summary.verdict}"),
-        f"```",
-        f"",
-        f"---\n*Generated: {datetime.now(timezone.utc).isoformat()} UTC*",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Verdict Explanation",
+            "",
+            "```",
+            _VERDICT_EXPLANATIONS.get(summary.verdict, f"Unknown: {summary.verdict}"),
+            "```",
+            "",
+            f"---\n*Generated: {datetime.now(timezone.utc).isoformat()} UTC*",
+        ]
+    )
     return "\n".join(lines)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HTML report
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _badge_html(kind: str, text: str) -> str:
     return f'<span class="badge-{kind}">{text}</span>'
@@ -194,10 +201,14 @@ def generate_html_report(summary: OvernightSummary) -> str:
     verdict_color = _VERDICT_COLORS.get(summary.verdict, "#888888")
     hours = summary.duration_seconds / 3600
     ci_pct = summary.ci_success_rate
-    fast_badge = _badge_html("ok" if summary.fast_can_start else "fail",
-                             "CAN START" if summary.fast_can_start else "BLOCKED")
-    strict_badge = _badge_html("ok" if summary.strict_can_start else "fail",
-                                "CAN START" if summary.strict_can_start else "BLOCKED")
+    fast_badge = _badge_html(
+        "ok" if summary.fast_can_start else "fail",
+        "CAN START" if summary.fast_can_start else "BLOCKED",
+    )
+    strict_badge = _badge_html(
+        "ok" if summary.strict_can_start else "fail",
+        "CAN START" if summary.strict_can_start else "BLOCKED",
+    )
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -271,8 +282,8 @@ def generate_html_report(summary: OvernightSummary) -> str:
         html += f"<h2>Unresolved Issues ({len(summary.unresolved_issues)})</h2>\n<ul>\n"
         for issue in summary.unresolved_issues:
             html += (
-                f"<li><strong>[{issue.get('severity','?').upper()}]</strong> "
-                f"{issue.get('description','?')}</li>\n"
+                f"<li><strong>[{issue.get('severity', '?').upper()}]</strong> "
+                f"{issue.get('description', '?')}</li>\n"
             )
         html += "</ul>\n"
 
@@ -289,65 +300,93 @@ def generate_html_report(summary: OvernightSummary) -> str:
 # CSV reports
 # ─────────────────────────────────────────────────────────────────────────────
 
-def generate_failure_timeline_csv(cycles: list[dict], bugs: list[dict],
-                                  output_path: Path) -> None:
+
+def generate_failure_timeline_csv(cycles: list[dict], bugs: list[dict], output_path: Path) -> None:
     """Write failure_timeline.csv."""
-    fieldnames = ["timestamp", "cycle_seq", "event", "bug_id", "error_class",
-                  "consecutive_failures", "description"]
+    fieldnames = [
+        "timestamp",
+        "cycle_seq",
+        "event",
+        "bug_id",
+        "error_class",
+        "consecutive_failures",
+        "description",
+    ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for cyc in cycles:
-            writer.writerow({
-                "timestamp": cyc.get("ended_at", ""),
-                "cycle_seq": cyc.get("sequence", ""),
-                "event": f"cycle_{cyc.get('status', '').lower()}",
-                "bug_id": "",
-                "error_class": "",
-                "consecutive_failures": "",
-                "description": cyc.get("exit_reason", ""),
-            })
+            writer.writerow(
+                {
+                    "timestamp": cyc.get("ended_at", ""),
+                    "cycle_seq": cyc.get("sequence", ""),
+                    "event": f"cycle_{cyc.get('status', '').lower()}",
+                    "bug_id": "",
+                    "error_class": "",
+                    "consecutive_failures": "",
+                    "description": cyc.get("exit_reason", ""),
+                }
+            )
         for bug in bugs:
-            writer.writerow({
-                "timestamp": bug.get("last_seen_at", ""),
-                "cycle_seq": "",
-                "event": "bug_detected",
-                "bug_id": bug.get("bug_id", ""),
-                "error_class": bug.get("error_class", ""),
-                "consecutive_failures": bug.get("consecutive_failures", ""),
-                "description": (
-                    f"{bug.get('error_class', '')} "
-                    f"fingerprint={bug.get('fingerprint', '')[:8]}"
-                ),
-            })
+            writer.writerow(
+                {
+                    "timestamp": bug.get("last_seen_at", ""),
+                    "cycle_seq": "",
+                    "event": "bug_detected",
+                    "bug_id": bug.get("bug_id", ""),
+                    "error_class": bug.get("error_class", ""),
+                    "consecutive_failures": bug.get("consecutive_failures", ""),
+                    "description": (
+                        f"{bug.get('error_class', '')} fingerprint={bug.get('fingerprint', '')[:8]}"
+                    ),
+                }
+            )
 
 
 def generate_repair_history_csv(repairs: list[dict], output_path: Path) -> None:
     """Write repair_history.csv."""
-    fieldnames = ["repair_id", "bug_id", "attempt", "started_at", "ended_at",
-                  "status", "target_test_passed", "regression_test_passed",
-                  "notes"]
+    fieldnames = [
+        "repair_id",
+        "bug_id",
+        "attempt",
+        "started_at",
+        "ended_at",
+        "status",
+        "target_test_passed",
+        "regression_test_passed",
+        "notes",
+    ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for r in repairs:
-            writer.writerow({
-                "repair_id": r.get("repair_id", ""),
-                "bug_id": r.get("bug_id", ""),
-                "attempt": r.get("attempt", ""),
-                "started_at": r.get("started_at", ""),
-                "ended_at": r.get("ended_at", ""),
-                "status": r.get("status", ""),
-                "target_test_passed": r.get("target_test_passed", ""),
-                "regression_test_passed": r.get("regression_test_passed", ""),
-                "notes": r.get("notes", ""),
-            })
+            writer.writerow(
+                {
+                    "repair_id": r.get("repair_id", ""),
+                    "bug_id": r.get("bug_id", ""),
+                    "attempt": r.get("attempt", ""),
+                    "started_at": r.get("started_at", ""),
+                    "ended_at": r.get("ended_at", ""),
+                    "status": r.get("status", ""),
+                    "target_test_passed": r.get("target_test_passed", ""),
+                    "regression_test_passed": r.get("regression_test_passed", ""),
+                    "notes": r.get("notes", ""),
+                }
+            )
 
 
 def generate_ci_reliability_csv(ci_summary: dict, output_path: Path) -> None:
     """Write ci_reliability.csv."""
-    fieldnames = ["suite", "total_pass", "total_fail", "total_skip",
-                  "flaky_count", "runs", "success_rate", "flaky_rate"]
+    fieldnames = [
+        "suite",
+        "total_pass",
+        "total_fail",
+        "total_skip",
+        "flaky_count",
+        "runs",
+        "success_rate",
+        "flaky_rate",
+    ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -360,22 +399,30 @@ def generate_ci_reliability_csv(ci_summary: dict, output_path: Path) -> None:
             denom = total_pass + total_fail
             success_rate = (total_pass / denom * 100) if denom > 0 else 0.0
             flaky_rate = (flaky / runs * 100) if runs > 0 else 0.0
-            writer.writerow({
-                "suite": suite,
-                "total_pass": total_pass,
-                "total_fail": total_fail,
-                "total_skip": total_skip,
-                "flaky_count": flaky,
-                "runs": runs,
-                "success_rate": round(success_rate, 2),
-                "flaky_rate": round(flaky_rate, 2),
-            })
+            writer.writerow(
+                {
+                    "suite": suite,
+                    "total_pass": total_pass,
+                    "total_fail": total_fail,
+                    "total_skip": total_skip,
+                    "flaky_count": flaky,
+                    "runs": runs,
+                    "success_rate": round(success_rate, 2),
+                    "flaky_rate": round(flaky_rate, 2),
+                }
+            )
 
 
 def generate_resource_trends_csv(metrics_dir: Path, output_path: Path) -> None:
     """Write resource_trends.csv from metrics JSON files."""
-    fieldnames = ["timestamp", "gpu_allocated_gb", "gpu_memory_used_pct",
-                  "gpu_temp_c", "cpu_ram_used_pct", "disk_free_gb"]
+    fieldnames = [
+        "timestamp",
+        "gpu_allocated_gb",
+        "gpu_memory_used_pct",
+        "gpu_temp_c",
+        "cpu_ram_used_pct",
+        "disk_free_gb",
+    ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -386,15 +433,16 @@ def generate_resource_trends_csv(metrics_dir: Path, output_path: Path) -> None:
                     "timestamp": data.get("timestamp_utc", ""),
                     "gpu_allocated_gb": (
                         data.get("gpu_memory_allocated_gb", [0])[0]
-                        if data.get("gpu_memory_allocated_gb") else 0
+                        if data.get("gpu_memory_allocated_gb")
+                        else 0
                     ),
                     "gpu_memory_used_pct": (
                         data.get("gpu_memory_used_pct", [0])[0]
-                        if data.get("gpu_memory_used_pct") else 0
+                        if data.get("gpu_memory_used_pct")
+                        else 0
                     ),
                     "gpu_temp_c": (
-                        data.get("gpu_temps_c", [0])[0]
-                        if data.get("gpu_temps_c") else 0
+                        data.get("gpu_temps_c", [0])[0] if data.get("gpu_temps_c") else 0
                     ),
                     "cpu_ram_used_pct": data.get("cpu_memory_used_pct", 0),
                     "disk_free_gb": data.get("disk_free_gb", 0),
@@ -406,8 +454,9 @@ def generate_resource_trends_csv(metrics_dir: Path, output_path: Path) -> None:
 
 def generate_unresolved_issues_md(bugs: list[dict], output_path: Path) -> None:
     """Write unresolved_issues.md."""
-    unresolved = [b for b in bugs if b.get("consecutive_failures", 0) > 0
-                  and not b.get("is_blocked")]
+    unresolved = [
+        b for b in bugs if b.get("consecutive_failures", 0) > 0 and not b.get("is_blocked")
+    ]
     lines = [
         "# Unresolved Issues",
         "",
@@ -425,9 +474,7 @@ def generate_unresolved_issues_md(bugs: list[dict], output_path: Path) -> None:
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def generate_final_gate_json(summary: OvernightSummary,
-                             verdict: dict,
-                             output_path: Path) -> None:
+def generate_final_gate_json(summary: OvernightSummary, verdict: dict, output_path: Path) -> None:
     """Write final_gate.json."""
     gate = {
         "verdict": summary.verdict,
@@ -465,9 +512,10 @@ def generate_final_gate_json(summary: OvernightSummary,
 # All-reports dispatcher
 # ─────────────────────────────────────────────────────────────────────────────
 
-def generate_all_reports(state_store: _state.SoakStateStore,
-                         run_id: str,
-                         output_dir: Path | None = None) -> dict:
+
+def generate_all_reports(
+    state_store: _state.SoakStateStore, run_id: str, output_dir: Path | None = None
+) -> dict:
     """Generate all morning reports and return a summary dict."""
     if output_dir is None:
         output_dir = state_store.reports_dir
@@ -485,8 +533,7 @@ def generate_all_reports(state_store: _state.SoakStateStore,
     # CI reliability
     total_pass = sum(v.get("total_pass", 0) for v in ci_summary.values())
     total_fail = sum(v.get("total_fail", 0) for v in ci_summary.values())
-    ci_rate = (total_pass / (total_pass + total_fail) * 100
-                if (total_pass + total_fail) > 0 else 0.0)
+    ci_rate = total_pass / (total_pass + total_fail) * 100 if (total_pass + total_fail) > 0 else 0.0
 
     # Hardware (best-effort from last metric file)
     max_temp = 0
@@ -535,7 +582,8 @@ def generate_all_reports(state_store: _state.SoakStateStore,
             "severity": "P0" if b.get("is_blocked") else "P1",
             "description": f"{b.get('error_class', '')} — {b.get('occurrences', 0)} occurrences",
         }
-        for b in bugs if b.get("consecutive_failures", 0) > 0
+        for b in bugs
+        if b.get("consecutive_failures", 0) > 0
     ]
     flaky_tests = [
         {
@@ -543,7 +591,8 @@ def generate_all_reports(state_store: _state.SoakStateStore,
             "description": "flaky",
             "rate": v.get("flaky_count", 0) / max(v.get("runs", 1), 1) * 100,
         }
-        for s, v in ci_summary.items() if v.get("flaky_count", 0) > 0
+        for s, v in ci_summary.items()
+        if v.get("flaky_count", 0) > 0
     ]
 
     summary = OvernightSummary(
@@ -577,18 +626,12 @@ def generate_all_reports(state_store: _state.SoakStateStore,
     html_text = generate_html_report(summary)
     (output_dir / "overnight_summary.html").write_text(html_text, encoding="utf-8")
 
-    generate_failure_timeline_csv(
-        cycles, bugs, output_dir / "failure_timeline.csv")
-    generate_repair_history_csv(
-        repairs, output_dir / "repair_history.csv")
-    generate_ci_reliability_csv(
-        ci_summary, output_dir / "ci_reliability.csv")
-    generate_resource_trends_csv(
-        state_store.metrics_dir, output_dir / "resource_trends.csv")
-    generate_unresolved_issues_md(
-        bugs, output_dir / "unresolved_issues.md")
-    generate_final_gate_json(
-        summary, verdict.to_dict(), output_dir / "final_gate.json")
+    generate_failure_timeline_csv(cycles, bugs, output_dir / "failure_timeline.csv")
+    generate_repair_history_csv(repairs, output_dir / "repair_history.csv")
+    generate_ci_reliability_csv(ci_summary, output_dir / "ci_reliability.csv")
+    generate_resource_trends_csv(state_store.metrics_dir, output_dir / "resource_trends.csv")
+    generate_unresolved_issues_md(bugs, output_dir / "unresolved_issues.md")
+    generate_final_gate_json(summary, verdict.to_dict(), output_dir / "final_gate.json")
 
     return {
         "verdict": summary.verdict,

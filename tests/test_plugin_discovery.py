@@ -1,4 +1,5 @@
 """Test Cursor plugin discovery: the manifest points to actual files."""
+
 import json
 from pathlib import Path
 
@@ -27,7 +28,9 @@ def test_agents_directory_resolves():
     data = json.loads(MANIFEST.read_text())
     agents = data.get("agents")
     assert agents, "agents field missing"
-    agents_dir = (REPO / agents.lstrip("./")).resolve() if not agents.startswith("/") else Path(agents)
+    agents_dir = (
+        (REPO / agents.lstrip("./")).resolve() if not agents.startswith("/") else Path(agents)
+    )
     assert agents_dir.is_dir(), f"agents dir missing: {agents_dir}"
     md_files = list(agents_dir.glob("*.md"))
     assert len(md_files) >= 5, f"expected ≥5 agents, got {len(md_files)}"
@@ -54,8 +57,14 @@ def test_all_commands_have_yaml_frontmatter():
     if bad:
         print(f"[warn] legacy commands without frontmatter: {bad}")
     # At least the 6 NEW commands (P5+P6+P7) MUST have frontmatter.
-    new_cmds = ["repro-contract.md","repro-plan.md","repro-review.md",
-                "repro-monitor.md","repro-report.md","research-extend.md"]
+    new_cmds = [
+        "repro-contract.md",
+        "repro-plan.md",
+        "repro-review.md",
+        "repro-monitor.md",
+        "repro-report.md",
+        "research-extend.md",
+    ]
     for nc in new_cmds:
         text = (cmds_dir / nc).read_text()
         assert text.startswith("---\n"), f"{nc}: missing YAML frontmatter"

@@ -10,6 +10,7 @@ Each node:
   6. Releases GPU lock
   7. Reports next nodes
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -49,8 +50,7 @@ class CVORunner:
         self.project_root = Path(project_root or os.getcwd()).resolve()
         self.store = CVOStateStore(self.project_root)
 
-    def run_node(self, node_id: str, dry_run: bool = False,
-                 force: bool = False) -> dict[str, Any]:
+    def run_node(self, node_id: str, dry_run: bool = False, force: bool = False) -> dict[str, Any]:
         """Run a single node. Returns result dict."""
         node = NODE_MAP.get(node_id)
         if not node:
@@ -75,6 +75,7 @@ class CVORunner:
         # Check GPU lock
         if node.requires_gpu:
             import os as _os
+
             acquired = self.store.acquire_gpu_lock(node_id, _os.getpid())
             if not acquired:
                 holder = self.store.gpu_lock_holder()
@@ -90,9 +91,12 @@ class CVORunner:
             self.store.set_status(node_id, "RUNNING")
 
             if dry_run:
-                self.store.set_status(node_id, "PASSED",
-                                     evidence_files=self._expected_outputs(node),
-                                     extra={"dry_run": True})
+                self.store.set_status(
+                    node_id,
+                    "PASSED",
+                    evidence_files=self._expected_outputs(node),
+                    extra={"dry_run": True},
+                )
                 return {"node_id": node_id, "status": "PASSED", "dry_run": True}
 
             # Execute
@@ -102,14 +106,16 @@ class CVORunner:
             if result.get("status") == "PASSED":
                 evidence = self._collect_evidence(node)
                 self.store.set_status(
-                    node_id, "PASSED",
+                    node_id,
+                    "PASSED",
                     evidence_files=result.get("evidence_files", evidence),
                     output_hashes=result.get("output_hashes", {}),
                     extra=result.get("extra", {}),
                 )
             elif result.get("status") == "PARTIAL":
                 self.store.set_status(
-                    node_id, "PARTIAL",
+                    node_id,
+                    "PARTIAL",
                     error_type=result.get("error_type", ""),
                     error_message=result.get("error_message", ""),
                     evidence_files=result.get("evidence_files", []),
@@ -121,9 +127,11 @@ class CVORunner:
                     "FAILED" if not node.retryable else "FAILED",
                     error_type=result.get("error_type", "EXECUTION_ERROR"),
                     error_message=result.get("error_message", ""),
-                    extra={"stdout": result.get("stdout", ""),
-                           "stderr": result.get("stderr", ""),
-                           "traceback": result.get("traceback", "")},
+                    extra={
+                        "stdout": result.get("stdout", ""),
+                        "stderr": result.get("stderr", ""),
+                        "traceback": result.get("traceback", ""),
+                    },
                 )
 
             return result
@@ -138,6 +146,7 @@ class CVORunner:
 
         # Heartbeat thread
         stop_heartbeat = threading.Event()
+
         def heartbeat_thread():
             while not stop_heartbeat.wait(30):
                 self.store.update_heartbeat(node.node_id)
@@ -155,9 +164,7 @@ class CVORunner:
 
             # Check for stale (missed heartbeat)
             if self.store.is_stale(node.node_id):
-                result.setdefault("warnings", []).append(
-                    "Node was marked STALE during execution"
-                )
+                result.setdefault("warnings", []).append("Node was marked STALE during execution")
 
             return result
 
@@ -206,7 +213,9 @@ class CVORunner:
     def _run_subprocess(self, node: ValidationNode, log_path: Path) -> dict[str, Any]:
         """Run node as a subprocess with timeout."""
         # Find the node's implementation script
-        node_script = self.project_root / "scripts" / "cvo" / f"{node.node_id.lower().replace('-', '_')}.py"
+        node_script = (
+            self.project_root / "scripts" / "cvo" / f"{node.node_id.lower().replace('-', '_')}.py"
+        )
 
         if not node_script.exists():
             return {
@@ -218,8 +227,10 @@ class CVORunner:
         cmd = [
             sys.executable,
             str(node_script),
-            "--project", str(self.project_root),
-            "--node", node.node_id,
+            "--project",
+            str(self.project_root),
+            "--node",
+            node.node_id,
         ]
 
         with open(log_path, "w") as log_f:
@@ -305,9 +316,10 @@ class CVORunner:
 
         # Count running GPU nodes
         running_gpu = sum(
-            1 for n in self.store.list_all()
-            if n.get("status") == "RUNNING" and
-            NODE_MAP.get(n["node_id"], ValidationNode("")).requires_gpu
+            1
+            for n in self.store.list_all()
+            if n.get("status") == "RUNNING"
+            and NODE_MAP.get(n["node_id"], ValidationNode("")).requires_gpu
         )
 
         for node in ALL_NODES:
@@ -316,10 +328,7 @@ class CVORunner:
                 continue
 
             # Check dependencies
-            deps_ok = all(
-                self.store.get_status(d) == "PASSED"
-                for d in node.depends_on
-            )
+            deps_ok = all(self.store.get_status(d) == "PASSED" for d in node.depends_on)
             if not deps_ok:
                 continue
 

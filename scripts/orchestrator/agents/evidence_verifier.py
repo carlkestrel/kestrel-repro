@@ -3,15 +3,15 @@ Evidence Verifier Agent - NORA-style specialist for evidence chain verification.
 
 This agent verifies evidence chains and ensures reproducibility documentation.
 """
+
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 from .base import (
-    AgentResult,
     AgentRegistry,
+    AgentResult,
     HandoffContext,
     SpecialistAgent,
     utc_now,
@@ -59,12 +59,15 @@ class EvidenceVerifierAgent(SpecialistAgent):
             "verified": completeness.get("score", 0) >= 80,
         }
 
-        self.prepare_handoff(context, {
-            "evidence": evidence,
-            "chain": chain,
-            "completeness": completeness,
-            "verification_result": verification_result,
-        })
+        self.prepare_handoff(
+            context,
+            {
+                "evidence": evidence,
+                "chain": chain,
+                "completeness": completeness,
+                "verification_result": verification_result,
+            },
+        )
 
         return AgentResult(
             agent_type=self.agent_type,
@@ -92,25 +95,30 @@ class EvidenceVerifierAgent(SpecialistAgent):
         if evidence_dir.exists():
             for run_dir in evidence_dir.iterdir():
                 if run_dir.is_dir():
-                    evidence.append({
-                        "type": "run",
-                        "path": str(run_dir),
-                        "run_id": run_dir.name,
-                    })
+                    evidence.append(
+                        {
+                            "type": "run",
+                            "path": str(run_dir),
+                            "run_id": run_dir.name,
+                        }
+                    )
 
         evidence_dir = self.project_root / ".repro" / "audit"
         if evidence_dir.exists():
             for report_file in evidence_dir.glob("*.md"):
-                evidence.append({
-                    "type": "report",
-                    "path": str(report_file),
-                    "name": report_file.stem,
-                })
+                evidence.append(
+                    {
+                        "type": "report",
+                        "path": str(report_file),
+                        "name": report_file.stem,
+                    }
+                )
 
         return evidence
 
-    def _build_evidence_chain(self, evidence: list[dict[str, Any]],
-                               context_data: dict[str, Any]) -> list[dict[str, Any]]:
+    def _build_evidence_chain(
+        self, evidence: list[dict[str, Any]], context_data: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Build evidence chain linking claims to evidence."""
         chain = []
 
@@ -119,12 +127,14 @@ class EvidenceVerifierAgent(SpecialistAgent):
         primary_repo = context_data.get("primary_repo", {})
 
         if primary_repo:
-            chain.append({
-                "type": "source",
-                "title": "Primary Repository",
-                "evidence": primary_repo,
-                "links": [],
-            })
+            chain.append(
+                {
+                    "type": "source",
+                    "title": "Primary Repository",
+                    "evidence": primary_repo,
+                    "links": [],
+                }
+            )
 
         for claim in claims:
             chain_entry = {
@@ -143,17 +153,18 @@ class EvidenceVerifierAgent(SpecialistAgent):
 
         for item in evidence:
             if not any(item["path"] in e.get("path", "") for e in chain if e.get("evidence")):
-                chain.append({
-                    "type": "artifact",
-                    "artifact": item,
-                    "links": [],
-                    "status": "unlinked",
-                })
+                chain.append(
+                    {
+                        "type": "artifact",
+                        "artifact": item,
+                        "links": [],
+                        "status": "unlinked",
+                    }
+                )
 
         return chain
 
-    def _evidence_supports_claim(self, evidence: dict[str, Any],
-                                  claim: dict[str, Any]) -> bool:
+    def _evidence_supports_claim(self, evidence: dict[str, Any], claim: dict[str, Any]) -> bool:
         """Check if evidence supports a claim."""
         evidence_str = json.dumps(evidence, default=str).lower()
         claim_type = claim.get("type", "").lower()
@@ -167,9 +178,12 @@ class EvidenceVerifierAgent(SpecialistAgent):
         keywords = claim_keywords.get(claim_type, [claim_type])
         return any(kw in evidence_str for kw in keywords)
 
-    def _check_completeness(self, chain: list[dict[str, Any]],
-                           metric_targets: list[dict[str, Any]],
-                           data_contracts: list[dict[str, Any]]) -> dict[str, Any]:
+    def _check_completeness(
+        self,
+        chain: list[dict[str, Any]],
+        metric_targets: list[dict[str, Any]],
+        data_contracts: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Check completeness of evidence chain."""
         completeness = {
             "score": 0,
@@ -181,8 +195,7 @@ class EvidenceVerifierAgent(SpecialistAgent):
         for target in metric_targets:
             metric = target.get("metric", "unknown")
             found = any(
-                entry.get("type") == "claim" and
-                entry.get("claim", {}).get("type") == metric
+                entry.get("type") == "claim" and entry.get("claim", {}).get("type") == metric
                 for entry in chain
             )
             if found:
@@ -210,8 +223,7 @@ class EvidenceVerifierAgent(SpecialistAgent):
 
         return completeness
 
-    def generate_report(self, chain: list[dict[str, Any]],
-                      completeness: dict[str, Any]) -> str:
+    def generate_report(self, chain: list[dict[str, Any]], completeness: dict[str, Any]) -> str:
         """Generate evidence verification report."""
         lines = [
             "# Evidence Verification Report",

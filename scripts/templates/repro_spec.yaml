@@ -1,0 +1,51 @@
+# Reproduction Specification Template
+# Copy this to .repro/repro_spec.yaml and fill in the values.
+
+paper:
+  title: ""
+  url: ""
+  arxiv_id: ""
+  target_table: ""          # e.g., "Table 3"
+  target_metrics: []        # e.g., [{metric: mIoU, value: 73.9, column: "S3DIS (val)"}]
+  submission_date: ""
+  authors: []
+
+code:
+  upstream_url: ""          # Paper-author official repository
+  target_commit: ""         # Commit aligned with paper version
+  current_commit: ""        # To be filled after cloning
+  license: ""
+
+data:
+  root_env: DATA_ROOT       # Environment variable for dataset root
+  name: ""
+  version: ""
+  split: ""                # e.g., "Area 1-5 train, Area 6 test" for S3DIS
+  restricted: false          # True if dataset requires application/agreement
+  download_script: ""       # Path to download script if available
+
+protocol:
+  epochs: null             # Paper-reported training epochs
+  seeds: []                # Seeds used in the paper
+  checkpoint_selection: ""  # e.g., "best val mIoU"
+  evaluation_mode: ""       # e.g., "sub-points", "full-PC voting"
+  ignored_labels: []        # e.g., [0] for unannotated points
+  metric_definition: ""     # Exact metric computation
+
+compute:
+  policy: strict_then_optimized
+  allow_amp_after_parity: true
+  allow_ddp_after_parity: true
+  allow_batch_change_after_parity: true
+  tolerance_mIoU: 0.5     # Absolute percentage tolerance for parity
+
+artifacts:
+  root: repro_audit        # Root directory for audit reports
+  checkpoints: checkpoints
+  logs: logs
+  metrics: metrics
+  predictions: predictions
+  figures: figures
+
+notes:
+  - ""

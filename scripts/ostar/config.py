@@ -2,20 +2,18 @@
 
 Handles loading, validation, and schema enforcement for OSTAR soak runs.
 """
+
 from __future__ import annotations
 
 import json
-import os
 import re
-import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from zoneinfo import ZoneInfo
 
 from . import constants as _C
-
 
 # Add project root to path for schema import
 _THIS = Path(__file__).resolve()
@@ -25,6 +23,7 @@ if str(_PKG) not in sys.path:
 
 try:
     import jsonschema as _jsonschema
+
     JSONSCHEMA_AVAILABLE = True
 except ImportError:
     JSONSCHEMA_AVAILABLE = False
@@ -33,10 +32,11 @@ except ImportError:
 @dataclass
 class OSTARConfig:
     """Validated OSTAR configuration."""
+
     # Timing
     timezone: str = _C.DEFAULT_TIMEZONE
-    start_time: str | None = None   # ISO datetime or HH:MM local
-    end_time: str | None = None     # ISO datetime or HH:MM local
+    start_time: str | None = None  # ISO datetime or HH:MM local
+    end_time: str | None = None  # ISO datetime or HH:MM local
     duration_seconds: int = _C.DEFAULT_DURATION_SECONDS
 
     # Auto-repair
@@ -77,6 +77,7 @@ class OSTARConfig:
     def resolved_end_time_utc(self, now: datetime) -> datetime:
         """Compute end_time as UTC datetime."""
         import zoneinfo
+
         tz = zoneinfo.ZoneInfo(self.timezone)
         if self.end_time:
             try:
@@ -92,7 +93,10 @@ class OSTARConfig:
             if match:
                 hour, minute = int(match.group(1)), int(match.group(2))
                 end_today = now.astimezone(tz).replace(
-                    hour=hour, minute=minute, second=0, microsecond=0,
+                    hour=hour,
+                    minute=minute,
+                    second=0,
+                    microsecond=0,
                 )
                 end_utc = end_today.astimezone(timezone.utc)
                 if end_utc <= now.astimezone(timezone.utc):
@@ -100,7 +104,8 @@ class OSTARConfig:
                 return end_utc
         # Fall back to duration
         return datetime.fromtimestamp(
-            now.timestamp() + self.duration_seconds, tz=timezone.utc,
+            now.timestamp() + self.duration_seconds,
+            tz=timezone.utc,
         )
 
     def to_dict(self) -> dict:
@@ -131,9 +136,10 @@ class OSTARConfig:
         }
 
     @classmethod
-    def from_args(cls, args) -> "OSTARConfig":
+    def from_args(cls, args) -> OSTARConfig:
         """Build config from parsed argparse namespace or dict."""
         cfg = cls()
+
         # Handle both argparse.Namespace and plain dict
         def _get(key: str):
             if isinstance(args, dict):
@@ -208,7 +214,7 @@ class OSTARConfig:
                     f"gpu_temperature_limit must be 30-110°C, got {self.gpu_temperature_limit}",
                 )
         try:
-            zoneinfo.ZoneInfo(self.timezone)
+            ZoneInfo(self.timezone)
         except Exception:
             errors.append(f"invalid timezone: {self.timezone!r}")
         return errors

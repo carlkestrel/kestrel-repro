@@ -23,18 +23,18 @@ Exit codes:
     11 - Manual stop
     12 - Duration ended
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import os
 import signal
-import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+import traceback
 
 # Allow running directly
 _THIS = Path(__file__).resolve()
@@ -42,18 +42,18 @@ _PKG = _THIS.parent.parent.parent
 if str(_PKG) not in sys.path:
     sys.path.insert(0, str(_PKG))
 
-from scripts.ostar import constants as _C
 from scripts.ostar import config as _cfg
-from scripts.ostar import hardware_monitor as _hw
+from scripts.ostar import constants as _C
 from scripts.ostar import guard as _guard
+from scripts.ostar import hardware_monitor as _hw
+from scripts.ostar import reporter as _report
 from scripts.ostar import soak_engine as _engine
 from scripts.ostar import soak_state as _state
-from scripts.ostar import reporter as _report
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Path helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _project_of(args: argparse.Namespace) -> Path:
     p = getattr(args, "project", None)
@@ -70,12 +70,12 @@ def _soak_root_of(project: Path) -> Path:
 # Output helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _print_err(stage: str, code: int, reason: str,
-               related: str = "", fix: str = "") -> None:
+def _print_err(stage: str, code: int, reason: str, related: str = "", fix: str = "") -> None:
     print("OSTAR FAILED", file=sys.stderr)
     print(f"  Stage:       {stage}", file=sys.stderr)
     print(f"  Exit Code:   {code}", file=sys.stderr)
@@ -93,6 +93,7 @@ def _json_out(data: dict) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Subcommands
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def cmd_plan(args: argparse.Namespace) -> int:
     """Run pre-flight rehearsal (30 minutes) before starting the full soak."""
@@ -119,10 +120,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"  {icon} {check['name']}: {check['message']}")
 
     if not g_result.passed:
-        _print_err("GUARD", _C.EXIT_GUARD_FAIL,
-                   f"{len([c for c in g_result.checks if c['status'] == 'FAIL'])} checks failed",
-                   "guard_result.json",
-                   "Fix failures before starting soak")
+        _print_err(
+            "GUARD",
+            _C.EXIT_GUARD_FAIL,
+            f"{len([c for c in g_result.checks if c['status'] == 'FAIL'])} checks failed",
+            "guard_result.json",
+            "Fix failures before starting soak",
+        )
         return _C.EXIT_GUARD_FAIL
 
     # Print soak plan
@@ -140,19 +144,22 @@ def cmd_plan(args: argparse.Namespace) -> int:
     print(f"[OSTAR] Start time: {_now()}")
 
     # Run rehearsal
-    print(f"[OSTAR] Running 30-minute rehearsal...")
+    print("[OSTAR] Running 30-minute rehearsal...")
     engine = _engine.SoakEngine(project, cfg, soak_root)
     result = engine.run_rehearsal()
 
     if result.status == "REHEARSAL_FAILED":
-        _print_err("REHEARSAL", _C.EXIT_REHEARSAL_FAIL,
-                   "rehearsal did not complete successfully",
-                   str(soak_root),
-                   "Fix rehearsal failures before starting full soak")
+        _print_err(
+            "REHEARSAL",
+            _C.EXIT_REHEARSAL_FAIL,
+            "rehearsal did not complete successfully",
+            str(soak_root),
+            "Fix rehearsal failures before starting full soak",
+        )
         return _C.EXIT_REHEARSAL_FAIL
 
-    print(f"[OSTAR] Rehearsal PASSED ✅")
-    print(f"[OSTAR] Plan ready. Run `reproctl soak start` to begin the full soak.")
+    print("[OSTAR] Rehearsal PASSED ✅")
+    print("[OSTAR] Plan ready. Run `reproctl soak start` to begin the full soak.")
     return _C.EXIT_OK
 
 
@@ -166,10 +173,13 @@ def cmd_start(args: argparse.Namespace) -> int:
     if existing_pid:
         proc_alive = _pid_alive(existing_pid)
         if proc_alive:
-            _print_err("START", _C.EXIT_ALREADY_RUNNING,
-                       f"soak already running (PID {existing_pid})",
-                       str(soak_root / "ostar.pid"),
-                       "Run `reproctl soak stop` first or `reproctl soak status`")
+            _print_err(
+                "START",
+                _C.EXIT_ALREADY_RUNNING,
+                f"soak already running (PID {existing_pid})",
+                str(soak_root / "ostar.pid"),
+                "Run `reproctl soak stop` first or `reproctl soak status`",
+            )
             return _C.EXIT_ALREADY_RUNNING
         else:
             print(f"[OSTAR] Cleaning stale PID {existing_pid}")
@@ -197,7 +207,7 @@ def cmd_start(args: argparse.Namespace) -> int:
             _write_pid(soak_root, pid)
             print(f"[OSTAR] Soak started (PID {pid})")
             print(f"[OSTAR] Log: {soak_root / 'logs' / f'soak_{pid}.log'}")
-            print(f"[OSTAR] Run `reproctl soak status` to monitor")
+            print("[OSTAR] Run `reproctl soak status` to monitor")
         return _C.EXIT_OK
     else:
         # Dry-run: run one cycle only
@@ -282,10 +292,14 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"GPU:     {hw_snap.gpu_count}x {hw_snap.gpu_names[0]}")
         if hw_snap.gpu_temps_c:
             print(f"Temp:    {hw_snap.gpu_temps_c[0]}°C")
-        print(f"GPU Mem: {hw_snap.gpu_memory_reserved_gb[0]:.1f}/{hw_snap.gpu_memory_total_gb[0]:.1f} GB "
-              f"({hw_snap.gpu_memory_used_pct[0]:.1f}%)")
-    print(f"CPU RAM: {hw_snap.cpu_memory_used_pct:.1f}% "
-          f"({hw_snap.cpu_memory_available_gb:.1f} GB free)")
+        print(
+            f"GPU Mem: {hw_snap.gpu_memory_reserved_gb[0]:.1f}/{hw_snap.gpu_memory_total_gb[0]:.1f} GB "
+            f"({hw_snap.gpu_memory_used_pct[0]:.1f}%)"
+        )
+    print(
+        f"CPU RAM: {hw_snap.cpu_memory_used_pct:.1f}% "
+        f"({hw_snap.cpu_memory_available_gb:.1f} GB free)"
+    )
     print(f"Disk:    {hw_snap.disk_free_gb:.1f} GB free")
     if heartbeat:
         age = time.time() - heartbeat.get("timestamp", 0)
@@ -338,7 +352,7 @@ def cmd_stop(args: argparse.Namespace) -> int:
             if not _pid_alive(pid):
                 break
         if _pid_alive(pid):
-            print(f"[OSTAR] Graceful stop failed, sending SIGKILL...")
+            print("[OSTAR] Graceful stop failed, sending SIGKILL...")
             os.kill(pid, signal.SIGKILL)
     else:
         print(f"[OSTAR] PID {pid} already dead")
@@ -384,8 +398,8 @@ def cmd_report(args: argparse.Namespace) -> int:
 # Subprocess fork
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _fork_child(project: Path, cfg: _cfg.OSTARConfig,
-                soak_root: Path) -> int | None:
+
+def _fork_child(project: Path, cfg: _cfg.OSTARConfig, soak_root: Path) -> int | None:
     """Fork a child process to run the soak engine."""
     logs_dir = soak_root / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
@@ -450,6 +464,7 @@ def _pid_alive(pid: int) -> bool:
 # Parser
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reproctl soak",
@@ -460,8 +475,7 @@ def build_parser() -> argparse.ArgumentParser:
     # ── plan ──────────────────────────────────────────────────────────────
     p_plan = sub.add_parser("plan", help="Run 30-minute pre-flight rehearsal")
     _add_common(p_plan)
-    p_plan.add_argument("--duration", default="30m",
-                       help="Rehearsal duration (default: 30m)")
+    p_plan.add_argument("--duration", default="30m", help="Rehearsal duration (default: 30m)")
 
     # ── start ───────────────────────────────────────────────────────────
     p_start = sub.add_parser("start", help="Start the overnight soak test")
@@ -469,8 +483,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_timing(p_start)
     _add_hardware(p_start)
     _add_repair(p_start)
-    p_start.add_argument("--dry-run", action="store_true",
-                        help="Run one cycle only (no daemon)")
+    p_start.add_argument("--dry-run", action="store_true", help="Run one cycle only (no daemon)")
 
     # ── status ───────────────────────────────────────────────────────────
     p_status = sub.add_parser("status", help="Show soak run status")
@@ -491,51 +504,70 @@ def build_parser() -> argparse.ArgumentParser:
     # ── report ───────────────────────────────────────────────────────────
     p_report = sub.add_parser("report", help="Generate/view the morning report")
     _add_common(p_report)
-    p_report.add_argument("--format", "-f",
-                         choices=["markdown", "html", "json"],
-                         default="markdown",
-                         help="Report format (default: markdown)")
+    p_report.add_argument(
+        "--format",
+        "-f",
+        choices=["markdown", "html", "json"],
+        default="markdown",
+        help="Report format (default: markdown)",
+    )
 
     return parser
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--project", "-p", default=".",
-                   help="Project root (default: current directory)")
+    p.add_argument("--project", "-p", default=".", help="Project root (default: current directory)")
 
 
 def _add_timing(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--duration", default="8h",
-                   help="Soak duration (default: 8h). Examples: 8h, 480m, 28800s")
-    p.add_argument("--start-time", default=None,
-                   help="Start time in HH:MM local or ISO format")
-    p.add_argument("--end-time", default=None,
-                   help="End time in HH:MM local or ISO format")
-    p.add_argument("--timezone", default=_C.DEFAULT_TIMEZONE,
-                   help=f"Timezone (default: {_C.DEFAULT_TIMEZONE})")
+    p.add_argument(
+        "--duration", default="8h", help="Soak duration (default: 8h). Examples: 8h, 480m, 28800s"
+    )
+    p.add_argument("--start-time", default=None, help="Start time in HH:MM local or ISO format")
+    p.add_argument("--end-time", default=None, help="End time in HH:MM local or ISO format")
+    p.add_argument(
+        "--timezone", default=_C.DEFAULT_TIMEZONE, help=f"Timezone (default: {_C.DEFAULT_TIMEZONE})"
+    )
 
 
 def _add_hardware(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--gpu-temperature-limit", type=int, default=None,
-                   help="GPU temperature limit in °C (default: auto)")
-    p.add_argument("--disk-reserve", type=float, default=None,
-                   help="Minimum free disk in GB (default: 10)")
+    p.add_argument(
+        "--gpu-temperature-limit",
+        type=int,
+        default=None,
+        help="GPU temperature limit in °C (default: auto)",
+    )
+    p.add_argument(
+        "--disk-reserve", type=float, default=None, help="Minimum free disk in GB (default: 10)"
+    )
 
 
 def _add_repair(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--auto-repair", dest="auto_repair_level",
-                   choices=["none", "safe", "full"],
-                   default="safe",
-                   help="Auto-repair level (default: safe)")
-    p.add_argument("--max-repairs", type=int, default=None,
-                   help=f"Max total repairs (default: {_C.DEFAULT_MAX_REPAIRS})")
-    p.add_argument("--max-retries", type=int, default=None,
-                   help=f"Max retries per bug (default: {_C.DEFAULT_MAX_RETRIES_PER_BUG})")
+    p.add_argument(
+        "--auto-repair",
+        dest="auto_repair_level",
+        choices=["none", "safe", "full"],
+        default="safe",
+        help="Auto-repair level (default: safe)",
+    )
+    p.add_argument(
+        "--max-repairs",
+        type=int,
+        default=None,
+        help=f"Max total repairs (default: {_C.DEFAULT_MAX_REPAIRS})",
+    )
+    p.add_argument(
+        "--max-retries",
+        type=int,
+        default=None,
+        help=f"Max retries per bug (default: {_C.DEFAULT_MAX_RETRIES_PER_BUG})",
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
@@ -562,7 +594,6 @@ def main(argv: list[str] | None = None) -> int:
         print("\n[OSTAR] Interrupted")
         return _C.EXIT_MANUAL_STOP
     except Exception as e:
-        import traceback
         traceback.print_exc()
         _print_err("INTERNAL", _C.EXIT_INTERNAL, str(e))
         return _C.EXIT_INTERNAL

@@ -7,21 +7,21 @@ This module implements NORA's automatic state saving mechanism:
 - Saves StateStore snapshot
 - Supports graceful shutdown and crash recovery
 """
+
 from __future__ import annotations
 
 import atexit
 import json
 import os
 import signal
-import sys
 import threading
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .state_store import StateStore
 from .event_journal import EventJournal
+from .state_store import StateStore
 
 
 def utc_now() -> str:
@@ -43,9 +43,12 @@ class StopHook:
     3. StateStore snapshot
     """
 
-    def __init__(self, project_root: str | Path,
-                 state_store: StateStore | None = None,
-                 event_journal: EventJournal | None = None):
+    def __init__(
+        self,
+        project_root: str | Path,
+        state_store: StateStore | None = None,
+        event_journal: EventJournal | None = None,
+    ):
         self.project_root = Path(project_root).resolve()
         self.execution_dir = self.project_root / ".repro" / "execution"
         self.state_store = state_store
@@ -66,11 +69,21 @@ class StopHook:
 
             atexit.register(self._save_state)
 
-            if hasattr(signal, "SIGINT"):
-                signal.signal(signal.SIGINT, self._signal_handler)
+            # R3-3: signal.signal() can only be called from the main thread.
+            # If we're running in a worker thread (e.g., tests launch the
+            # controller in a thread), skip signal registration — tests
+            # should drive signals via direct method calls or simply use
+            # set_control_state().
+            if threading.current_thread() is threading.main_thread():
+                if hasattr(signal, "SIGINT"):
+                    signal.signal(signal.SIGINT, self._signal_handler)
 
-            if hasattr(signal, "SIGTERM"):
-                signal.signal(signal.SIGTERM, self._signal_handler)
+                if hasattr(signal, "SIGTERM"):
+                    signal.signal(signal.SIGTERM, self._signal_handler)
+            else:
+                # Best-effort: register atexit-only; controller will be
+                # stopped by its thread when it polls control_state.
+                pass
 
             self._registered = True
 
@@ -178,10 +191,20 @@ class StopHook:
         if self.state_store is not None:
             try:
                 tasks = self.state_store.list_tasks()
-                pending = [t for t in tasks if t["status"] in {
-                    "PENDING", "READY", "RUNNING", "VERIFYING", "WAITING_APPROVAL", "RETRY_WAIT"
-                }]
-                completed = [t for t in tasks if t["status"] in {"PASS", "FAIL", "REJECTED"}]
+                pending = [
+                    t
+                    for t in tasks
+                    if t["status"]
+                    in {
+                        "PENDING",
+                        "READY",
+                        "RUNNING",
+                        "VERIFYING",
+                        "WAITING_APPROVAL",
+                        "RETRY_WAIT",
+                    }
+                ]
+                completed = [t for t in tasks if t["status"] in {"PASSED", "FAILED", "REJECTED"}]
 
                 handoff["execution_state"] = {
                     "control_state": self.state_store.control_state(),
@@ -357,9 +380,11 @@ class RecoveryManager:
             return None
 
 
-def create_stop_hook(project_root: str | Path,
-                    state_store: StateStore | None = None,
-                    event_journal: EventJournal | None = None) -> StopHook:
+def create_stop_hook(
+    project_root: str | Path,
+    state_store: StateStore | None = None,
+    event_journal: EventJournal | None = None,
+) -> StopHook:
     """
     Factory function to create and register a StopHook.
 

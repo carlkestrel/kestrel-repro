@@ -3,18 +3,17 @@ Hardware Fit Agent - NORA-style specialist for hardware compatibility checking.
 
 This agent evaluates hardware requirements and provides fit recommendations.
 """
+
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
 from typing import Any
 
 from .base import (
-    AgentResult,
     AgentRegistry,
+    AgentResult,
     HandoffContext,
     SpecialistAgent,
-    utc_now,
 )
 
 
@@ -52,12 +51,15 @@ class HardwareFitAgent(SpecialistAgent):
 
         config = self._generate_config(hardware_info, fit_recommendation)
 
-        self.prepare_handoff(context, {
-            "hardware_info": hardware_info,
-            "requirements_analysis": requirements_analysis,
-            "fit_recommendation": fit_recommendation,
-            "config": config,
-        })
+        self.prepare_handoff(
+            context,
+            {
+                "hardware_info": hardware_info,
+                "requirements_analysis": requirements_analysis,
+                "fit_recommendation": fit_recommendation,
+                "config": config,
+            },
+        )
 
         return AgentResult(
             agent_type=self.agent_type,
@@ -177,21 +179,25 @@ class HardwareFitAgent(SpecialistAgent):
 
                 for i in range(torch.cuda.device_count()):
                     props = torch.cuda.get_device_properties(i)
-                    gpu_info["devices"].append({
-                        "id": i,
-                        "name": torch.cuda.get_device_name(i),
-                        "total_memory_gb": props.total_memory / (1024**3),
-                        "compute_capability": f"{props.major}.{props.minor}",
-                    })
+                    gpu_info["devices"].append(
+                        {
+                            "id": i,
+                            "name": torch.cuda.get_device_name(i),
+                            "total_memory_gb": props.total_memory / (1024**3),
+                            "compute_capability": f"{props.major}.{props.minor}",
+                        }
+                    )
             elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
                 gpu_info["available"] = True
                 gpu_info["type"] = "mps"
-                gpu_info["devices"].append({
-                    "id": 0,
-                    "name": "Apple Silicon GPU (MPS)",
-                    "total_memory_gb": 0,
-                    "compute_capability": "mps",
-                })
+                gpu_info["devices"].append(
+                    {
+                        "id": 0,
+                        "name": "Apple Silicon GPU (MPS)",
+                        "total_memory_gb": 0,
+                        "compute_capability": "mps",
+                    }
+                )
 
         except ImportError:
             pass
@@ -221,6 +227,7 @@ class HardwareFitAgent(SpecialistAgent):
 
         try:
             import shutil
+
             usage = shutil.disk_usage("/")
             disk_info["free_gb"] = usage.free / (1024**3)
             disk_info["total_gb"] = usage.total / (1024**3)
@@ -273,8 +280,9 @@ class HardwareFitAgent(SpecialistAgent):
 
         return analysis
 
-    def _evaluate_fit(self, hardware_info: dict[str, Any],
-                      requirements: dict[str, Any]) -> dict[str, Any]:
+    def _evaluate_fit(
+        self, hardware_info: dict[str, Any], requirements: dict[str, Any]
+    ) -> dict[str, Any]:
         """Evaluate hardware fit."""
         fit = {
             "score": 0,
@@ -287,7 +295,9 @@ class HardwareFitAgent(SpecialistAgent):
         mem_required = requirements.get("estimated_memory_gb", 4)
 
         if mem_available < mem_required:
-            fit["issues"].append(f"Insufficient memory: {mem_available:.1f}GB available, {mem_required:.1f}GB required")
+            fit["issues"].append(
+                f"Insufficient memory: {mem_available:.1f}GB available, {mem_required:.1f}GB required"
+            )
         else:
             fit["score"] += 50
 
@@ -296,7 +306,10 @@ class HardwareFitAgent(SpecialistAgent):
                 fit["issues"].append("GPU required but not available")
                 fit["status"] = "no-fit"
             else:
-                gpu_mem = sum(d.get("total_memory_gb", 0) for d in hardware_info.get("gpu", {}).get("devices", []))
+                gpu_mem = sum(
+                    d.get("total_memory_gb", 0)
+                    for d in hardware_info.get("gpu", {}).get("devices", [])
+                )
                 if gpu_mem < mem_required:
                     fit["issues"].append(f"Insufficient GPU memory: {gpu_mem:.1f}GB available")
                 else:
@@ -316,8 +329,9 @@ class HardwareFitAgent(SpecialistAgent):
 
         return fit
 
-    def _generate_config(self, hardware_info: dict[str, Any],
-                        fit: dict[str, Any]) -> dict[str, Any]:
+    def _generate_config(
+        self, hardware_info: dict[str, Any], fit: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate configuration based on hardware."""
         config = {
             "device": "cpu",

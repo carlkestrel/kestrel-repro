@@ -6,9 +6,9 @@ This module provides enhanced GitHub code search capabilities:
 - Repository ranking based on code relevance
 - Rate-limited API access
 """
+
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import time
@@ -19,7 +19,7 @@ from typing import Any
 class GitHubCodeSearch:
     """
     NORA-style GitHub code search for discovering relevant code snippets.
-    
+
     Features:
     - Code search API integration
     - Rate limiting with exponential backoff
@@ -46,8 +46,7 @@ class GitHubCodeSearch:
         """Get GitHub auth token if available."""
         try:
             result = subprocess.run(
-                ["gh", "auth", "token"],
-                capture_output=True, text=True, timeout=10
+                ["gh", "auth", "token"], capture_output=True, text=True, timeout=10
             )
             if result.returncode == 0:
                 return result.stdout.strip()
@@ -57,8 +56,8 @@ class GitHubCodeSearch:
 
     def _make_request(self, endpoint: str, params: dict | None = None) -> dict | None:
         """Make authenticated GitHub API request."""
-        import urllib.request
         import urllib.parse
+        import urllib.request
 
         self._rate_limit()
 
@@ -82,8 +81,9 @@ class GitHubCodeSearch:
         except Exception as e:
             return {"error": str(e)}
 
-    def search_code(self, query: str, language: str | None = None,
-                   max_results: int = 30) -> list[dict]:
+    def search_code(
+        self, query: str, language: str | None = None, max_results: int = 30
+    ) -> list[dict]:
         """
         Search for code snippets.
 
@@ -121,8 +121,9 @@ class GitHubCodeSearch:
             for item in data.get("items", [])
         ]
 
-    def search_repositories(self, query: str, language: str | None = None,
-                           max_results: int = 30) -> list[dict]:
+    def search_repositories(
+        self, query: str, language: str | None = None, max_results: int = 30
+    ) -> list[dict]:
         """
         Search for repositories.
 
@@ -188,6 +189,7 @@ class GitHubCodeSearch:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 import base64
+
                 return base64.b64decode(data["content"]).decode("utf-8")
         except Exception:
             return None
@@ -242,7 +244,9 @@ class GitHubCodeSearch:
 
         return results
 
-    def search_metrics(self, repo_pattern: str, metric_names: list[str] | None = None) -> list[dict]:
+    def search_metrics(
+        self, repo_pattern: str, metric_names: list[str] | None = None
+    ) -> list[dict]:
         """Search for metric implementations."""
         if metric_names:
             queries = [f"def.*{name}.*in:file" for name in metric_names]
@@ -290,8 +294,7 @@ class GitHubCodeSearch:
 
         return classified
 
-    def calculate_repo_relevance(self, repo_data: dict,
-                                code_results: list[dict]) -> dict[str, Any]:
+    def calculate_repo_relevance(self, repo_data: dict, code_results: list[dict]) -> dict[str, Any]:
         """Calculate repository relevance score."""
         score = {
             "total": 0.0,
@@ -321,10 +324,13 @@ class GitHubCodeSearch:
 
         return score
 
-    def full_search(self, repo_pattern: str,
-                   architecture: str | None = None,
-                   loss_name: str | None = None,
-                   metric_names: list[str] | None = None) -> dict[str, Any]:
+    def full_search(
+        self,
+        repo_pattern: str,
+        architecture: str | None = None,
+        loss_name: str | None = None,
+        metric_names: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Perform full code search for a repository.
 
@@ -356,9 +362,7 @@ class GitHubCodeSearch:
         if metric_names:
             results["metrics"] = self.search_metrics(repo_pattern, metric_names)
 
-        results["training_loops"] = self.search_code(
-            f"for epoch in:file repo:{repo_pattern}"
-        )
+        results["training_loops"] = self.search_code(f"for epoch in:file repo:{repo_pattern}")
 
         relevance = self.calculate_repo_relevance({}, [r for rs in results.values() for r in rs])
 

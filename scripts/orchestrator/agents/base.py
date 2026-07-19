@@ -6,9 +6,9 @@ This module implements NORA's Specialist Agent architecture adapted for paper re
 - Agent registry for dynamic discovery
 - Agent collaboration via handoff mechanism
 """
+
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -23,6 +23,7 @@ def utc_now() -> str:
 @dataclass
 class AgentResult:
     """Result of a specialist agent execution."""
+
     agent_type: str
     agent_id: str
     status: str  # "success", "partial", "failed"
@@ -35,6 +36,7 @@ class AgentResult:
 @dataclass
 class HandoffContext:
     """Context passed between agents during handoff."""
+
     project_root: Path
     current_agent: str
     next_agent: str | None
@@ -44,12 +46,14 @@ class HandoffContext:
 
     def add_to_history(self, agent: str, action: str, result: dict[str, Any]) -> None:
         """Add an entry to the handoff history."""
-        self.history.append({
-            "agent": agent,
-            "action": action,
-            "result": result,
-            "timestamp": utc_now(),
-        })
+        self.history.append(
+            {
+                "agent": agent,
+                "action": action,
+                "result": result,
+                "timestamp": utc_now(),
+            }
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -101,8 +105,9 @@ class SpecialistAgent(ABC):
         """Check if this agent can handoff to target."""
         return target_agent in self.next_agents
 
-    def prepare_handoff(self, context: HandoffContext, data: dict[str, Any],
-                       next_agent: str | None = None) -> HandoffContext:
+    def prepare_handoff(
+        self, context: HandoffContext, data: dict[str, Any], next_agent: str | None = None
+    ) -> HandoffContext:
         """Prepare handoff context for next agent."""
         context.add_to_history(self.agent_type, "execute", data)
         context.current_agent = self.agent_type
@@ -199,9 +204,12 @@ class AgentOrchestrator:
         self.results: list[AgentResult] = []
         self.context: HandoffContext | None = None
 
-    def run(self, start_agent: str,
-            initial_data: dict[str, Any] | None = None,
-            chain: list[str] | None = None) -> AgentResult:
+    def run(
+        self,
+        start_agent: str,
+        initial_data: dict[str, Any] | None = None,
+        chain: list[str] | None = None,
+    ) -> AgentResult:
         """
         Run agent pipeline starting from start_agent.
 
@@ -262,11 +270,15 @@ class AgentOrchestrator:
                 self.results.append(result)
                 break
 
-        return self.results[-1] if self.results else AgentResult(
-            agent_type="orchestrator",
-            agent_id="orchestrator",
-            status="failed",
-            output={"error": "No agents executed"},
+        return (
+            self.results[-1]
+            if self.results
+            else AgentResult(
+                agent_type="orchestrator",
+                agent_id="orchestrator",
+                status="failed",
+                output={"error": "No agents executed"},
+            )
         )
 
     def get_results(self) -> list[AgentResult]:

@@ -1,0 +1,164 @@
+# Reproduction Gates Rule
+
+type: always-on
+priority: critical
+
+## Purpose
+
+This rule enforces the staged reproduction gate system for all deep learning paper reproduction tasks. It prevents the agent from skipping critical validation steps, especially long training runs before preflight and short-loop gates have passed.
+
+## Gate Definitions
+
+### Gate 0 — Paper & Source Audit
+**Required before:** Any environment setup or code inspection
+**What must pass:**
+- [ ] Paper claims are clearly identified (model, dataset, metrics)
+- [ ] Target table/figure and metric values are recorded
+- [ ] Paper submission date and version are noted
+- [ ] Official repository is identified (primary source)
+- [ ] Repository commit aligned with paper version is identified
+- [ ] Configuration files are audited and match paper claims
+- [ ] No critical discrepancy between paper and repository
+**What this gate does NOT permit:** Training, data download, or installation
+
+### Gate 1 — Environment & Data Preflight
+**Required before:** Any code execution (smoke test, training, evaluation)
+**What must pass:**
+- [ ] Python version is compatible
+- [ ] CUDA and cuDNN versions are compatible
+- [ ] PyTorch version is compatible
+- [ ] All required packages are installed
+- [ ] Dataset is available (downloaded, split defined, labels verified)
+- [ ] Disk space is sufficient (data + checkpoints + logs)
+- [ ] Checkpoint format is compatible
+- [ ] Custom CUDA extensions can compile (if applicable)
+**What this gate does NOT permit:** Training, evaluation, or model modifications
+
+### Gate 2 — Short-Loop Validation (L0–L3)
+**Required before:** Any optimization or full training
+**What must pass:**
+- [ ] L0: Real forward pass on one batch succeeds (no NaN, no crash)
+- [ ] L0: Real backward pass on one batch succeeds (gradients computed)
+- [ ] L1: Fixed-batch overfit succeeds (network memorizes random labels)
+- [ ] L2: Mini-dataset end-to-end loop succeeds (3 epochs on small split)
+- [ ] L3: Checkpoint save/load produces identical results
+- [ ] Loss curves are reasonable (no divergence, no NaN)
+**What this gate does NOT permit:** Full training, evaluation on test set, or publishing results
+
+### Gate 3 — Hardware Parity Testing
+**Required before:** Using optimized_repro_safe mode for paper results
+**What must pass:**
+- [ ] Strict (FP32, single GPU) vs. optimized throughput is measured
+- [ ] AMP/BF16 numerical parity is verified (within ±0.5% mIoU)
+- [ ] DDP numerical parity is verified (within ±0.5% mIoU)
+- [ ] Batch size changes numerical parity is verified
+- [ ] Loss curves between strict and optimized match
+- [ ] No NaN or divergence introduced by optimizations
+**What this gate does NOT permit:** Publishing optimized results without parity documentation
+
+### Gate 4 — Full Training
+**Required before:** Evaluation on test set or publishing results
+**Required gates:** Gate 0, Gate 1, Gate 2, Gate 3 (if using optimizations)
+**What must pass:**
+- [ ] All previous gates passed
+- [ ] Exact command, config, seed, and commit are recorded
+- [ ] Checkpoints are saved at appropriate intervals
+- [ ] Raw metrics are logged at every evaluation
+- [ ] Failed runs are preserved with their logs
+- [ ] Environment snapshot is captured
+**What this gate does NOT permit:** Skipping any previous gate
+
+### Gate 5 — Evidence Verification
+**Required before:** Final report or publication of results
+**What must pass:**
+- [ ] Every reported metric is traceable to raw metrics
+- [ ] Every reported metric can be reproduced from checkpoints
+- [ ] Evidence chain is complete (commit → config → data → seed → command → checkpoint → metrics)
+- [ ] No metric is cherry-picked from selectively retained runs
+- [ ] Failed runs are documented with reasons
+**What this gate does NOT permit:** Claiming results without complete evidence
+
+## Hard Rules
+
+### Absolute Prohibitions
+
+1. **Never start full training before Gate 1 (Preflight) passes.**
+   - Rationale: Wasted GPU hours on broken environments are the most common reproducibility failure.
+   - Exception: None. Even if the environment "looks correct," Gate 1 must be passed.
+
+2. **Never start full training before Gate 2 (Short-Loop) passes.**
+   - Rationale: If the network cannot overfit a small batch, full training will not converge.
+   - Exception: None. Short-loop is a cheap test that prevents expensive failures.
+
+3. **Never use optimized_repro_safe results for paper claims without Gate 3 parity verification.**
+   - Rationale: AMP, DDP, and batch changes can subtly alter training dynamics.
+   - Exception: None. Every optimization must be documented with parity evidence.
+
+4. **Never treat a stub, toy, or simplified network as a real reproduction.**
+   - Rationale: A network that "looks similar" but cannot reproduce results is not a reproduction.
+   - Exception: None. The reproduction must produce comparable metrics on comparable data.
+
+5. **Never use hardcoded, simulated, or cherry-picked metrics.**
+   - Rationale: Fabricated metrics are worse than failed reproductions.
+   - Exception: None. Every metric must come from a real experiment with recorded evidence.
+
+6. **Never discard failed runs.**
+   - Rationale: Failed runs contain evidence about what went wrong.
+   - Exception: None. All runs (success and failure) must be preserved.
+
+7. **Never modify model architecture, loss function, or data augmentation during baseline reproduction.**
+   - Rationale: Changes alter what is being reproduced.
+   - Exception: Only allowed in experimental_fast mode, which cannot be used for paper results.
+
+8. **Never use Optuna or hyperparameter search until the baseline reproduction gate passes.**
+   - Rationale: Searching hyperparameters before having a working baseline is premature optimization.
+   - Exception: None. Get the baseline working first.
+
+### Permission Hierarchy
+
+| Action | strict_repro | optimized_repro_safe | experimental_fast |
+|---|---|---|---|
+| Full training | After Gate 2 | After Gate 3 parity | Never for paper |
+| Evaluation | After Gate 2 | After Gate 3 parity | Never for paper |
+| Metric publication | After Gate 5 | After Gate 5 | Never |
+| Model modification | Never | Never | Allowed |
+| Hyperparameter search | Never | After Gate 5 | Allowed |
+
+## Enforcement
+
+This rule is enforced by `reproctl.py`. The tool checks the state file `.repro/state.json` before allowing phase transitions. If a required gate has not passed, `reproctl` will refuse to proceed and report which gate failed.
+
+### State File Format
+
+```json
+{
+  "paper_url": "",
+  "target_metrics": [],
+  "phase": "preflight",
+  "gates": {
+    "gate_0_paper_audit": {"status": "passed", "timestamp": "", "evidence": ""},
+    "gate_1_preflight": {"status": "passed", "timestamp": "", "evidence": ""},
+    "gate_2_short_loop": {"status": "passed", "timestamp": "", "evidence": ""},
+    "gate_3_parity": {"status": "pending", "timestamp": "", "evidence": ""},
+    "gate_4_full_training": {"status": "pending", "timestamp": "", "evidence": ""},
+    "gate_5_evidence": {"status": "pending", "timestamp": "", "evidence": ""}
+  },
+  "current_mode": "strict_repro",
+  "repositories": {
+    "primary": {"url": "", "commit": "", "role": "primary"},
+    "references": []
+  },
+  "runs": []
+}
+```
+
+## Override
+
+If the user explicitly requests to override a gate (with full understanding of the risks), the override must be:
+1. Documented in the run's evidence record
+2. Logged with a reason for the override
+3. Accompanied by a risk acknowledgment in the final report
+
+No override is possible for:
+- Gate 2 L0 (smoke test) — if the network cannot forward/backward, nothing will work
+- Gate 5 (evidence verification) — results without evidence cannot be claimed as paper reproduction

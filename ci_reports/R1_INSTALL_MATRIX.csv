@@ -1,0 +1,2 @@
+python_version,python_tag,venv_path,editable_install_ok,wheel_install_ok,reproctl_version_subcmd,reproctl_help_subcmd,python_m_reproctl,fixture_locator_resolves,test_count,passed,failed,exit_code,date
+3.13.13,cp313,/tmp/kestrel_r1_workspace/kestrel_r1_venv,yes,not_tested_in_R1,yes,yes,yes,yes,198,185,13,1,2026-07-17

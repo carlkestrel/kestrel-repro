@@ -3,29 +3,29 @@
 Each suite is a callable that returns a structured result dict.
 Suites are run in isolation as subprocesses to prevent crashes from propagating.
 """
+
 from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 import sys
 import time
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Result types
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class SuiteResult:
     """Result returned by every test suite."""
+
     name: str
-    status: str       # PASS | FAIL | SKIP | ERROR
+    status: str  # PASS | FAIL | SKIP | ERROR
     duration_seconds: float
     passed: int = 0
     failed: int = 0
@@ -56,6 +56,7 @@ class SuiteResult:
 # Base runner
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _run_subprocess(
     cmd: list[str],
     timeout_seconds: int = 300,
@@ -82,6 +83,7 @@ def _run_subprocess(
 # Suite A: CI Repeat Stress  (Section III.A)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def run_ci_stress(
     project_root: Path,
     *,
@@ -102,16 +104,26 @@ def run_ci_stress(
     pytest_root = plugin_root / "tests"
     if not pytest_root.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="tests/ directory not found",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="tests/ directory not found",
         )
 
     # Run LEVEL-1 fast suite
     if level_1_fast:
         for i in range(runs):
             rc, stdout, stderr = _run_subprocess(
-                [sys.executable, "-m", "pytest", str(pytest_root / "test_startup.py"),
-                 "-q", "--tb=short", "-x"],
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    str(pytest_root / "test_startup.py"),
+                    "-q",
+                    "--tb=short",
+                    "-x",
+                ],
                 timeout_seconds=120,
                 cwd=str(project_root),
             )
@@ -122,7 +134,7 @@ def run_ci_stress(
                 skipped += 1
             else:
                 failed += 1
-                errors.append(f"CI L1 run {i+1}: exit {rc}")
+                errors.append(f"CI L1 run {i + 1}: exit {rc}")
                 if i > 0:
                     flaky = True
             all_results.append({"run": i + 1, "level": 1, "rc": rc})
@@ -131,8 +143,16 @@ def run_ci_stress(
     if level_2_full:
         for i in range(min(runs, 2)):
             rc, stdout, stderr = _run_subprocess(
-                [sys.executable, "-m", "pytest", str(pytest_root),
-                 "-q", "--tb=short", "-x", "--ignore=tests/test_chaos.py"],
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    str(pytest_root),
+                    "-q",
+                    "--tb=short",
+                    "-x",
+                    "--ignore=tests/test_chaos.py",
+                ],
                 timeout_seconds=300,
                 cwd=str(project_root),
             )
@@ -142,25 +162,30 @@ def run_ci_stress(
                 skipped += 1
             else:
                 failed += 1
-                errors.append(f"CI L2 run {i+1}: exit {rc}")
+                errors.append(f"CI L2 run {i + 1}: exit {rc}")
             all_results.append({"run": i + 1, "level": 2, "rc": rc})
 
     duration = time.monotonic() - t0
     status = "PASS" if failed == 0 else ("SKIP" if skipped and failed == 0 else "FAIL")
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=skipped,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=skipped,
         flaky=flaky,
         output="; ".join(str(r) for r in all_results),
-        errors=errors, warnings=warnings,
-        metadata={"total_runs": runs, "level_1_fast": level_1_fast,
-                  "level_2_full": level_2_full},
+        errors=errors,
+        warnings=warnings,
+        metadata={"total_runs": runs, "level_1_fast": level_1_fast, "level_2_full": level_2_full},
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Suite B: Scheduler Stress  (Section III.B)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_scheduler_stress(project_root: Path, runs: int = 5) -> SuiteResult:
     """Stress-test the task scheduler (start/pause/resume/stop/crash recovery)."""
@@ -177,8 +202,11 @@ def run_scheduler_stress(project_root: Path, runs: int = 5) -> SuiteResult:
     reproctl = plugin_root / "scripts" / "reproctl.py"
     if not reproctl.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="reproctl.py not found",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="reproctl.py not found",
         )
 
     for i in range(runs):
@@ -190,13 +218,12 @@ def run_scheduler_stress(project_root: Path, runs: int = 5) -> SuiteResult:
             passed += 1
         else:
             failed += 1
-            errors.append(f"reproctl version run {i+1}: exit {rc}")
+            errors.append(f"reproctl version run {i + 1}: exit {rc}")
         all_results.append({"run": i + 1, "command": "version", "rc": rc})
 
     # Test: orphan process detection (simulated)
     rc, stdout, stderr = _run_subprocess(
-        [sys.executable, str(reproctl), "status",
-         "--project", str(project_root)],
+        [sys.executable, str(reproctl), "status", "--project", str(project_root)],
         timeout_seconds=30,
     )
     if rc == 0:
@@ -209,10 +236,15 @@ def run_scheduler_stress(project_root: Path, runs: int = 5) -> SuiteResult:
     duration = time.monotonic() - t0
     status = "PASS" if failed == 0 else "FAIL"
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=skipped,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=skipped,
         output="; ".join(str(r) for r in all_results),
-        errors=errors, warnings=warnings,
+        errors=errors,
+        warnings=warnings,
         metadata={"runs": runs},
     )
 
@@ -220,6 +252,7 @@ def run_scheduler_stress(project_root: Path, runs: int = 5) -> SuiteResult:
 # ─────────────────────────────────────────────────────────────────────────────
 # Suite C: GPU Short-Loop Stress  (Section III.C)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_gpu_stress(
     project_root: Path,
@@ -235,15 +268,22 @@ def run_gpu_stress(
 
     try:
         import torch
+
         if not torch.cuda.is_available():
             return SuiteResult(
-                name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-                skipped=1, output="No GPU available",
+                name=name,
+                status="SKIP",
+                duration_seconds=time.monotonic() - t0,
+                skipped=1,
+                output="No GPU available",
             )
     except ImportError:
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="torch not installed",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="torch not installed",
         )
 
     # Try to find a training script in fixtures or primary
@@ -253,16 +293,22 @@ def run_gpu_stress(
 
     if not fixture_train.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="No fixture training script found",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="No fixture training script found",
         )
 
     # Run with GPU short loop args
     rc, stdout, stderr = _run_subprocess(
         [
-            sys.executable, str(fixture_train),
-            "--max-steps", str(min(max_steps, 20)),  # cap at 20 for soak
-            "--batch-size", str(batch_size),
+            sys.executable,
+            str(fixture_train),
+            "--max-steps",
+            str(min(max_steps, 20)),  # cap at 20 for soak
+            "--batch-size",
+            str(batch_size),
         ],
         timeout_seconds=300,
         cwd=str(project_root),
@@ -281,18 +327,27 @@ def run_gpu_stress(
             errors.append("OOM detected in GPU loop")
 
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=0,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=0,
         output=combined[:2000],
-        errors=errors, warnings=warnings,
-        metadata={"max_steps": max_steps, "batch_size": batch_size,
-                  "fixture": str(fixture_train.name)},
+        errors=errors,
+        warnings=warnings,
+        metadata={
+            "max_steps": max_steps,
+            "batch_size": batch_size,
+            "fixture": str(fixture_train.name),
+        },
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Suite D: Batch Boundary Stress  (Section III.D)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_batch_boundary_stress(
     project_root: Path,
@@ -303,10 +358,14 @@ def run_batch_boundary_stress(
     """Test batch sizes around recommended_batch ± 1, P95, and max."""
     t0 = time.monotonic()
     name = "BATCH_BOUNDARY"
-    candidates = candidates or ["paper_batch", "recommended_batch",
-                                "recommended_batch_minus_one",
-                                "recommended_batch_plus_one",
-                                "p95_points_batch", "max_points_batch"]
+    candidates = candidates or [
+        "paper_batch",
+        "recommended_batch",
+        "recommended_batch_minus_one",
+        "recommended_batch_plus_one",
+        "p95_points_batch",
+        "max_points_batch",
+    ]
     errors: list[str] = []
     warnings: list[str] = []
     passed = failed = skipped = 0
@@ -318,8 +377,11 @@ def run_batch_boundary_stress(
 
     if not fixture_train.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=len(candidates), output="No fixture training script",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=len(candidates),
+            output="No fixture training script",
         )
 
     for candidate in candidates:
@@ -335,9 +397,12 @@ def run_batch_boundary_stress(
         bs = batch_map.get(candidate, 10)
         rc, stdout, stderr = _run_subprocess(
             [
-                sys.executable, str(fixture_train),
-                "--max-steps", "5",
-                "--batch-size", str(bs),
+                sys.executable,
+                str(fixture_train),
+                "--max-steps",
+                "5",
+                "--batch-size",
+                str(bs),
             ],
             timeout_seconds=timeout_per,
             cwd=str(project_root),
@@ -356,10 +421,15 @@ def run_batch_boundary_stress(
     duration = time.monotonic() - t0
     status = "PASS" if failed == 0 else "FAIL"
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=skipped,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=skipped,
         output=json.dumps(results),
-        errors=errors, warnings=warnings,
+        errors=errors,
+        warnings=warnings,
         metadata={"candidates": candidates},
     )
 
@@ -367,6 +437,7 @@ def run_batch_boundary_stress(
 # ─────────────────────────────────────────────────────────────────────────────
 # Suite E: DataLoader Stress  (Section III.E)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_dataloader_stress(
     project_root: Path,
@@ -389,16 +460,22 @@ def run_dataloader_stress(
 
     if not fixture_train.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=len(worker_counts), output="No fixture training script",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=len(worker_counts),
+            output="No fixture training script",
         )
 
     for workers in worker_counts:
         rc, stdout, stderr = _run_subprocess(
             [
-                sys.executable, str(fixture_train),
-                "--max-steps", "5",
-                "--num-workers", str(workers),
+                sys.executable,
+                str(fixture_train),
+                "--max-steps",
+                "5",
+                "--num-workers",
+                str(workers),
             ],
             timeout_seconds=timeout_per,
             cwd=str(project_root),
@@ -418,10 +495,15 @@ def run_dataloader_stress(
     duration = time.monotonic() - t0
     status = "PASS" if failed == 0 else "FAIL"
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=skipped,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=skipped,
         output=json.dumps(results),
-        errors=errors, warnings=warnings,
+        errors=errors,
+        warnings=warnings,
         metadata={"worker_counts": worker_counts},
     )
 
@@ -429,6 +511,7 @@ def run_dataloader_stress(
 # ─────────────────────────────────────────────────────────────────────────────
 # Suite F: Metric Consistency Stress  (Section III.F)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_metric_consistency_stress(project_root: Path) -> SuiteResult:
     """Verify metric computation is deterministic and consistent."""
@@ -446,24 +529,32 @@ def run_metric_consistency_stress(project_root: Path) -> SuiteResult:
     # Check if recompute is deterministic (run twice, compare)
     if not metrics_cli.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="metrics/cli.py not found",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="metrics/cli.py not found",
         )
 
     fixture_cm = project_root / "fixtures" / "golden_torch_A"
     if not fixture_cm.exists():
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="golden_torch_A fixture not found",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="golden_torch_A fixture not found",
         )
 
     results: list[dict] = []
     for run_i in range(2):
         rc, stdout, stderr = _run_subprocess(
             [
-                sys.executable, str(metrics_cli),
+                sys.executable,
+                str(metrics_cli),
                 "recompute",
-                "--project", str(project_root),
+                "--project",
+                str(project_root),
             ],
             timeout_seconds=120,
         )
@@ -483,16 +574,22 @@ def run_metric_consistency_stress(project_root: Path) -> SuiteResult:
     duration = time.monotonic() - t0
     status = "PASS" if failed == 0 else "FAIL"
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=skipped,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=skipped,
         output=json.dumps(results),
-        errors=errors, warnings=warnings,
+        errors=errors,
+        warnings=warnings,
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Suite G: Resource Leak Stress  (Section III.G)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_resource_leak_stress(
     project_root: Path,
@@ -508,6 +605,7 @@ def run_resource_leak_stress(
 
     try:
         import torch
+
         TORCH_OK = torch.cuda.is_available()
     except ImportError:
         TORCH_OK = False
@@ -521,8 +619,11 @@ def run_resource_leak_stress(
 
     if len(snapshots) < 3:
         return SuiteResult(
-            name=name, status="SKIP", duration_seconds=time.monotonic() - t0,
-            skipped=1, output="Not enough samples",
+            name=name,
+            status="SKIP",
+            duration_seconds=time.monotonic() - t0,
+            skipped=1,
+            output="Not enough samples",
         )
 
     # Detect monotonically growing resources
@@ -530,7 +631,9 @@ def run_resource_leak_stress(
 
     if TORCH_OK:
         try:
-            gpu_alloc = [s["gpu_allocated_gb"] for s in snapshots if s.get("gpu_allocated_gb") is not None]
+            gpu_alloc = [
+                s["gpu_allocated_gb"] for s in snapshots if s.get("gpu_allocated_gb") is not None
+            ]
             if len(gpu_alloc) >= 3 and gpu_alloc[-1] > gpu_alloc[0] * 1.5:
                 growing.append(f"GPU allocated: {gpu_alloc[0]:.2f} → {gpu_alloc[-1]:.2f} GB")
                 warnings.append("GPU memory leak suspected")
@@ -555,18 +658,27 @@ def run_resource_leak_stress(
 
     duration = time.monotonic() - t0
     return SuiteResult(
-        name=name, status=status, duration_seconds=duration,
-        passed=passed, failed=failed, skipped=0,
+        name=name,
+        status=status,
+        duration_seconds=duration,
+        passed=passed,
+        failed=failed,
+        skipped=0,
         output=json.dumps(snapshots[:3]),  # first 3 as sample
-        errors=errors, warnings=warnings,
-        metadata={"iterations": iterations, "growing_resources": growing,
-                  "samples": len(snapshots)},
+        errors=errors,
+        warnings=warnings,
+        metadata={
+            "iterations": iterations,
+            "growing_resources": growing,
+            "samples": len(snapshots),
+        },
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _sample_resources(project_root: Path) -> dict:
     """Sample current resource usage."""
@@ -578,14 +690,18 @@ def _sample_resources(project_root: Path) -> dict:
     }
     try:
         import torch
+
         if torch.cuda.is_available():
-            sample["gpu_allocated_gb"] = torch.cuda.memory_allocated(0) / (1024 ** 3)
+            sample["gpu_allocated_gb"] = torch.cuda.memory_allocated(0) / (1024**3)
     except Exception:
         pass
 
     try:
         result = subprocess.run(
-            ["free", "-m"], capture_output=True, text=True, timeout=5,
+            ["free", "-m"],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0:
             lines = result.stdout.splitlines()
@@ -599,7 +715,9 @@ def _sample_resources(project_root: Path) -> dict:
     try:
         result = subprocess.run(
             ["ls", "/proc/self/fd"],
-            capture_output=True, text=True, timeout=2,
+            capture_output=True,
+            text=True,
+            timeout=2,
         )
         if result.returncode == 0:
             sample["file_handles"] = len(result.stdout.splitlines())
@@ -613,6 +731,7 @@ def _sample_resources(project_root: Path) -> dict:
 # All suites dispatcher
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def run_all_suites(
     project_root: Path,
     *,
@@ -623,12 +742,14 @@ def run_all_suites(
     results: list[SuiteResult] = []
 
     if cfg.get("run_ci_stress", True):
-        results.append(run_ci_stress(
-            project_root,
-            level_1_fast=cfg.get("ci_level_1_fast", True),
-            level_2_full=cfg.get("ci_level_2_full", False),
-            runs=3,
-        ))
+        results.append(
+            run_ci_stress(
+                project_root,
+                level_1_fast=cfg.get("ci_level_1_fast", True),
+                level_2_full=cfg.get("ci_level_2_full", False),
+                runs=3,
+            )
+        )
 
     if cfg.get("run_scheduler_stress", True):
         results.append(run_scheduler_stress(project_root, runs=3))

@@ -1,4 +1,5 @@
 """CVO — Checkpointed Validation Orchestrator for dl-paper-repro."""
+
 from __future__ import annotations
 
 __version__ = "0.1.0"
@@ -8,10 +9,10 @@ from .nodes import (
     NODE_MAP,
     STAGE_LABELS,
     STAGE_NODES,
-    get_node,
-    get_next_ready,
-    get_stage,
     ValidationNode,
+    get_next_ready,
+    get_node,
+    get_stage,
 )
 from .runner import CVORunner
 from .state import CVOStateStore

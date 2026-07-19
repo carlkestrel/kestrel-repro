@@ -16,6 +16,15 @@ Usage:
     result = orchestrator.run("repo-scout", {"query": "transformer"})
 """
 
+# Import all agents to register them
+from . import (
+    evidence_verifier,  # noqa: F401, E402
+    hardware_fit,  # noqa: F401, E402
+    metric_auditor,  # noqa: F401, E402
+    paper_auditor,  # noqa: F401, E402
+    repo_scout,  # noqa: F401, E402
+    review_auditor,  # noqa: F401, E402
+)
 from .base import (
     AgentOrchestrator,
     AgentRegistry,
@@ -23,14 +32,6 @@ from .base import (
     HandoffContext,
     SpecialistAgent,
 )
-
-# Import all agents to register them
-from . import repo_scout  # noqa: F401, E402
-from . import paper_auditor  # noqa: F401, E402
-from . import metric_auditor  # noqa: F401, E402
-from . import hardware_fit  # noqa: F401, E402
-from . import evidence_verifier  # noqa: F401, E402
-from . import review_auditor  # noqa: F401, E402
 
 __all__ = [
     "AgentOrchestrator",

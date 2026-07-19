@@ -1,0 +1,23 @@
+legacy_mode,research_purpose,execution_track,automation_level,needs_review,notes
+strict_repro,reproduce,strict,gated-autopilot,NO,exact equivalent
+optimized_repro_safe,reproduce,fast,gated-autopilot,NO,exact equivalent
+experimental_fast,reproduce,fast,gated-autopilot,NO,exact equivalent
+strict,reproduce,strict,manual,NO,unambiguous
+optimized,reproduce,fast,manual,NO,unambiguous
+reproduce,reproduce,strict,gated-autopilot,NO,exact equivalent
+diagnose,audit,strict,gated-autopilot,NO,exact equivalent
+evolve,extend,fast,gated-autopilot,NO,exact equivalent
+extend,extend,fast,gated-autopilot,NO,exact equivalent
+takeover,takeover,strict,gated-autopilot,NO,exact equivalent
+audit,?,?,?,YES,ambiguous — could mean audit_smoke or audit_strict or audit_manual
+optimized_repro,?,?,?,YES,deprecated spelling
+experimental,?,?,?,YES,ambiguous — could be experimental_fast or experimental_strict
+auto,?,?,?,YES,ambiguous — automation level unspecified
+gated,?,?,?,YES,ambiguous — automation_level=gated but purpose unspecified
+manual,?,?,?,YES,ambiguous — automation_level=manual but purpose unspecified
+audit_strict,audit,strict,gated-autopilot,NO,fully specified
+audit_fast,audit,fast,gated-autopilot,NO,fully specified
+audit_smoke,audit,smoke,gated-autopilot,NO,fully specified
+reproduce_strict_gated,reproduce,strict,gated-autopilot,NO,fully specified
+strict_gated,reproduce,strict,gated-autopilot,NO,fully specified
+unknown_xyz,?,?,?,YES,completely unrecognised

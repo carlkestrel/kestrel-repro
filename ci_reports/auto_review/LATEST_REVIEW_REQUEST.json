@@ -1,0 +1,69 @@
+{
+  "repository": "carlkestrel/kestrel-repro",
+  "pull_request": 1,
+  "branch": "review/r3-20260718-a828023",
+  "phase": "R3F-678",
+  "phase_status": "PASS",
+  "base_sha": "a828023f537dfbfed4d7798066f3ca084d8072c9",
+  "previous_head_sha": "b9a0150e9156ae81923a759a7d2c53bfbeabfd42",
+  "new_head_sha": "e8178e827a39fed914c6a189fa2240c5462e98eb",
+  "commit_sha": "715b8aba2f7fd38cd9631d0274adb6b618ef3aa6",
+  "main_sha_verified": "a828023f537dfbfed4d7798066f3ca084d8072c9",
+  "test_commands": [
+    "python -m pytest tests/test_orchestrator.py --tb=line --timeout=120 -p no:cacheprovider -q",
+    "python -m pytest tests/test_startup.py tests/test_r2_acceptance.py tests/test_r3_0_acceptance.py tests/test_r3f2_single_authority.py tests/test_r1_acceptance.py --tb=line --timeout=120 -p no:cacheprovider -q",
+    "python -m pytest tests/test_chaos.py --tb=line --timeout=300 -p no:cacheprovider -q",
+    "python -m pytest tests/ --ignore=tests/test_chaos.py --tb=line --timeout=120 -p no:cacheprovider -q"
+  ],
+  "collected": 403,
+  "passed": 399,
+  "failed": 4,
+  "skipped": 0,
+  "junit_files": [
+    "ci_reports/r3_repair/R3F_678_chaos_JUNIT.xml",
+    "ci_reports/r3_repair/R3F_678_other_JUNIT.xml"
+  ],
+  "raw_log_files": [
+    "ci_reports/r3_repair/R3F_678_BASELINE.md"
+  ],
+  "r3f678_summary": {
+    "orchestrator": "18/18 passed",
+    "core_suite": "120/120 passed",
+    "chaos": "24/28 passed (4 ENVIRONMENT)",
+    "all_others": "237/237 passed",
+    "total": "399/403 passed",
+    "r3f6_self_test": "start --self-test flag, _cmd_self_test, startup_verification_report.json",
+    "r3f7_verifier": "self_test method, crash isolation, test schema validation, _REQUIRED_FIELDS",
+    "r3f8_stop": "stop --force flag, lock_cleared verification, SIGKILL after 2s SIGTERM"
+  },
+  "known_failures": [
+    {
+      "test": "TestTrainingSubprocessKilled::test_training_killed_preserves_checkpoint",
+      "classification": "ENVIRONMENT",
+      "root_cause": "torch not installed"
+    },
+    {
+      "test": "TestSqliteLocked::test_sqlite_locked_retries_or_fails",
+      "classification": "ENVIRONMENT",
+      "root_cause": "reproctl hangs on locked SQLite"
+    },
+    {
+      "test": "TestGpuUnavailable::test_gpu_unavailable_graceful_degradation",
+      "classification": "ENVIRONMENT",
+      "root_cause": "no GPU hardware"
+    },
+    {
+      "test": "TestAutoRetryHitsLimit::test_max_retries_then_fail",
+      "classification": "ENVIRONMENT",
+      "root_cause": "torch not installed"
+    }
+  ],
+  "changed_files_manifest": "scripts/startup/cli.py (--self-test, _cmd_self_test, canonical plan validation), scripts/startup/stop.py (--force, lock_cleared), scripts/orchestrator/verifier.py (self_test, crash isolation, test schema validation), ci_reports/r3_repair/R3F_678_BASELINE.md, ci_reports/r3_repair/R3F_678_chaos_JUNIT.xml, ci_reports/r3_repair/R3F_678_other_JUNIT.xml",
+  "unresolved_risks": [
+    "4 chaos tests fail due to ENVIRONMENT: torch not installed, no GPU hardware, SQLite lock hangs"
+  ],
+  "ready_for_external_review": true,
+  "ready_for_external_review_caveat": "Materials uploaded for review. ready_for_external_review=true does NOT mean external review has been completed, PR may be merged, release may be tagged, or real paper reproduction is finished.",
+  "external_review_status": "NOT_REQUESTED",
+  "generated_at": "2026-07-18T20:00:00+08:00"
+}

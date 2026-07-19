@@ -1,0 +1,31 @@
+{
+  "plan_id": "golden_torch_A",
+  "expected_events": [
+    {"event_type": "PLAN_REGISTERED", "task_id": null},
+    {"event_type": "TASK_CLAIMED", "task_id": "T1_init"},
+    {"event_type": "TASK_STARTED", "task_id": "T1_init"},
+    {"event_type": "VERIFICATION_PASS", "task_id": "T1_init"},
+    {"event_type": "TASK_PASSED", "task_id": "T1_init"},
+    {"event_type": "TASK_CLAIMED", "task_id": "T2_env"},
+    {"event_type": "TASK_STARTED", "task_id": "T2_env"},
+    {"event_type": "VERIFICATION_PASS", "task_id": "T2_env"},
+    {"event_type": "TASK_PASSED", "task_id": "T2_env"},
+    {"event_type": "TASK_CLAIMED", "task_id": "T3_train"},
+    {"event_type": "TASK_STARTED", "task_id": "T3_train"},
+    {"event_type": "VERIFICATION_PASS", "task_id": "T3_train"},
+    {"event_type": "TASK_PASSED", "task_id": "T3_train"},
+    {"event_type": "TASK_CLAIMED", "task_id": "T4_verify"},
+    {"event_type": "TASK_STARTED", "task_id": "T4_verify"},
+    {"event_type": "VERIFICATION_PASS", "task_id": "T4_verify"},
+    {"event_type": "TASK_PASSED", "task_id": "T4_verify"},
+    {"event_type": "TASK_CLAIMED", "task_id": "T5_checkpoint"},
+    {"event_type": "TASK_STARTED", "task_id": "T5_checkpoint"},
+    {"event_type": "VERIFICATION_PASS", "task_id": "T5_checkpoint"},
+    {"event_type": "TASK_PASSED", "task_id": "T5_checkpoint"},
+    {"event_type": "TASK_CLAIMED", "task_id": "T6_audit"},
+    {"event_type": "TASK_STARTED", "task_id": "T6_audit"},
+    {"event_type": "VERIFICATION_PASS", "task_id": "T6_audit"},
+    {"event_type": "TASK_PASSED", "task_id": "T6_audit"},
+    {"event_type": "PLAN_COMPLETE", "task_id": null}
+  ]
+}

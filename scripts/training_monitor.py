@@ -23,25 +23,25 @@ The module also emits telemetry via `write_telemetry()` (P4_T06):
     experiments/<run_id>/TELEMETRY.jsonl          # one row per sample
     experiments/<run_id>/TELEMETRY_STAGES.jsonl   # one row per detected stage transition
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
 import threading
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
 
 
 class Status(str, Enum):
     """Nine canonical run states (P4_T01 acceptance)."""
+
     OK = "OK"
     STALLED = "STALLED"
     DIVERGED = "DIVERGED"
@@ -69,25 +69,26 @@ STATUS_PRIORITY = [
 @dataclass
 class Metrics:
     """The 15-metric snapshot. Field names match TELEMETRY.jsonl schema."""
+
     ts: str = ""
-    gpu_util_pct: float = 0.0           # 1
-    gpu_mem_used_mb: float = 0.0        # 2
-    gpu_mem_peak_mb: float = 0.0        # 3
-    gpu_temp_c: float = 0.0             # 4
-    cpu_pct: float = 0.0                # 5
-    ram_used_mb: float = 0.0            # 6
-    disk_used_pct: float = 0.0          # 7
-    step_time_s: float = 0.0            # 8
-    loss: float = 0.0                   # 9
-    grad_norm: float = 0.0              # 10
-    has_nan: bool = False               # 11
-    has_oom: bool = False               # 12
-    last_ckpt_age_s: float = -1.0       # 13
+    gpu_util_pct: float = 0.0  # 1
+    gpu_mem_used_mb: float = 0.0  # 2
+    gpu_mem_peak_mb: float = 0.0  # 3
+    gpu_temp_c: float = 0.0  # 4
+    cpu_pct: float = 0.0  # 5
+    ram_used_mb: float = 0.0  # 6
+    disk_used_pct: float = 0.0  # 7
+    step_time_s: float = 0.0  # 8
+    loss: float = 0.0  # 9
+    grad_norm: float = 0.0  # 10
+    has_nan: bool = False  # 11
+    has_oom: bool = False  # 12
+    last_ckpt_age_s: float = -1.0  # 13
     class_distribution_entropy: float = 0.0  # 14 (high = healthy, low = collapse)
     log_keyword_hits: dict = field(default_factory=dict)  # 15
     status: str = Status.UNKNOWN.value  # classification
     run_id: str = ""
-    stage: str = ""                     # free-form stage name (data, fwd, bwd, optim, ckpt, eval)
+    stage: str = ""  # free-form stage name (data, fwd, bwd, optim, ckpt, eval)
 
 
 def _now_iso() -> str:
@@ -121,7 +122,10 @@ def _gpu_metrics() -> tuple[float, float, float, float]:
 def _cpu_metrics() -> tuple[float, float]:
     try:
         import psutil  # type: ignore
-        return float(psutil.cpu_percent(interval=0.0)), float(psutil.virtual_memory().used / 1024 / 1024)
+
+        return float(psutil.cpu_percent(interval=0.0)), float(
+            psutil.virtual_memory().used / 1024 / 1024
+        )
     except Exception:
         return 0.0, 0.0
 
@@ -129,6 +133,7 @@ def _cpu_metrics() -> tuple[float, float]:
 def _disk_metrics(path: str = "/") -> float:
     try:
         import psutil  # type: ignore
+
         return float(psutil.disk_usage(path).percent)
     except Exception:
         return 0.0
@@ -140,21 +145,25 @@ _KEYWORD_PATTERNS = {
     "ckpt_saved": re.compile(r"(saving checkpoint|checkpoint saved|model saved)", re.IGNORECASE),
     "diverged": re.compile(r"(diverge|loss explosion|loss spike)", re.IGNORECASE),
     "overheat": re.compile(r"(thermal throttl\w+|temperature.*critical)", re.IGNORECASE),
-    "class_collapse": re.compile(r"(class collapse|all predictions.*same|predictions degenerate)", re.IGNORECASE),
+    "class_collapse": re.compile(
+        r"(class collapse|all predictions.*same|predictions degenerate)", re.IGNORECASE
+    ),
 }
 
 
-def _scan_log_keywords(log_path: Optional[Path]) -> dict:
+def _scan_log_keywords(log_path: Path | None) -> dict:
     if not log_path or not log_path.exists():
-        return {k: 0 for k in _KEYWORD_PATTERNS}
+        return dict.fromkeys(_KEYWORD_PATTERNS, 0)
     try:
         # Tail the last 200 lines (cheap and avoids re-reading huge files).
         text = subprocess.run(
             ["tail", "-n", "200", str(log_path)],
-            capture_output=True, text=True, timeout=2.0,
+            capture_output=True,
+            text=True,
+            timeout=2.0,
         ).stdout
     except Exception:
-        return {k: 0 for k in _KEYWORD_PATTERNS}
+        return dict.fromkeys(_KEYWORD_PATTERNS, 0)
     hits = {}
     for k, pat in _KEYWORD_PATTERNS.items():
         hits[k] = len(pat.findall(text))
@@ -164,6 +173,7 @@ def _scan_log_keywords(log_path: Optional[Path]) -> dict:
 def _class_collapse_entropy(class_dist: dict) -> float:
     """Shannon entropy of class distribution (higher = more uniform)."""
     import math
+
     total = sum(class_dist.values())
     if total <= 0 or len(class_dist) <= 1:
         return 0.0
@@ -208,15 +218,15 @@ class TrainingMonitor:
     def __init__(
         self,
         run_id: str,
-        log_path: Optional[Path] = None,
-        telemetry_dir: Optional[Path] = None,
+        log_path: Path | None = None,
+        telemetry_dir: Path | None = None,
     ):
         self.run_id = run_id
         self.log_path = log_path
         self.telemetry_dir = telemetry_dir
-        self._last_sample_ts: Optional[float] = None
+        self._last_sample_ts: float | None = None
         self._stage: str = ""
-        self._stage_start: Optional[float] = None
+        self._stage_start: float | None = None
         self._stages: list = []
         self._lock = threading.Lock()
         self._stop_evt = threading.Event()
@@ -229,12 +239,14 @@ class TrainingMonitor:
         self._stop_evt.set()
         # Flush current stage, if any.
         if self._stage and self._stage_start is not None:
-            self._stages.append({
-                "stage": self._stage,
-                "start_ts": datetime.fromtimestamp(self._stage_start, timezone.utc).isoformat(),
-                "end_ts": _now_iso(),
-                "duration_s": time.time() - self._stage_start,
-            })
+            self._stages.append(
+                {
+                    "stage": self._stage,
+                    "start_ts": datetime.fromtimestamp(self._stage_start, timezone.utc).isoformat(),
+                    "end_ts": _now_iso(),
+                    "duration_s": time.time() - self._stage_start,
+                }
+            )
         if self.telemetry_dir is not None:
             self._flush_stages()
 
@@ -244,12 +256,16 @@ class TrainingMonitor:
         now = time.time()
         with self._lock:
             if self._stage and self._stage_start is not None:
-                self._stages.append({
-                    "stage": self._stage,
-                    "start_ts": datetime.fromtimestamp(self._stage_start, timezone.utc).isoformat(),
-                    "end_ts": _now_iso(),
-                    "duration_s": now - self._stage_start,
-                })
+                self._stages.append(
+                    {
+                        "stage": self._stage,
+                        "start_ts": datetime.fromtimestamp(
+                            self._stage_start, timezone.utc
+                        ).isoformat(),
+                        "end_ts": _now_iso(),
+                        "duration_s": now - self._stage_start,
+                    }
+                )
             self._stage = name
             self._stage_start = now
         if self.telemetry_dir is not None:
@@ -260,8 +276,8 @@ class TrainingMonitor:
         *,
         loss: float = 0.0,
         grad_norm: float = 0.0,
-        class_dist: Optional[dict] = None,
-        ckpt_mtime: Optional[float] = None,
+        class_dist: dict | None = None,
+        ckpt_mtime: float | None = None,
         step_time_s: float = 0.0,
     ) -> Metrics:
         """Take one snapshot. Returns the classified Metrics dataclass."""
@@ -319,10 +335,11 @@ class TrainingMonitor:
 
 # --- Module-level helpers used by CLI ---
 
+
 def write_telemetry(
     metrics: Metrics,
     telemetry_dir: Path,
-    stages: Optional[list] = None,
+    stages: list | None = None,
 ) -> None:
     """Stand-alone writer for callers that don't want a TrainingMonitor instance."""
     telemetry_dir.mkdir(parents=True, exist_ok=True)

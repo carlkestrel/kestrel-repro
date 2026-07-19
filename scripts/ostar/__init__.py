@@ -2,6 +2,7 @@
 
 This module provides the entry point for the overnight soak testing system.
 """
+
 from __future__ import annotations
 
 __version__ = "0.1.0"

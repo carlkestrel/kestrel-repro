@@ -1,0 +1,24 @@
+{
+  ".github/workflows/ci-l1.yml": [
+    "manifest",
+    "syntax",
+    "validate-configs",
+    "ruff-lint",
+    "pytest-unit"
+  ],
+  ".github/workflows/ci-l2.yml": [
+    "cli-smoke",
+    "startup-integration",
+    "config-parsing",
+    "orchestrator-import"
+  ],
+  ".github/workflows/ci-l3.yml": [
+    "l0-l3-verification",
+    "orchestrator-full",
+    "startup-full",
+    "golden-fixtures",
+    "gpu-tests",
+    "cvo-full",
+    "remaining-tests"
+  ]
+}

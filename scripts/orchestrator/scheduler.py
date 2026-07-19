@@ -44,8 +44,9 @@ class Scheduler:
         tasks = {task["id"]: task for task in self.store.list_tasks()}
         for task in tasks.values():
             if task["status"] == "RETRY_WAIT" and (task.get("retry_at") or 0) <= now:
-                self.store.transition(task["id"], "READY", expected="RETRY_WAIT",
-                                      fields={"retry_at": None})
+                self.store.transition(
+                    task["id"], "READY", expected="RETRY_WAIT", fields={"retry_at": None}
+                )
                 changed = True
         if changed:
             tasks = {task["id"]: task for task in self.store.list_tasks()}
@@ -53,7 +54,7 @@ class Scheduler:
             if task["status"] != "PENDING":
                 continue
             deps = [tasks[dep]["status"] for dep in task.get("deps", [])]
-            if all(status == "PASS" for status in deps):
+            if all(status in {"PASSED"} for status in deps):
                 self.store.transition(task["id"], "READY", expected="PENDING")
                 changed = True
         return changed
@@ -77,8 +78,11 @@ class Scheduler:
 
     def deadlock_reason(self) -> str | None:
         tasks = self.store.list_tasks()
-        if any(task["status"] in {"RUNNING", "VERIFYING", "READY", "APPROVED",
-                                  "RETRY_WAIT", "WAITING_APPROVAL"} for task in tasks):
+        if any(
+            task["status"]
+            in {"RUNNING", "VERIFYING", "READY", "APPROVED", "RETRY_WAIT", "WAITING_APPROVAL"}
+            for task in tasks
+        ):
             return None
         unfinished = [task for task in tasks if task["status"] == "PENDING"]
         if not unfinished:
@@ -86,7 +90,10 @@ class Scheduler:
         details = []
         by_id = {task["id"]: task for task in tasks}
         for task in unfinished:
-            blocked = [f"{dep}:{by_id[dep]['status']}" for dep in task.get("deps", [])
-                       if by_id[dep]["status"] != "PASS"]
+            blocked = [
+                f"{dep}:{by_id[dep]['status']}"
+                for dep in task.get("deps", [])
+                if by_id[dep]["status"] not in {"PASSED"}
+            ]
             details.append(f"{task['id']} waits on {','.join(blocked)}")
         return "dependency deadlock: " + "; ".join(details)

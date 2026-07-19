@@ -1,0 +1,95 @@
+# Repository Adapter Template
+# Copy this to .repro/repo_adapter.yaml and fill in the values for the specific repository.
+# This file tells reproctl and agents how to interact with this specific repository.
+
+# Commands — use these exact paths/commands for this repository
+commands:
+  # Check environment requirements
+  environment_check: ""
+  # Example: "python check_requirements.py"
+
+  # Preprocess data (if needed)
+  preprocess: ""
+  # Example: "python scripts/preprocess_s3dis.py --data_root $DATA_ROOT"
+
+  # Full training command
+  train: ""
+  # Example: "python train.py --config configs/s3dis/kpconv.yaml --epochs 300"
+
+  # Evaluation command
+  evaluate: ""
+  # Example: "python evaluate.py --checkpoint checkpoints/best.pth --data_root $DATA_ROOT"
+
+  # Inference/prediction command
+  predict: ""
+  # Example: "python predict.py --checkpoint checkpoints/best.pth --input scene.ply"
+
+  # Full-point-cloud voting (for point cloud models)
+  full_pc_vote: ""
+  # Example: "python scripts/full_pc_vote.py --checkpoint checkpoints/best.pth"
+
+# Entrypoints — paths to key modules
+entrypoints:
+  model: ""                # e.g., "models/kpconv.py"
+  dataset: ""               # e.g., "datasets/s3dis.py"
+  loss: ""                 # e.g., "losses/cross_entropy.py"
+  metrics: ""              # e.g., "metrics/miou.py"
+  trainer: ""               # e.g., "train.py"
+  evaluator: ""             # e.g., "evaluate.py"
+
+# Artifact locations within the repository
+artifacts:
+  checkpoints: "checkpoints/"
+  logs: "logs/"
+  metrics: "metrics/"
+  predictions: "predictions/"
+  figures: "figures/"
+
+# Smoke test configuration (L0)
+smoke:
+  config: ""               # Config file for smoke test
+  # Example: "configs/smoke_test.yaml"
+  max_steps: 1
+
+# Short-loop configuration (L1, L2)
+short_loop:
+  # L1: Overfit a single batch
+  overfit_steps: 100
+  overfit_target_loss: 0.01
+
+  # L2: Mini-dataset loop
+  mini_split_ratio: 0.05  # Use 5% of training data
+  mini_epochs: 3
+
+# Hardware configuration hints
+hardware:
+  # Estimated VRAM usage at default batch size
+  estimated_vram_gb: 8
+
+  # Batch sizes for different VRAM tiers
+  batch_sizes:
+    large: 8     # >= 24 GB VRAM
+    medium: 4    # 16 GB VRAM
+    small: 2     # 12 GB VRAM
+    minimal: 1   # < 12 GB VRAM
+
+  # Whether custom CUDA extensions are needed
+  requires_cuda_extension: false
+  cuda_extension_path: ""
+
+# Data configuration
+data:
+  # Dataset class name
+  dataset_class: ""
+
+  # Expected number of classes
+  num_classes: 0
+
+  # Label mapping (raw → remapped)
+  label_mapping: {}
+
+  # Ignored labels in evaluation
+  ignored_labels: []
+
+  # Augmentation config (for verification)
+  augmentation: ""

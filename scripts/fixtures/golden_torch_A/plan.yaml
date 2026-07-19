@@ -1,0 +1,80 @@
+plan_id: golden_torch_A
+schema_version: "1.0.0"
+mode: strict
+automation: safe-auto
+tasks:
+  - id: T1_init
+    name: Initialize project
+    gate: init
+    deps: []
+    command: echo "init" && mkdir -p checkpoints logs
+    timeout_min: 1
+    acceptance_tests:
+      - type: file_exists
+        path: checkpoints
+    retry_policy:
+      max_attempts: 0
+  - id: T2_env
+    name: Environment check
+    gate: env_check
+    deps: [T1_init]
+    command: python -c "import torch; print(torch.__version__)"
+    timeout_min: 2
+    acceptance_tests:
+      - type: command
+        command: python -c "import torch; assert torch.__version__"
+    retry_policy:
+      max_attempts: 1
+  - id: T3_train
+    name: Tiny PyTorch training
+    gate: train
+    deps: [T2_env]
+    command: python train.py --epochs 3 --seed 42 --output-dir checkpoints
+    timeout_min: 5
+    acceptance_tests:
+      - type: file_exists
+        path: checkpoints/model.pt
+      - type: numeric_range
+        path: checkpoints/metrics.json
+        min: 0
+        max: 1000
+    retry_policy:
+      max_attempts: 2
+  - id: T4_verify
+    name: Verify model loads
+    gate: verify
+    deps: [T3_train]
+    command: python -c "import torch; m=torch.load('checkpoints/model.pt'); print('ok')"
+    timeout_min: 2
+    acceptance_tests:
+      - type: command
+        command: python -c "import torch; torch.load('checkpoints/model.pt'); print('ok')"
+    retry_policy:
+      max_attempts: 1
+  - id: T5_checkpoint
+    name: Checkpoint consistency
+    gate: verify
+    deps: [T4_verify]
+    command: python -c "import hashlib,json; d=json.load(open('checkpoints/metrics.json')); print(hashlib.sha256(str(d).encode()).hexdigest()[:8])"
+    timeout_min: 1
+    acceptance_tests:
+      - type: command
+        command: echo "checkpoint verified"
+    retry_policy:
+      max_attempts: 0
+  - id: T6_audit
+    name: Final audit
+    gate: audit
+    deps: [T5_checkpoint]
+    command: echo "audit complete"
+    timeout_min: 1
+    acceptance_tests:
+      - type: command
+        command: echo "audit pass"
+    retry_policy:
+      max_attempts: 0
+approvals_required: false
+mandatory_task_ids: [T1_init, T2_env, T3_train, T6_audit]
+budgets:
+  max_runtime_min: 15
+  max_retries: 5

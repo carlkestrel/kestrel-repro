@@ -1,0 +1,66 @@
+# Excluded Files Inventory
+
+## Categories NOT staged
+
+### Already gitignored (automatic)
+- `.repro/` (runtime state, audit, decision log)
+- `.venv/`, `venv/` (virtual environments)
+- `node_modules/` (JS deps)
+- `__pycache__/`, `*.py[cod]`
+- `.pytest_cache/`, `.mypy_cache/`
+- `*.log`, `logs/`
+- `*.tmp`, `*.bak`, `*~`
+- `.coverage`, `htmlcov/`
+- `*.egg-info/`, `build/`, `dist/`
+
+### Prohibited patterns (none found)
+- `.env`, `.env.*` — 0
+- API keys / OAuth tokens — 0
+- Private keys (PEM) — 0
+- `.sqlite3`, `.db` — 0
+- `.pth`, `.pt`, `.ckpt` — 0
+- `*.tar.gz`, `*.zip` — 0
+- Datasets, checkpoints — 0
+- Lock files (`*.lock`, `*.pid`) — 0
+
+### User-excluded
+- `.git/config` — contains user's GitHub PAT, local-only, never committed
+
+## Detailed listing of unstaged/untracked files in working tree
+
+```
+$ git status --short | grep -v "^[MA] "
+(empty)
+```
+
+**No untracked or unstaged files remain after staging.**
+
+## What IS staged (194 files)
+
+See `REVIEW_STAGED_FILES.txt` for the complete manifest.
+
+Summary by category:
+- 1 .gitignore (modified)
+- 33 R1-R3 deliverables (R1_*, R2_*, R3_0_*, R3_FULL_*, R3_PROGRESS_*)
+- 5 review_state snapshots + SHA256SUMS
+- 7 github_review reports (REVIEW_*, OLD_VS_NEW_*, R3_REVIEW_PR_BODY)
+- 11 performance files (modified baseline reports)
+- 49 scripts/ files (modified + new R1-R3 modules)
+- 15 tests/ files (modified + new acceptance suites)
+- pyproject.toml
+- docs/adr/ADR-001-single-state-authority.md
+- 23 templates, 8 commands, 7 agents, 4 skills, 4 rules
+- 3 root CSV/JSON (issue_ledger, refactor_state, truth_matrix)
+
+## Verification
+
+```
+$ git diff --cached --name-only | wc -l
+194
+
+$ git status --short | wc -l
+194    (all are staged A/M records)
+
+$ git diff HEAD --stat | tail -1
+ 194 files changed, 16612 insertions(+), 678 deletions(-)
+```

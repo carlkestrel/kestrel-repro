@@ -45,12 +45,18 @@ AUTO_PROCEED_ENV = "AUTO_PROCEED"
 class PolicyEngine:
     """Reload-on-every-decision policy evaluator with NORA AUTO_PROCEED support."""
 
-    def __init__(self, project_root: str | Path,
-                 policy_path: str | Path | None = None,
-                 automation: str = "safe-auto"):
+    def __init__(
+        self,
+        project_root: str | Path,
+        policy_path: str | Path | None = None,
+        automation: str = "safe-auto",
+    ):
         self.project_root = Path(project_root).resolve()
-        self.policy_path = (Path(policy_path).resolve() if policy_path else
-                            self.project_root / "automation_policy.yaml")
+        self.policy_path = (
+            Path(policy_path).resolve()
+            if policy_path
+            else self.project_root / "automation_policy.yaml"
+        )
         self.automation = automation
         self._nora_config: dict[str, Any] = {}
 
@@ -60,13 +66,15 @@ class PolicyEngine:
         if yaml is None:
             raise RuntimeError("PyYAML is required to read automation policy")
         loaded = yaml.safe_load(self.policy_path.read_text(encoding="utf-8")) or {}
-        
+
         # Load NORA config
         self._nora_config = loaded.get("nora", DEFAULT_POLICY["nora"])
-        
-        merged = {"default": loaded.get("default", DEFAULT_POLICY["default"]),
-                  "gates": {**DEFAULT_POLICY["gates"], **loaded.get("gates", {})},
-                  "nora": {**DEFAULT_POLICY["nora"], **self._nora_config}}
+
+        merged = {
+            "default": loaded.get("default", DEFAULT_POLICY["default"]),
+            "gates": {**DEFAULT_POLICY["gates"], **loaded.get("gates", {})},
+            "nora": {**DEFAULT_POLICY["nora"], **self._nora_config},
+        }
         return merged
 
     def is_auto_proceed_enabled(self) -> bool:
@@ -76,7 +84,7 @@ class PolicyEngine:
             return True
         if env_value in ("false", "0", "no"):
             return False
-        
+
         # Check config
         policy = self.load()
         return policy.get("nora", {}).get("auto_proceed", False)
@@ -91,32 +99,32 @@ class PolicyEngine:
         checkpoints = self.get_human_checkpoints()
         if not checkpoints:
             return False
-        
+
         # Check if this gate is in the checkpoint list
         if gate in checkpoints:
             # Don't pause if AUTO_PROCEED is enabled
             return not self.is_auto_proceed_enabled()
-        
+
         return False
 
     def evaluate(self, task: dict) -> tuple[str, str]:
         policy = self.load()
         gate = str(task.get("gate", ""))
         decision = str(policy["gates"].get(gate, policy["default"])).upper()
-        
+
         if decision not in DECISIONS:
             return REJECT, f"invalid policy decision {decision!r} for gate {gate}"
-        
+
         if self.automation != "safe-auto":
             return decision, f"policy gate {gate}"
-        
+
         # Check for AUTO_PROCEED
         if self.is_auto_proceed_enabled() and decision == REQUIRE_APPROVAL:
             # Auto-approve R0/R1 gates if AUTO_PROCEED is enabled
             risk_level = self._get_risk_level(gate)
             if risk_level in ("R0", "R1", "R2"):
                 return AUTO_EXECUTE, f"{gate} auto-proceeded (AUTO_PROCEED=true)"
-        
+
         boundary = self._safe_auto_boundary(task)
         if boundary is not None:
             return boundary

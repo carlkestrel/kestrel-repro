@@ -1,7 +1,0 @@
-{
-  "task_id": "P1_T04",
-  "status": "PASS",
-  "template_path": "templates/research_contract.md",
-  "template_bytes": 4352,
-  "required_sections": ["Paper", "Code", "Goal", "Data", "Metric", "Budget", "Allowed", "Forbidden", "Human Confirmation"]
-}

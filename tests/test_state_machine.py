@@ -1,5 +1,7 @@
 """Test the project state machine (mode transitions)."""
-import sys, importlib.util
+
+import importlib.util
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -8,6 +10,7 @@ mod = importlib.util.module_from_spec(spec)
 sys.modules["reproctl"] = mod  # register for @dataclass etc.
 spec.loader.exec_module(mod)
 import os  # noqa: E402
+
 os.chdir(str(REPO))
 m = mod
 
@@ -32,7 +35,6 @@ def test_default_state():
     Before calling _load_state(), we ensure a clean state by removing any
     existing STATE.json so it gets re-materialized from defaults.
     """
-    import os
     # Ensure clean state: remove existing STATE.json so _load_state()
     # re-materializes from defaults
     p = m._state_path()
@@ -44,11 +46,13 @@ def test_default_state():
     for key in ["HUMAN_CHECKPOINT", "WIP_LIMIT"]:
         assert key in state["flags"], f"required flag {key} missing from state"
     # HUMAN_CHECKPOINT must be bool True (not string "True")
-    assert state["flags"]["HUMAN_CHECKPOINT"] == True, \
+    assert state["flags"]["HUMAN_CHECKPOINT"] == True, (
         f"HUMAN_CHECKPOINT must be True (bool), got {state['flags']['HUMAN_CHECKPOINT']!r}"
+    )
     # WIP_LIMIT must be int 1 (not string "1")
-    assert state["flags"]["WIP_LIMIT"] == 1, \
+    assert state["flags"]["WIP_LIMIT"] == 1, (
         f"WIP_LIMIT must be 1 (int), got {state['flags']['WIP_LIMIT']!r}"
+    )
 
 
 def test_state_machine_round_trip(tmp_path):
@@ -64,8 +68,10 @@ def test_state_machine_round_trip(tmp_path):
 
 if __name__ == "__main__":
     import tempfile
+
     with tempfile.TemporaryDirectory() as td:
         import os
+
         old_cwd = os.getcwd()
         try:
             test_valid_project_modes()

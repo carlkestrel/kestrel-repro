@@ -17,13 +17,12 @@ Usage:
 All commands read/write state at:
     .repro/audit/
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,9 +31,9 @@ from pathlib import Path
 #   _SCRIPT_DIR       = .../dl-paper-repro/scripts/cvo/  (where this file lives)
 #   _SCRIPT_DIR.parent = .../dl-paper-repro/scripts/       (package root; in sys.path)
 #   PLUGIN_ROOT       = .../dl-paper-repro/scripts/../    = dl-paper-repro/  (plugin root)
-_SCRIPT_DIR = Path(__file__).resolve().parent        # scripts/cvo/
-_PLUGINS_DIR = _SCRIPT_DIR.parent                   # scripts/
-PLUGIN_ROOT = _PLUGINS_DIR.parent                  # dl-paper-repro/ ← CORRECT
+_SCRIPT_DIR = Path(__file__).resolve().parent  # scripts/cvo/
+_PLUGINS_DIR = _SCRIPT_DIR.parent  # scripts/
+PLUGIN_ROOT = _PLUGINS_DIR.parent  # dl-paper-repro/ ← CORRECT
 
 # Make scripts/ importable as "from cvo import ..."
 if str(_PLUGINS_DIR) not in sys.path:
@@ -43,20 +42,21 @@ if str(_PLUGINS_DIR) not in sys.path:
 try:
     from cvo import (
         ALL_NODES,
-        CVORunner,
-        CVOStateStore,
         NODE_MAP,
         STAGE_LABELS,
         STAGE_NODES,
+        CVORunner,
+        CVOStateStore,
         __version__,
     )
     from cvo.nodes import ValidationNode
+
     HAS_CVO = True
 except ImportError as e:
     HAS_CVO = False
     print(f"[warn] CVO not importable: {e}", file=sys.stderr)
 
-PLUGIN_ROOT = _PLUGINS_DIR.parent                  # dl-paper-repro/ ← correct
+PLUGIN_ROOT = _PLUGINS_DIR.parent  # dl-paper-repro/ ← correct
 AUDIT_ROOT = PLUGIN_ROOT / ".repro" / "audit"
 
 
@@ -67,6 +67,7 @@ def utc_now() -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def _project_root(args) -> Path:
     """Resolve project root from args or plugin root."""
@@ -106,6 +107,7 @@ def _node_summary(store: CVOStateStore) -> dict:
 # Commands
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def cmd_init(args) -> int:
     """Bootstrap audit: create audit dir, init VAL-000 state."""
     root = _project_root(args)
@@ -116,32 +118,41 @@ def cmd_init(args) -> int:
 
     # Initialize VAL-000 state
     from cvo.val_000 import run as val_000_run
+
     result = val_000_run(project_root=root)
 
-    print(json.dumps({
-        "command": "init",
-        "audit_id": result.get("audit_id"),
-        "audit_dir": str(AUDIT_ROOT),
-        "git_commit": result.get("git_commit"),
-        "git_dirty": result.get("git_dirty"),
-        "disk_free_gb": result.get("disk_free_gb"),
-        "status": result["status"],
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "command": "init",
+                "audit_id": result.get("audit_id"),
+                "audit_dir": str(AUDIT_ROOT),
+                "git_commit": result.get("git_commit"),
+                "git_dirty": result.get("git_dirty"),
+                "disk_free_gb": result.get("disk_free_gb"),
+                "status": result["status"],
+            },
+            indent=2,
+        )
+    )
 
     # Also init all other nodes as PENDING
     store = _store(args)
     for node in ALL_NODES:
         if node.node_id == "VAL-000":
             continue
-        store.init_node(node.node_id, {
-            "node_version": node.version,
-            "name": node.name,
-            "capability_ids": node.capability_ids,
-            "depends_on": node.depends_on,
-            "requires_gpu": node.requires_gpu,
-            "requires_real_data": node.requires_real_data,
-            "timeout_seconds": node.timeout_seconds,
-        })
+        store.init_node(
+            node.node_id,
+            {
+                "node_version": node.version,
+                "name": node.name,
+                "capability_ids": node.capability_ids,
+                "depends_on": node.depends_on,
+                "requires_gpu": node.requires_gpu,
+                "requires_real_data": node.requires_real_data,
+                "timeout_seconds": node.timeout_seconds,
+            },
+        )
 
     pending = [n.node_id for n in ALL_NODES if store.get_status(n.node_id) == "PENDING"]
     print(f"[ok] {len(pending)}/{len(ALL_NODES)} nodes initialized")
@@ -224,10 +235,16 @@ def cmd_run_next(args) -> int:
     runner = CVORunner(_project_root(args))
     result = runner.run_next(dry_run=args.dry_run, max_gpu=args.max_gpu)
 
-    print(json.dumps({
-        "command": "run-next",
-        **result,
-    }, indent=2, default=str))
+    print(
+        json.dumps(
+            {
+                "command": "run-next",
+                **result,
+            },
+            indent=2,
+            default=str,
+        )
+    )
 
     status = result.get("status", "FAILED")
     if status == "PASSED":
@@ -261,11 +278,17 @@ def cmd_run_node(args) -> int:
     runner = CVORunner(_project_root(args))
     result = runner.run_node(node_id, dry_run=args.dry_run, force=args.force)
 
-    print(json.dumps({
-        "command": "run-node",
-        "node_id": node_id,
-        **result,
-    }, indent=2, default=str))
+    print(
+        json.dumps(
+            {
+                "command": "run-node",
+                "node_id": node_id,
+                **result,
+            },
+            indent=2,
+            default=str,
+        )
+    )
 
     status = result.get("status", "FAILED")
     if status == "PASSED":
@@ -314,11 +337,17 @@ def cmd_retry(args) -> int:
     runner = CVORunner(_project_root(args))
     result = runner.run_node(args.node_id, force=True)
 
-    print(json.dumps({
-        "command": "retry",
-        "node_id": args.node_id,
-        **result,
-    }, indent=2, default=str))
+    print(
+        json.dumps(
+            {
+                "command": "retry",
+                "node_id": args.node_id,
+                **result,
+            },
+            indent=2,
+            default=str,
+        )
+    )
 
     return 0 if result.get("status") == "PASSED" else 1
 
@@ -343,16 +372,17 @@ def cmd_report(args) -> int:
     }
 
     for stage, node_ids in STAGE_NODES.items():
-        passed = sum(
-            1 for nid in node_ids
-            if store.get_status(nid) == "PASSED"
-        )
+        passed = sum(1 for nid in node_ids if store.get_status(nid) == "PASSED")
         total = len(node_ids)
         report["stage_summary"][stage] = {
             "label": STAGE_LABELS.get(stage, stage),
             "passed": passed,
             "total": total,
-            "status": "COMPLETE" if passed == total else "IN_PROGRESS" if passed > 0 else "NOT_STARTED",
+            "status": "COMPLETE"
+            if passed == total
+            else "IN_PROGRESS"
+            if passed > 0
+            else "NOT_STARTED",
         }
 
     report["overall"] = {
@@ -375,7 +405,8 @@ def cmd_validate(args) -> int:
 
     # Check imports
     try:
-        from cvo import ALL_NODES, CVORunner, CVOStateStore, NODE_MAP
+        from cvo import ALL_NODES, NODE_MAP, CVORunner, CVOStateStore
+
         checks.append({"check": "cvo_import", "status": "PASS"})
     except ImportError as e:
         checks.append({"check": "cvo_import", "status": "FAIL", "message": str(e)})
@@ -384,11 +415,9 @@ def cmd_validate(args) -> int:
 
     # Check node registry
     if len(ALL_NODES) >= 30:
-        checks.append({"check": "node_count", "status": "PASS",
-                       "count": len(ALL_NODES)})
+        checks.append({"check": "node_count", "status": "PASS", "count": len(ALL_NODES)})
     else:
-        checks.append({"check": "node_count", "status": "FAIL",
-                       "count": len(ALL_NODES)})
+        checks.append({"check": "node_count", "status": "FAIL", "count": len(ALL_NODES)})
 
     # Check state store
     try:
@@ -399,14 +428,12 @@ def cmd_validate(args) -> int:
 
     # Check VAL-000 callable
     try:
-        from cvo.val_000 import run as v0
         checks.append({"check": "val_000_callable", "status": "PASS"})
     except Exception as e:
         checks.append({"check": "val_000_callable", "status": "FAIL", "message": str(e)})
 
     # Check VAL-010 callable
     try:
-        from cvo.val_010 import run as v10
         checks.append({"check": "val_010_callable", "status": "PASS"})
     except Exception as e:
         checks.append({"check": "val_010_callable", "status": "FAIL", "message": str(e)})
@@ -421,11 +448,12 @@ def cmd_validate(args) -> int:
 # CLI
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reproctl audit",
         description="CVO: Checkpointed Validation Orchestrator — "
-                    "Reproducibility Capability Gap Auditor",
+        "Reproducibility Capability Gap Auditor",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -452,8 +480,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("node_id", help="Node ID (e.g. VAL-000, VAL-010)")
     p.add_argument("--project", default=None)
     p.add_argument("--dry-run", action="store_true")
-    p.add_argument("--force", action="store_true",
-                   help="Re-run even if already passed")
+    p.add_argument("--force", action="store_true", help="Re-run even if already passed")
 
     # run-stage
     p = sub.add_parser("run-stage", help="Run all nodes in a stage (A–F)")
@@ -499,12 +526,19 @@ def main(argv=None) -> int:
             return fn(args)
         except Exception as e:
             import traceback
-            print(json.dumps({
-                "command": args.command,
-                "status": "FAILED",
-                "error": str(e),
-                "traceback": traceback.format_exc(),
-            }, indent=2), file=sys.stderr)
+
+            print(
+                json.dumps(
+                    {
+                        "command": args.command,
+                        "status": "FAILED",
+                        "error": str(e),
+                        "traceback": traceback.format_exc(),
+                    },
+                    indent=2,
+                ),
+                file=sys.stderr,
+            )
             return 10
     parser.print_help()
     return 1

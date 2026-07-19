@@ -7,14 +7,13 @@ This module generates:
 - Go/Pivot/No-Go verdicts
 - Claim-to-evidence mapping
 """
+
 from __future__ import annotations
 
 import csv
 import json
-import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 try:
     import yaml
@@ -40,8 +39,8 @@ class ReportGenerator:
             "generated_at": utc_now(),
             "project_root": str(self.project_root),
             "total_tasks": len(task_results),
-            "passed": sum(1 for t in task_results if t.get("status") == "PASS"),
-            "failed": sum(1 for t in task_results if t.get("status") == "FAIL"),
+            "passed": sum(1 for t in task_results if t.get("status") == "PASSED"),
+            "failed": sum(1 for t in task_results if t.get("status") == "FAILED"),
             "blocked": sum(1 for t in task_results if t.get("status") == "BLOCKED"),
             "tasks": [],
         }
@@ -64,18 +63,20 @@ class ReportGenerator:
         csv_path = self.reports_dir / "summary_report.csv"
         if task_results:
             with csv_path.open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=[
-                    "id", "name", "status", "attempts", "failure_reason"
-                ])
+                writer = csv.DictWriter(
+                    f, fieldnames=["id", "name", "status", "attempts", "failure_reason"]
+                )
                 writer.writeheader()
                 for task in task_results:
-                    writer.writerow({
-                        "id": task.get("id", ""),
-                        "name": task.get("name", ""),
-                        "status": task.get("status", ""),
-                        "attempts": task.get("attempts", 0),
-                        "failure_reason": task.get("failure_reason", ""),
-                    })
+                    writer.writerow(
+                        {
+                            "id": task.get("id", ""),
+                            "name": task.get("name", ""),
+                            "status": task.get("status", ""),
+                            "attempts": task.get("attempts", 0),
+                            "failure_reason": task.get("failure_reason", ""),
+                        }
+                    )
 
         return report
 
@@ -86,7 +87,7 @@ class ReportGenerator:
         paper_info: dict | None = None,
     ) -> str:
         """Generate a human-readable Markdown report."""
-        
+
         md = f"""# {title}
 
 **Generated**: {utc_now()}  
@@ -99,9 +100,9 @@ class ReportGenerator:
 | Metric | Count |
 |--------|-------|
 | Total Tasks | {len(task_results)} |
-| Passed | {sum(1 for t in task_results if t.get('status') == 'PASS')} |
-| Failed | {sum(1 for t in task_results if t.get('status') == 'FAIL')} |
-| Blocked | {sum(1 for t in task_results if t.get('status') == 'BLOCKED')} |
+| Passed | {sum(1 for t in task_results if t.get("status") == "PASS")} |
+| Failed | {sum(1 for t in task_results if t.get("status") == "FAIL")} |
+| Blocked | {sum(1 for t in task_results if t.get("status") == "BLOCKED")} |
 
 """
 
@@ -116,18 +117,18 @@ class ReportGenerator:
         md += """## Task Results
 
 """
-        
+
         # Group tasks by status
         passed = [t for t in task_results if t.get("status") == "PASS"]
         failed = [t for t in task_results if t.get("status") == "FAIL"]
         blocked = [t for t in task_results if t.get("status") == "BLOCKED"]
-        
+
         if passed:
             md += "### Passed Tasks\n\n"
             for task in passed:
                 md += f"- [x] **{task.get('name', task.get('id'))}**\n"
             md += "\n"
-        
+
         if failed:
             md += "### Failed Tasks\n\n"
             for task in failed:
@@ -135,7 +136,7 @@ class ReportGenerator:
                 md += f"- [ ] **{task.get('name', task.get('id'))}**\n"
                 md += f"  - Reason: {reason}\n"
             md += "\n"
-        
+
         if blocked:
             md += "### Blocked Tasks\n\n"
             for task in blocked:
@@ -168,7 +169,7 @@ artifacts/runs/<run_id>/
 
         # Add claim-to-evidence mapping
         md += self._generate_claim_table()
-        
+
         # Add verdict
         verdict = self._determine_verdict(task_results)
         md += f"""---
@@ -197,9 +198,10 @@ artifacts/runs/<run_id>/
 """
         # Try to read metrics from artifacts
         from .evidence_manager import EvidenceManager
+
         em = EvidenceManager(self.project_root)
         runs = em.list_runs()
-        
+
         if runs:
             for run in runs[:10]:  # Limit to 10 most recent
                 run_id = run.get("run_id", "unknown")
@@ -208,20 +210,20 @@ artifacts/runs/<run_id>/
                 table += f"| {task_id} | {status} | `artifacts/runs/{run_id}/` |\n"
         else:
             table += "| No evidence yet | - | - |\n"
-        
+
         return table + "\n"
 
     def _determine_verdict(self, task_results: list[dict]) -> str:
         """Determine Go/Pivot/No-Go verdict."""
-        passed = sum(1 for t in task_results if t.get("status") == "PASS")
-        failed = sum(1 for t in task_results if t.get("status") == "FAIL")
+        passed = sum(1 for t in task_results if t.get("status") == "PASSED")
+        failed = sum(1 for t in task_results if t.get("status") == "FAILED")
         total = len(task_results)
-        
+
         if total == 0:
             return "⚪ **INCONCLUSIVE**: No tasks executed"
-        
+
         pass_rate = passed / total if total > 0 else 0
-        
+
         if pass_rate >= 0.9:
             return "🟢 **GO**: High reproduction success rate"
         elif pass_rate >= 0.7:
@@ -233,12 +235,12 @@ artifacts/runs/<run_id>/
 
     def generate_go_pivot_nogo(self, task_results: list[dict]) -> dict:
         """Generate Go/Pivot/No-Go report."""
-        
-        passed = sum(1 for t in task_results if t.get("status") == "PASS")
-        failed = sum(1 for t in task_results if t.get("status") == "FAIL")
+
+        passed = sum(1 for t in task_results if t.get("status") == "PASSED")
+        failed = sum(1 for t in task_results if t.get("status") == "FAILED")
         total = len(task_results)
         pass_rate = passed / total if total > 0 else 0
-        
+
         # Determine verdict
         if pass_rate >= 0.9:
             verdict = "GO"
@@ -252,7 +254,7 @@ artifacts/runs/<run_id>/
         else:
             verdict = "NO-GO"
             summary = "Insufficient reproduction success"
-        
+
         report = {
             "verdict": verdict,
             "summary": summary,
@@ -262,22 +264,23 @@ artifacts/runs/<run_id>/
             "total_tasks": total,
             "failed_task_details": [
                 {"id": t.get("id"), "reason": t.get("failure_reason")}
-                for t in task_results if t.get("status") == "FAIL"
+                for t in task_results
+                if t.get("status") == "FAILED"
             ],
             "recommendations": self._get_recommendations(verdict, task_results),
             "generated_at": utc_now(),
         }
-        
+
         # Save report
         report_path = self.reports_dir / "go_pivot_nogo.json"
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-        
+
         return report
 
     def _get_recommendations(self, verdict: str, task_results: list[dict]) -> list[str]:
         """Get recommendations based on verdict."""
         recommendations = []
-        
+
         if verdict == "GO":
             recommendations.append("Proceed with full paper writeup")
             recommendations.append("Document any minor deviations in the report")
@@ -290,39 +293,41 @@ artifacts/runs/<run_id>/
             recommendations.append("Check for missing dependencies")
             recommendations.append("Verify dataset integrity")
             recommendations.append("Consider alternative implementations")
-        
+
         # Add task-specific recommendations
         for task in task_results:
             if task.get("status") == "FAIL":
                 task_id = task.get("id", "unknown")
                 reason = task.get("failure_reason", "Unknown error")
-                
+
                 if "OOM" in str(reason):
-                    recommendations.append(f"{task_id}: Consider reducing batch size or using gradient accumulation")
+                    recommendations.append(
+                        f"{task_id}: Consider reducing batch size or using gradient accumulation"
+                    )
                 elif "timeout" in str(reason).lower():
                     recommendations.append(f"{task_id}: Increase timeout or optimize training loop")
                 elif "verification" in str(reason).lower():
                     recommendations.append(f"{task_id}: Review verification criteria and metrics")
-        
+
         return recommendations
 
     def generate_metric_report(self, metrics_data: list[dict]) -> dict:
         """Generate detailed metric report."""
-        
+
         report = {
             "generated_at": utc_now(),
             "total_runs": len(metrics_data),
             "metrics": {},
         }
-        
+
         if not metrics_data:
             return report
-        
+
         # Aggregate metrics
         all_keys = set()
         for run in metrics_data:
             all_keys.update(run.keys())
-        
+
         for key in all_keys:
             values = [r.get(key) for r in metrics_data if r.get(key) is not None]
             if values and all(isinstance(v, (int, float)) for v in values):
@@ -332,16 +337,16 @@ artifacts/runs/<run_id>/
                     "max": max(values),
                     "count": len(values),
                 }
-        
+
         # Save report
         report_path = self.reports_dir / "metric_report.json"
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-        
+
         return report
 
     def generate_paper_comparison(self, paper_metrics: dict, reproduction_metrics: dict) -> dict:
         """Generate comparison between paper claims and reproduction results."""
-        
+
         comparison = {
             "generated_at": utc_now(),
             "paper_metrics": paper_metrics,
@@ -349,17 +354,17 @@ artifacts/runs/<run_id>/
             "differences": {},
             "verdict": "INCONCLUSIVE",
         }
-        
+
         # Calculate differences
         for key in paper_metrics:
             if key in reproduction_metrics:
                 paper_val = paper_metrics[key]
                 repro_val = reproduction_metrics[key]
-                
+
                 if isinstance(paper_val, (int, float)) and isinstance(repro_val, (int, float)):
                     diff = abs(paper_val - repro_val)
                     pct_diff = (diff / paper_val * 100) if paper_val != 0 else 0
-                    
+
                     comparison["differences"][key] = {
                         "paper": paper_val,
                         "reproduction": repro_val,
@@ -367,24 +372,23 @@ artifacts/runs/<run_id>/
                         "percentage_difference": round(pct_diff, 2),
                         "within_tolerance": pct_diff < 5,  # 5% tolerance
                     }
-        
+
         # Determine overall verdict
         if comparison["differences"]:
             within_tolerance = sum(
-                1 for d in comparison["differences"].values() 
-                if d.get("within_tolerance", False)
+                1 for d in comparison["differences"].values() if d.get("within_tolerance", False)
             )
             total = len(comparison["differences"])
-            
+
             if within_tolerance == total:
                 comparison["verdict"] = "SUCCESS"
             elif within_tolerance >= total * 0.5:
                 comparison["verdict"] = "PARTIAL"
             else:
                 comparison["verdict"] = "FAILURE"
-        
+
         # Save report
         report_path = self.reports_dir / "paper_comparison.json"
         report_path.write_text(json.dumps(comparison, indent=2), encoding="utf-8")
-        
+
         return comparison

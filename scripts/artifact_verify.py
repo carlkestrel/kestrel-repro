@@ -18,15 +18,11 @@ Usage:
 """
 
 import argparse
-import hashlib
 import json
 import re
 import subprocess
-import sys
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
 
 
 @dataclass
@@ -58,9 +54,7 @@ def verify_commit(repo_path: Path) -> VerificationResult:
         branch = subprocess.check_output(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.DEVNULL, text=True
         ).strip()
-        is_dirty = bool(subprocess.call(
-            ["git", "diff", "--quiet"], stderr=subprocess.DEVNULL
-        ))
+        is_dirty = bool(subprocess.call(["git", "diff", "--quiet"], stderr=subprocess.DEVNULL))
 
         result.status = "passed"
         result.details = {
@@ -125,6 +119,7 @@ def verify_checkpoint_dir(run_dir: Path) -> VerificationResult:
     for ckpt in checkpoints:
         try:
             import torch
+
             state = torch.load(ckpt, map_location="cpu", weights_only=False)
             loadable += 1
             # Verify checkpoint has expected keys
@@ -271,9 +266,20 @@ def verify_chain(run_dir: Path, repo_path: Path) -> list[VerificationResult]:
 # Four new functions, each verifying one claim from a candidate paper/repo/dataset
 # returned by /repro-discover or /geoai-discover.
 
-PERMISSIVE_LICENSES = {"MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause",
-                        "ISC", "MPL-2.0", "LGPL-2.1", "LGPL-3.0", "CC-BY-4.0",
-                        "CC0-1.0", "Unlicense", "Zlib"}
+PERMISSIVE_LICENSES = {
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "CC-BY-4.0",
+    "CC0-1.0",
+    "Unlicense",
+    "Zlib",
+}
 
 
 def verify_paper_identity(paper_record: dict) -> VerificationResult:
@@ -284,24 +290,32 @@ def verify_paper_identity(paper_record: dict) -> VerificationResult:
     non-empty AND consistent (e.g., arxiv_id regex match).
     """
     present = []
-    if paper_record.get("title"): present.append("title")
-    if paper_record.get("authors"): present.append("authors")
+    if paper_record.get("title"):
+        present.append("title")
+    if paper_record.get("authors"):
+        present.append("authors")
     arxiv = paper_record.get("arxiv_id", "")
     if arxiv and re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", str(arxiv)):
         present.append("arxiv_id")
     elif arxiv:
-        return VerificationResult(check="paper_identity", passed=False,
-                                  message=f"arxiv_id {arxiv!r} malformed")
+        return VerificationResult(
+            check="paper_identity", passed=False, message=f"arxiv_id {arxiv!r} malformed"
+        )
     if paper_record.get("doi") and str(paper_record["doi"]).startswith("10."):
         present.append("doi")
     if paper_record.get("year") and 1990 <= int(paper_record["year"]) <= 2030:
         present.append("year")
-    if paper_record.get("url"): present.append("url")
+    if paper_record.get("url"):
+        present.append("url")
     if len(present) < 3:
-        return VerificationResult(check="paper_identity", passed=False,
-                                  message=f"only {len(present)} identity fields: {present}")
-    return VerificationResult(check="paper_identity", passed=True,
-                              message=f"identity verified across {present}")
+        return VerificationResult(
+            check="paper_identity",
+            passed=False,
+            message=f"only {len(present)} identity fields: {present}",
+        )
+    return VerificationResult(
+        check="paper_identity", passed=True, message=f"identity verified across {present}"
+    )
 
 
 def verify_commit_sha_pinned(repo_meta: dict) -> VerificationResult:
@@ -312,29 +326,30 @@ def verify_commit_sha_pinned(repo_meta: dict) -> VerificationResult:
     """
     sha = repo_meta.get("commit_sha", "")
     if not sha:
-        return VerificationResult(check="commit_sha", passed=False,
-                                  message="no commit_sha recorded")
+        return VerificationResult(
+            check="commit_sha", passed=False, message="no commit_sha recorded"
+        )
     if not re.match(r"^[0-9a-f]{7,40}$", str(sha)):
-        return VerificationResult(check="commit_sha", passed=False,
-                                  message=f"commit_sha {sha!r} not a valid hex string")
-    return VerificationResult(check="commit_sha", passed=True,
-                              message=f"pinned to {sha[:7]}")
+        return VerificationResult(
+            check="commit_sha", passed=False, message=f"commit_sha {sha!r} not a valid hex string"
+        )
+    return VerificationResult(check="commit_sha", passed=True, message=f"pinned to {sha[:7]}")
 
 
 def verify_license(repo_meta: dict) -> VerificationResult:
     """Repo license must be in PERMISSIVE_LICENSES (or 'other-permissive' if user-approved)."""
     license_id = (repo_meta.get("license") or "").strip()
     if not license_id:
-        return VerificationResult(check="license", passed=False,
-                                  message="no license recorded")
+        return VerificationResult(check="license", passed=False, message="no license recorded")
     if license_id in PERMISSIVE_LICENSES:
-        return VerificationResult(check="license", passed=True,
-                                  message=f"permissive: {license_id}")
+        return VerificationResult(check="license", passed=True, message=f"permissive: {license_id}")
     if license_id.lower() in {"gpl-3.0", "gpl-2.0", "agpl-3.0"}:
-        return VerificationResult(check="license", passed=False,
-                                  message=f"copyleft forbids derivative: {license_id}")
-    return VerificationResult(check="license", passed=False,
-                              message=f"unknown / non-permissive: {license_id}")
+        return VerificationResult(
+            check="license", passed=False, message=f"copyleft forbids derivative: {license_id}"
+        )
+    return VerificationResult(
+        check="license", passed=False, message=f"unknown / non-permissive: {license_id}"
+    )
 
 
 def verify_checkpoint_source(ckpt_meta: dict) -> VerificationResult:
@@ -342,20 +357,26 @@ def verify_checkpoint_source(ckpt_meta: dict) -> VerificationResult:
     (b) a verified re-run (with run_id + commit_sha)."""
     source = ckpt_meta.get("source", "")
     if source == "paper_release":
-        return VerificationResult(check="checkpoint_source", passed=True,
-                                  message="from paper-author release")
+        return VerificationResult(
+            check="checkpoint_source", passed=True, message="from paper-author release"
+        )
     if source == "rerun":
         run_id = ckpt_meta.get("run_id")
         commit = ckpt_meta.get("commit_sha", "")
         if run_id and re.match(r"^[0-9a-f]{7,40}$", str(commit)):
-            return VerificationResult(check="checkpoint_source", passed=True,
-                                      message=f"verified rerun {run_id}@{commit[:7]}")
-        return VerificationResult(check="checkpoint_source", passed=False,
-                                  message="rerun source missing run_id or valid commit_sha")
-    return VerificationResult(check="checkpoint_source", passed=False,
-                              message=f"unknown checkpoint source: {source!r}")
-
-    return results
+            return VerificationResult(
+                check="checkpoint_source",
+                passed=True,
+                message=f"verified rerun {run_id}@{commit[:7]}",
+            )
+        return VerificationResult(
+            check="checkpoint_source",
+            passed=False,
+            message="rerun source missing run_id or valid commit_sha",
+        )
+    return VerificationResult(
+        check="checkpoint_source", passed=False, message=f"unknown checkpoint source: {source!r}"
+    )
 
 
 def format_results(results: list[VerificationResult]) -> str:
@@ -415,7 +436,9 @@ def main() -> None:
         for run_dir in sorted(args.runs_dir.iterdir()):
             if run_dir.is_dir():
                 results = verify_chain(run_dir, Path("primary"))
-                all_results.append({"run_id": run_dir.name, "results": [asdict(r) for r in results]})
+                all_results.append(
+                    {"run_id": run_dir.name, "results": [asdict(r) for r in results]}
+                )
         print(json.dumps(all_results, indent=2, default=str))
     else:
         parser.print_help()

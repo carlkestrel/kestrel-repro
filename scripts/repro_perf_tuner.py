@@ -45,15 +45,11 @@ import os
 import pathlib
 import random
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
-import time
 import traceback
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable, Optional
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -63,10 +59,10 @@ TPL_DIR = REPO / "templates" / "performance"
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-TEMP_THRESHOLD_C = 83          # stop if GPU exceeds this
-POWER_LIMIT_PCT = 0.95         # warn if >95% of power limit
-MEM_SAFETY_MARGIN = 0.80       # recommended micro-batch = OOM * 0.80
-NUMERICAL_TOL = {              # relative tolerance by precision
+TEMP_THRESHOLD_C = 83  # stop if GPU exceeds this
+POWER_LIMIT_PCT = 0.95  # warn if >95% of power limit
+MEM_SAFETY_MARGIN = 0.80  # recommended micro-batch = OOM * 0.80
+NUMERICAL_TOL = {  # relative tolerance by precision
     "FP32": 1e-6,
     "TF32": 1e-3,
     "BF16": 1e-2,
@@ -76,6 +72,7 @@ NUMERICAL_TOL = {              # relative tolerance by precision
 
 # ── Hardware Inventory ─────────────────────────────────────────────────────────
 
+
 @dataclass
 class GPUInfo:
     index: int
@@ -83,12 +80,12 @@ class GPUInfo:
     memory_total_mb: float
     memory_free_mb: float
     memory_used_mb: float
-    temperature_c: Optional[int]
-    power_draw_w: Optional[int]
-    power_limit_w: Optional[int]
-    graphics_clock_mhz: Optional[int]
-    sm_clock_mhz: Optional[int]
-    mem_clock_mhz: Optional[int]
+    temperature_c: int | None
+    power_draw_w: int | None
+    power_limit_w: int | None
+    graphics_clock_mhz: int | None
+    sm_clock_mhz: int | None
+    mem_clock_mhz: int | None
     driver_version: str = ""
     cuda_version: str = ""
     cudnn_version: str = ""
@@ -115,7 +112,7 @@ def collect_hardware_inventory() -> dict:
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "hostname": os.uname().nodename,
         "container": os.environ.get("container", ""),
-        "os": dict(zip(["system","release","machine"], os.uname())),
+        "os": dict(zip(["system", "release", "machine"], os.uname())),
         "cpu": {},
         "ram": {},
         "gpu": [],
@@ -154,11 +151,16 @@ def collect_hardware_inventory() -> dict:
             inv["ram"]["swap_free_gb"] = round(int(swap[3]) / 1e9, 2)
 
     # GPU via nvidia-smi
-    rc, so, se = run_cmd(["nvidia-smi", "--query-gpu=index,name,memory.total,memory.free,"
-                           "memory.used,temperature.gpu,power.draw,power.limit,"
-                           "clocks.sm.graphics,clocks.sm.current,clocks.mem,"
-                           "driver_version,cuda.version,cudnn.version",
-                           "--format=csv,noheader,nounits"])
+    rc, so, se = run_cmd(
+        [
+            "nvidia-smi",
+            "--query-gpu=index,name,memory.total,memory.free,"
+            "memory.used,temperature.gpu,power.draw,power.limit,"
+            "clocks.sm.graphics,clocks.sm.current,clocks.mem,"
+            "driver_version,cuda.version,cudnn.version",
+            "--format=csv,noheader,nounits",
+        ]
+    )
     if rc == 0:
         for line in so.strip().splitlines():
             parts = [p.strip() for p in line.split(",")]
@@ -181,8 +183,14 @@ def collect_hardware_inventory() -> dict:
                 cudnn_version=parts[13],
             )
             # Compute capability
-            rc2, so2, _ = run_cmd(["nvidia-smi", "--query-gpu=compute_cap",
-                                   "--format=csv,noheader", f"--id={gpu.index}"])
+            rc2, so2, _ = run_cmd(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=compute_cap",
+                    "--format=csv,noheader",
+                    f"--id={gpu.index}",
+                ]
+            )
             if rc2 == 0:
                 gpu.compute_capability = so2.strip()
                 gpu.tensor_cores = True  # Ampere or newer
@@ -191,20 +199,26 @@ def collect_hardware_inventory() -> dict:
             inv["gpu"].append(asdict(gpu))
 
     # Active GPU processes
-    rc, so, _ = run_cmd(["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory",
-                          "--format=csv,noheader,nounits"])
+    rc, so, _ = run_cmd(
+        [
+            "nvidia-smi",
+            "--query-compute-apps=pid,process_name,used_memory",
+            "--format=csv,noheader,nounits",
+        ]
+    )
     if rc == 0:
         for line in so.strip().splitlines():
             parts = [p.strip() for p in line.split(",")]
             if len(parts) >= 3:
                 for g in inv["gpu"]:
-                    g.setdefault("current_gpu_processes", []).append({
-                        "pid": parts[0], "name": parts[1], "memory_mb": parts[2]
-                    })
+                    g.setdefault("current_gpu_processes", []).append(
+                        {"pid": parts[0], "name": parts[1], "memory_mb": parts[2]}
+                    )
 
     # PyTorch info
     try:
         import torch
+
         inv["pytorch"] = {
             "version": torch.__version__,
             "cuda_available": torch.cuda.is_available(),
@@ -222,12 +236,14 @@ def collect_hardware_inventory() -> dict:
             parts = line.split()
             if len(parts) >= 4:
                 mount = parts[0]
-                inv["storage"].append({
-                    "mount_point": mount,
-                    "total_gb": round(int(parts[2]) / 1e9, 2),
-                    "free_gb": round(int(parts[3]) / 1e9, 2),
-                    "fstype": parts[1] if len(parts) > 1 else "unknown",
-                })
+                inv["storage"].append(
+                    {
+                        "mount_point": mount,
+                        "total_gb": round(int(parts[2]) / 1e9, 2),
+                        "free_gb": round(int(parts[3]) / 1e9, 2),
+                        "fstype": parts[1] if len(parts) > 1 else "unknown",
+                    }
+                )
 
     # Shared memory
     rc, so, _ = run_cmd(["df", "-B1", "--output=target,size,avail", "/dev/shm"])
@@ -260,7 +276,9 @@ def run_health_checks(inv: dict) -> dict:
             if gpu["temperature_c"] > TEMP_THRESHOLD_C:
                 checks["overheating"] = True
                 checks["stop_capacity_test"] = True
-                checks["stop_reason"] = f"GPU {gpu['index']} at {gpu['temperature_c']}°C > {TEMP_THRESHOLD_C}°C"
+                checks["stop_reason"] = (
+                    f"GPU {gpu['index']} at {gpu['temperature_c']}°C > {TEMP_THRESHOLD_C}°C"
+                )
             elif gpu["temperature_c"] > 75:
                 warnings.append(f"GPU {gpu['index']} warm ({gpu['temperature_c']}°C)")
 
@@ -268,15 +286,18 @@ def run_health_checks(inv: dict) -> dict:
         if gpu.get("power_draw_w") and gpu.get("power_limit_w"):
             if gpu["power_draw_w"] > gpu["power_limit_w"] * POWER_LIMIT_PCT:
                 checks["throttling"] = True
-                warnings.append(f"GPU {gpu['index']} at {gpu['power_draw_w']}W "
-                               f"(limit {gpu['power_limit_w']}W)")
+                warnings.append(
+                    f"GPU {gpu['index']} at {gpu['power_draw_w']}W (limit {gpu['power_limit_w']}W)"
+                )
 
     # Active processes check
     for gpu in inv.get("gpu", []):
         procs = gpu.get("current_gpu_processes", [])
         if procs:
-            warnings.append(f"GPU {gpu['index']} has {len(procs)} active process(es). "
-                            "Stop them before capacity tests.")
+            warnings.append(
+                f"GPU {gpu['index']} has {len(procs)} active process(es). "
+                "Stop them before capacity tests."
+            )
 
     checks["warnings"] = warnings
     return checks
@@ -294,17 +315,18 @@ def write_health_report(inv: dict, checks: dict) -> None:
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     gpu_rows = ""
     for gpu in inv.get("gpu", []):
-        gpu_rows += f"| GPU {gpu['index']} | {gpu.get('temperature_c','N/A')} | " \
-                    f"{gpu.get('power_draw_w','N/A')} | " \
-                    f"{gpu.get('graphics_clock_mhz','N/A')} | " \
-                    f"{gpu.get('sm_clock_mhz','N/A')} | " \
-                    f"{gpu.get('mem_clock_mhz','N/A')} |\n"
+        gpu_rows += (
+            f"| GPU {gpu['index']} | {gpu.get('temperature_c', 'N/A')} | "
+            f"{gpu.get('power_draw_w', 'N/A')} | "
+            f"{gpu.get('graphics_clock_mhz', 'N/A')} | "
+            f"{gpu.get('sm_clock_mhz', 'N/A')} | "
+            f"{gpu.get('mem_clock_mhz', 'N/A')} |\n"
+        )
 
     proc_rows = ""
     for gpu in inv.get("gpu", []):
         for p in gpu.get("current_gpu_processes", []):
-            proc_rows += f"| {p['pid']} | GPU {gpu['index']} | {p['name']} | " \
-                         f"{p['memory_mb']} |\n"
+            proc_rows += f"| {p['pid']} | GPU {gpu['index']} | {p['name']} | {p['memory_mb']} |\n"
 
     verdict = "PROCEED" if not checks["stop_capacity_test"] else "STOP"
     stop_color = "🔴" if checks["stop_capacity_test"] else "🟢"
@@ -320,11 +342,11 @@ def write_health_report(inv: dict, checks: dict) -> None:
 |---|---|---|
 | ECC errors | 🟢 OK | |
 | Driver errors | 🟢 OK | |
-| Temperature | {stop_color} {'FAIL' if checks['overheating'] else 'OK'} | {checks.get('stop_reason','')} |
+| Temperature | {stop_color} {"FAIL" if checks["overheating"] else "OK"} | {checks.get("stop_reason", "")} |
 | Power | 🟢 OK | |
 | Clock throttling | 🟢 OK | |
 | Hardware unstable | 🟢 OK | |
-| **Overall verdict** | **{stop_color} {verdict}** | {checks.get('stop_reason','')} |
+| **Overall verdict** | **{stop_color} {verdict}** | {checks.get("stop_reason", "")} |
 
 {warnings_block(checks)}
 
@@ -338,7 +360,7 @@ def write_health_report(inv: dict, checks: dict) -> None:
 
 | PID | GPU | Process | Memory (MB) |
 |---|---|---|---|
-{proc_rows.rstrip() if proc_rows else '*(none)*'}
+{proc_rows.rstrip() if proc_rows else "*(none)*"}
 
 ## Source
 
@@ -358,6 +380,7 @@ def warnings_block(checks: dict) -> str:
 
 
 # ── Baseline Measurement ────────────────────────────────────────────────────────
+
 
 @dataclass
 class PerfMetrics:
@@ -400,8 +423,9 @@ class PerfMetrics:
     ts: str = ""
 
 
-def measure_baseline(config: dict, warmup_steps: int = 5,
-                      measure_steps: int = 20, val_steps: int = 1) -> PerfMetrics:
+def measure_baseline(
+    config: dict, warmup_steps: int = 5, measure_steps: int = 20, val_steps: int = 1
+) -> PerfMetrics:
     """
     Run baseline measurement using real model, real DataLoader, real loss.
     Returns PerfMetrics with timing breakdown.
@@ -423,6 +447,7 @@ def measure_baseline(config: dict, warmup_steps: int = 5,
 
     try:
         import torch
+
         device = torch.device(m.device if torch.cuda.is_available() else "cpu")
 
         # Simulate: real timing would come from actual model + dataloader
@@ -448,8 +473,13 @@ def measure_baseline(config: dict, warmup_steps: int = 5,
         if torch.cuda.is_available():
             m.gpu_memory_used_mb = torch.cuda.memory_allocated() / 1e6
             m.gpu_memory_peak_mb = torch.cuda.max_memory_allocated() / 1e6
-            rc, so, _ = run_cmd(["nvidia-smi", "--query-gpu=utilization.gpu,temperature.gpu,power.draw",
-                                  "--format=csv,noheader,nounits"])
+            rc, so, _ = run_cmd(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=utilization.gpu,temperature.gpu,power.draw",
+                    "--format=csv,noheader,nounits",
+                ]
+            )
             if rc == 0:
                 parts = [p.strip() for p in so.split(",")]
                 m.gpu_utilization_pct = float(parts[0])
@@ -474,17 +504,47 @@ def write_baseline(m: PerfMetrics, extra: dict | None = None) -> None:
     csv_path = OUT_DIR / "baseline_metrics.csv"
     write_header = not csv_path.exists()
     with open(csv_path, "a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=[
-            "trial_id","config_id","mode","micro_batch","grad_accum","num_workers",
-            "prefetch_factor","pin_memory","persistent_workers","torch_compile",
-            "activation_checkpointing","world_size","device",
-            "step_time_mean_s","step_time_p50_s","step_time_p95_s",
-            "dataloader_wait_s","forward_time_s","backward_time_s","optimizer_time_s",
-            "validation_time_s","samples_per_second","points_per_second",
-            "gpu_utilization_pct","gpu_memory_used_mb","gpu_memory_peak_mb",
-            "cpu_utilization_pct","ram_used_gb","temperature_c","power_draw_w",
-            "loss","gradient_norm","status","ooms","duration_s","ts"
-        ])
+        w = csv.DictWriter(
+            f,
+            fieldnames=[
+                "trial_id",
+                "config_id",
+                "mode",
+                "micro_batch",
+                "grad_accum",
+                "num_workers",
+                "prefetch_factor",
+                "pin_memory",
+                "persistent_workers",
+                "torch_compile",
+                "activation_checkpointing",
+                "world_size",
+                "device",
+                "step_time_mean_s",
+                "step_time_p50_s",
+                "step_time_p95_s",
+                "dataloader_wait_s",
+                "forward_time_s",
+                "backward_time_s",
+                "optimizer_time_s",
+                "validation_time_s",
+                "samples_per_second",
+                "points_per_second",
+                "gpu_utilization_pct",
+                "gpu_memory_used_mb",
+                "gpu_memory_peak_mb",
+                "cpu_utilization_pct",
+                "ram_used_gb",
+                "temperature_c",
+                "power_draw_w",
+                "loss",
+                "gradient_norm",
+                "status",
+                "ooms",
+                "duration_s",
+                "ts",
+            ],
+        )
         if write_header:
             w.writeheader()
         w.writerow(asdict(m))
@@ -522,6 +582,7 @@ def write_baseline(m: PerfMetrics, extra: dict | None = None) -> None:
 
 # ── Capacity Search ─────────────────────────────────────────────────────────────
 
+
 def binary_search_capacity(start: int, end: int, config: dict) -> dict:
     """
     Binary search for max micro-batch that doesn't OOM.
@@ -546,8 +607,10 @@ def binary_search_capacity(start: int, end: int, config: dict) -> dict:
             oom_batch = mid
             end = mid - 1
 
-        print(f"[perf] capacity trial: batch={mid} → {trial['status']} "
-              f"(safe={safe_batch}, oom={oom_batch})")
+        print(
+            f"[perf] capacity trial: batch={mid} → {trial['status']} "
+            f"(safe={safe_batch}, oom={oom_batch})"
+        )
 
     recommended = int(safe_batch * MEM_SAFETY_MARGIN) if safe_batch else 1
     return {
@@ -583,6 +646,7 @@ def _try_batch(micro_batch: int, config: dict) -> dict:
     }
     try:
         import torch
+
         torch.cuda.empty_cache()
         # Simulate: real test would allocate tensor of size proportional to batch
         dummy = torch.randn(micro_batch * 1024, 4096, device="cuda")
@@ -610,25 +674,65 @@ def _append_capacity_trial(trial: dict) -> None:
     csv_path = OUT_DIR / "capacity_trials.csv"
     write_header = not csv_path.exists()
     with open(csv_path, "a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=[
-            "trial_id","config_id","mode","micro_batch","grad_accum","global_batch",
-            "precision","world_size","trial_type","trial_value","result",
-            "step_time_mean_s","step_time_p95_s","gpu_memory_peak_mb",
-            "ooms","loss","gradient_norm","status","duration_s","ts"
-        ])
+        w = csv.DictWriter(
+            f,
+            fieldnames=[
+                "trial_id",
+                "config_id",
+                "mode",
+                "micro_batch",
+                "grad_accum",
+                "global_batch",
+                "precision",
+                "world_size",
+                "trial_type",
+                "trial_value",
+                "result",
+                "step_time_mean_s",
+                "step_time_p95_s",
+                "gpu_memory_peak_mb",
+                "ooms",
+                "loss",
+                "gradient_norm",
+                "status",
+                "duration_s",
+                "ts",
+            ],
+        )
         if write_header:
             w.writeheader()
-        row = {k: trial[k] for k in trial if k in [
-            "trial_id","config_id","mode","micro_batch","grad_accum","global_batch",
-            "precision","world_size","trial_type","trial_value","status",
-            "step_time_mean_s","step_time_p95_s","gpu_memory_peak_mb",
-            "ooms","loss","gradient_norm","duration_s","ts"
-        ]}
+        row = {
+            k: trial[k]
+            for k in trial
+            if k
+            in [
+                "trial_id",
+                "config_id",
+                "mode",
+                "micro_batch",
+                "grad_accum",
+                "global_batch",
+                "precision",
+                "world_size",
+                "trial_type",
+                "trial_value",
+                "status",
+                "step_time_mean_s",
+                "step_time_p95_s",
+                "gpu_memory_peak_mb",
+                "ooms",
+                "loss",
+                "gradient_norm",
+                "duration_s",
+                "ts",
+            ]
+        }
         row["result"] = row.pop("status", "unknown")
         w.writerow(row)
 
 
 # ── Numerical Parity ────────────────────────────────────────────────────────────
+
 
 @dataclass
 class ParityResult:
@@ -646,15 +750,14 @@ class ParityResult:
     details: list = field(default_factory=list)
 
 
-def check_numerical_parity(baseline_id: str, candidate_id: str,
-                           precision: str = "FP32") -> ParityResult:
+def check_numerical_parity(
+    baseline_id: str, candidate_id: str, precision: str = "FP32"
+) -> ParityResult:
     """Check if candidate is numerically equivalent to baseline."""
     tol = NUMERICAL_TOL.get(precision, 1e-3)
-    result = ParityResult(baseline_config_id=baseline_id,
-                           candidate_config_id=candidate_id)
+    result = ParityResult(baseline_config_id=baseline_id, candidate_config_id=candidate_id)
 
     try:
-        import torch
         # Simulate: real comparison would run both configs and compare outputs
         # Here we produce a passing result for template completeness
         result.model_output_l2 = random.random() * tol * 0.5
@@ -666,16 +769,18 @@ def check_numerical_parity(baseline_id: str, candidate_id: str,
         result.gradient_exploding = False
         result.checkpoint_ok = True
 
-        checks_passed = all([
-            result.model_output_l2 < tol,
-            result.loss_rel_diff < tol,
-            result.gradient_l2 < tol,
-            result.nan_count == 0,
-            result.inf_count == 0,
-            not result.gradient_vanishing,
-            not result.gradient_exploding,
-            result.checkpoint_ok,
-        ])
+        checks_passed = all(
+            [
+                result.model_output_l2 < tol,
+                result.loss_rel_diff < tol,
+                result.gradient_l2 < tol,
+                result.nan_count == 0,
+                result.inf_count == 0,
+                not result.gradient_vanishing,
+                not result.gradient_exploding,
+                result.checkpoint_ok,
+            ]
+        )
         result.verdict = "NUMERICAL_EQUIVALENT" if checks_passed else "NUMERICAL_DIFFERENT"
 
     except Exception as e:
@@ -735,6 +840,7 @@ def write_parity_report(result: ParityResult) -> None:
 
 
 # ── Soak Test ─────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class SoakResult:
@@ -807,14 +913,14 @@ def write_soak_report(result: SoakResult) -> None:
 ## Decision
 
 ```
-[soak] memory_leak          : {'OK' if result.memory_growth_mb < 500 else 'FAIL'} ({result.memory_growth_mb:.0f} MB)
-[soak] step_time_stable     : {'OK' if result.step_time_p95_std_ratio < 1.5 else 'FAIL'} (p95/std={result.step_time_p95_std_ratio:.2f})
+[soak] memory_leak          : {"OK" if result.memory_growth_mb < 500 else "FAIL"} ({result.memory_growth_mb:.0f} MB)
+[soak] step_time_stable     : {"OK" if result.step_time_p95_std_ratio < 1.5 else "FAIL"} (p95/std={result.step_time_p95_std_ratio:.2f})
 [soak] loss_valid           : OK (no NaN)
-[soak] no_oom               : {'OK' if result.oom_count == 0 else 'FAIL'} ({result.oom_count} OOMs)
-[soak] temperature_stable  : {'OK' if result.temperature_max_c < 83 else 'FAIL'} (max={result.temperature_max_c}°C)
-[soak] no_throttle          : {'OK' if result.throttle_count == 0 else 'FAIL'} ({result.throttle_count} events)
-[soak] checkpoint_save       : {'OK' if result.checkpoint_save_ok else 'FAIL'}
-[soak] checkpoint_resume     : {'OK' if result.checkpoint_resume_ok else 'FAIL'}
+[soak] no_oom               : {"OK" if result.oom_count == 0 else "FAIL"} ({result.oom_count} OOMs)
+[soak] temperature_stable  : {"OK" if result.temperature_max_c < 83 else "FAIL"} (max={result.temperature_max_c}°C)
+[soak] no_throttle          : {"OK" if result.throttle_count == 0 else "FAIL"} ({result.throttle_count} events)
+[soak] checkpoint_save       : {"OK" if result.checkpoint_save_ok else "FAIL"}
+[soak] checkpoint_resume     : {"OK" if result.checkpoint_resume_ok else "FAIL"}
 [soak] verdict              : {result.verdict}
 ```
 
@@ -829,25 +935,39 @@ def write_soak_report(result: SoakResult) -> None:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="ReproPerf AutoTuner")
-    p.add_argument("--phase", required=True,
-                   choices=["health","baseline","capacity","dataloader",
-                            "compute","parity","soak","recommend","all"],
-                   help="Phase to run")
+    p.add_argument(
+        "--phase",
+        required=True,
+        choices=[
+            "health",
+            "baseline",
+            "capacity",
+            "dataloader",
+            "compute",
+            "parity",
+            "soak",
+            "recommend",
+            "all",
+        ],
+        help="Phase to run",
+    )
     p.add_argument("--config", default="", help="Config YAML/JSON path")
     p.add_argument("--config-id", default="", help="Config ID for this run")
     p.add_argument("--baseline-id", default="", help="Baseline config ID (for parity/soak)")
     p.add_argument("--candidate-id", default="", help="Candidate config ID (for parity)")
-    p.add_argument("--duration", type=int, default=600,
-                   help="Soak test duration in seconds")
-    p.add_argument("--mode", default="strict_repro",
-                   choices=["strict_repro","optimized_repro_safe","experimental_fast"])
+    p.add_argument("--duration", type=int, default=600, help="Soak test duration in seconds")
+    p.add_argument(
+        "--mode",
+        default="strict_repro",
+        choices=["strict_repro", "optimized_repro_safe", "experimental_fast"],
+    )
     p.add_argument("--micro-batch", type=int, default=1)
     p.add_argument("--grad-accum-steps", type=int, default=1)
     p.add_argument("--num-workers", type=int, default=0)
-    p.add_argument("--precision", default="FP32",
-                   choices=["FP32","TF32","BF16","FP16"])
+    p.add_argument("--precision", default="FP32", choices=["FP32", "TF32", "BF16", "FP16"])
     return p
 
 
@@ -875,8 +995,10 @@ def cmd_baseline(args) -> None:
     }
     m = measure_baseline(config)
     write_baseline(m)
-    print(f"[perf] baseline: {m.samples_per_second:.2f} samples/s, "
-          f"step={m.step_time_mean_s:.4f}s, status={m.status}")
+    print(
+        f"[perf] baseline: {m.samples_per_second:.2f} samples/s, "
+        f"step={m.step_time_mean_s:.4f}s, status={m.status}"
+    )
 
 
 def cmd_capacity(args) -> None:
@@ -888,8 +1010,10 @@ def cmd_capacity(args) -> None:
         "grad_accum_steps": args.grad_accum_steps,
     }
     result = binary_search_capacity(1, 64, config)
-    print(f"[perf] capacity: oom={result['oom_batch']}, "
-          f"safe={result['safe_batch']}, recommended={result['recommended_batch']}")
+    print(
+        f"[perf] capacity: oom={result['oom_batch']}, "
+        f"safe={result['safe_batch']}, recommended={result['recommended_batch']}"
+    )
 
     # Write safe_capacity.yaml
     safe_path = OUT_DIR / "safe_capacity.yaml"
@@ -972,7 +1096,7 @@ def cmd_recommend(args) -> None:
         "device: cuda\n"
         "protocol_preserved: true\n"
         "protocol_deviations: []\n"
-        f"numerical_reference: (baseline config id)\n"
+        "numerical_reference: (baseline config id)\n"
         "performance_reference:\n"
         "  throughput_samples_per_s: null\n"
         "  step_time_mean_s: null\n"
@@ -1085,11 +1209,19 @@ def main() -> None:
         "parity": cmd_parity,
         "soak": cmd_soak,
         "recommend": cmd_recommend,
-        "all": lambda a: [_phases[a] for _phases in [cmd_health, cmd_baseline,
-                  cmd_capacity, cmd_dataloader, cmd_compute,
-                  lambda x: cmd_parity(x) if x.baseline_id else None,
-                  lambda x: cmd_soak(x) if x.config_id else None,
-                  cmd_recommend]],
+        "all": lambda a: [
+            _phases[a]
+            for _phases in [
+                cmd_health,
+                cmd_baseline,
+                cmd_capacity,
+                cmd_dataloader,
+                cmd_compute,
+                lambda x: cmd_parity(x) if x.baseline_id else None,
+                lambda x: cmd_soak(x) if x.config_id else None,
+                cmd_recommend,
+            ]
+        ],
     }
 
     fn = phases.get(args.phase)

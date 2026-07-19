@@ -3,7 +3,10 @@
 These 9 tests run after any `/repro-evolution` round. They guard the
 plugin from accidental breakage when new lessons are absorbed.
 """
-import json, subprocess, sys
+
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -15,6 +18,7 @@ def _read(p):
 
 # ── 9 regression items ─────────────────────────────────────────────────────────
 
+
 def test_01_manifest_valid():
     """plugin.json parses as JSON and has the canonical name."""
     data = json.loads((REPO / ".cursor-plugin" / "plugin.json").read_text())
@@ -25,8 +29,14 @@ def test_02_commands_listed():
     """The plugin's commands directory contains ≥6 known commands."""
     cmds_dir = REPO / "commands"
     md_files = sorted(p.name for p in cmds_dir.glob("*.md"))
-    required = {"repro-contract.md","repro-plan.md","repro-review.md",
-                "repro-monitor.md","repro-report.md","research-extend.md"}
+    required = {
+        "repro-contract.md",
+        "repro-plan.md",
+        "repro-review.md",
+        "repro-monitor.md",
+        "repro-report.md",
+        "research-extend.md",
+    }
     assert required.issubset(set(md_files)), f"missing: {required - set(md_files)}"
 
 
@@ -34,17 +44,27 @@ def test_03_agents_listed():
     """The plugin's agents directory contains the canonical agents."""
     agents_dir = REPO / "agents"
     md_files = sorted(p.name for p in agents_dir.glob("*.md"))
-    required = {"repro-lead.md","review-auditor.md","evidence-verifier.md","repo-scout.md"}
+    required = {"repro-lead.md", "review-auditor.md", "evidence-verifier.md", "repo-scout.md"}
     assert required.issubset(set(md_files)), f"missing: {required - set(md_files)}"
 
 
 def test_04_templates_listed():
     """All canonical templates exist."""
     tpl_dir = REPO / "templates"
-    required = {"research_contract.md","human_checkpoints.md","handoff.json",
-                "project_memory.md","topic_graph.json","search_plan.json",
-                "claim_evidence_matrix.md","experiment_plan.md","experiment_tracker.csv",
-                "control_flags.md","dataset_registry.md","narrative_report.md"}
+    required = {
+        "research_contract.md",
+        "human_checkpoints.md",
+        "handoff.json",
+        "project_memory.md",
+        "topic_graph.json",
+        "search_plan.json",
+        "claim_evidence_matrix.md",
+        "experiment_plan.md",
+        "experiment_tracker.csv",
+        "control_flags.md",
+        "dataset_registry.md",
+        "narrative_report.md",
+    }
     found = {p.name for p in tpl_dir.iterdir()}
     missing = required - found
     assert not missing, f"missing: {missing}"
@@ -58,8 +78,11 @@ def test_05_strict_mode_default():
 
 def test_06_short_loop_block():
     """reproctl.py exposes the run-short-loop subcommand."""
-    r = subprocess.run([sys.executable, str(REPO/"scripts"/"reproctl.py"), "help"],
-                       capture_output=True, text=True)
+    r = subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "reproctl.py"), "help"],
+        capture_output=True,
+        text=True,
+    )
     assert "run-short-loop" in r.stdout, "run-short-loop missing from help"
 
 
@@ -90,7 +113,8 @@ def main():
     passed = 0
     for fn in TESTS:
         try:
-            fn(); passed += 1
+            fn()
+            passed += 1
         except AssertionError as e:
             print(f"[FAIL] {fn.__name__}: {e}")
         except Exception as e:

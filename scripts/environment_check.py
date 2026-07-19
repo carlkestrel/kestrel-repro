@@ -29,8 +29,7 @@ def run_cmd(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
     """Run a command and return (returncode, stdout, stderr)."""
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=30,
-            cwd=str(cwd) if cwd else None
+            cmd, capture_output=True, text=True, timeout=30, cwd=str(cwd) if cwd else None
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
@@ -73,13 +72,16 @@ def check_cuda() -> dict[str, Any]:
     # Check PyTorch CUDA
     try:
         import torch
+
         result["available"] = torch.cuda.is_available()
         if result["available"]:
             result["pytorch_cuda_version"] = torch.version.cuda
             result["cudnn_version"] = torch.backends.cudnn.version()
             result["gpu_count"] = torch.cuda.device_count()
             result["gpu_name"] = torch.cuda.get_device_name(0) if result["gpu_count"] > 0 else None
-            result["compute_capability"] = torch.cuda.get_device_capability(0) if result["gpu_count"] > 0 else None
+            result["compute_capability"] = (
+                torch.cuda.get_device_capability(0) if result["gpu_count"] > 0 else None
+            )
             result["bf16_supported"] = torch.cuda.is_bf16_supported()
     except ImportError:
         result["pytorch_available"] = False
@@ -91,6 +93,7 @@ def check_pytorch() -> dict[str, Any]:
     result = {"available": False}
     try:
         import torch
+
         result["available"] = True
         result["version"] = torch.__version__
         result["cuda_available"] = torch.cuda.is_available()
@@ -111,7 +114,12 @@ def check_pytorch() -> dict[str, Any]:
 def check_packages() -> dict[str, Any]:
     """Check for required packages."""
     required = [
-        "torch", "numpy", "PIL", "yaml", "json", "pathlib",
+        "torch",
+        "numpy",
+        "PIL",
+        "yaml",
+        "json",
+        "pathlib",
     ]
     results = {}
     for pkg in required:
@@ -127,13 +135,14 @@ def check_packages() -> dict[str, Any]:
 def check_disk_space(path: str = ".") -> dict[str, Any]:
     """Check available disk space."""
     import shutil
+
     result = {"path": path}
     try:
         usage = shutil.disk_usage(path)
         result["total_gb"] = round(usage.total / 1e9, 1)
         result["free_gb"] = round(usage.free / 1e9, 1)
         result["used_percent"] = round((usage.used / usage.total) * 100, 1)
-        result["sufficient"] = usage.free > 10 * (1024 ** 3)  # 10 GB minimum
+        result["sufficient"] = usage.free > 10 * (1024**3)  # 10 GB minimum
     except Exception as e:
         result["error"] = str(e)
     return result
@@ -161,11 +170,12 @@ def check_cpu() -> dict[str, Any]:
 def check_memory() -> dict[str, Any]:
     """Check RAM availability."""
     import shutil
+
     result = {}
     try:
         mem = shutil.mem_info()
-        result["total_gb"] = round(mem[0] / (1024 ** 3), 1)
-        result["available_gb"] = round(mem[1] / (1024 ** 3), 1)
+        result["total_gb"] = round(mem[0] / (1024**3), 1)
+        result["available_gb"] = round(mem[1] / (1024**3), 1)
     except Exception:
         rc, stdout, _ = run_cmd(["free", "-h"])
         if rc == 0:

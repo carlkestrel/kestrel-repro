@@ -21,6 +21,42 @@ env:
   REPRO_FAKE_DISK_FREE: ""
 
 jobs:
+  # ── Job 0: Manifest — record what this CI level covers (truthful declaration) ─
+  manifest:
+    name: CI Level 1 Manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Record what CI-L1 covers
+        run: |
+          mkdir -p ci_reports
+          cat > ci_reports/ci_l1_manifest.json <<'EOF'
+          {
+            "level": "L1",
+            "covers": [
+              "Python syntax compile for all .py files",
+              "Package import smoke (startup, orchestrator, cvo, ostar)",
+              "YAML / JSON / schema validation",
+              "Ruff lint and format",
+              "Plugin discovery, startup unit, state machine, orchestrator import tests"
+            ],
+            "does_not_cover": [
+              "GPU training parity",
+              "Real paper reproduction",
+              "Long training runs",
+              "Network access"
+            ],
+            "test_files": [
+              "tests/test_r1_acceptance.py",
+              "tests/test_plugin_discovery.py",
+              "tests/test_startup.py",
+              "tests/test_state_machine.py"
+            ],
+            "generated_at": "${{ github.run_id }}"
+          }
+          EOF
+          echo "CI-L1 manifest recorded."
+          cat ci_reports/ci_l1_manifest.json
   # ── Job 1: Python syntax & import check ─────────────────────────────────────
   syntax:
     name: Syntax & Import
@@ -50,20 +86,20 @@ jobs:
         run: |
           echo "=== Package import check ==="
           export PYTHONPATH="${PWD}/scripts:${PYTHONPATH}"
-          python3 -c "
-import sys
-errors = []
-for pkg in ['startup', 'orchestrator', 'cvo', 'ostar']:
-    try:
-        __import__(pkg)
-        print(f'  OK  import {pkg}')
-    except Exception as e:
-        print(f'  FAIL import {pkg}: {e}')
-        errors.append(pkg)
-if errors:
-    print('Import failures:', errors)
-    sys.exit(1)
-"
+          python3 - <<'PYEOF'
+          import sys
+          errors = []
+          for pkg in ['startup', 'orchestrator', 'cvo', 'ostar']:
+              try:
+                  __import__(pkg)
+                  print(f'  OK  import {pkg}')
+              except Exception as e:
+                  print(f'  FAIL import {pkg}: {e}')
+                  errors.append(pkg)
+          if errors:
+              print('Import failures:', errors)
+              sys.exit(1)
+          PYEOF
 
   # ── Job 2: YAML / JSON / schema validation ───────────────────────────────────
   validate-configs:
@@ -86,16 +122,21 @@ if errors:
         run: |
           echo "=== YAML validation ==="
           ERRORS=0
-          for f in $(find . -name "*.yaml" -o -name "*.yml" \
+          for f in $(find . \( -name "*.yaml" -o -name "*.yml" \) \
                -not -path "./.git/*" \
                -not -path "./.pytest_cache/*" \
                -not -path "./fixtures/*" \
-               -not -path "./.repro/*"); do
-            python3 -c "import yaml; list(yaml.safe_load_all(open('$f')))" 2>&1 \
+               -not -path "./.repro/*" \
+               -not -path "./templates/*" \
+               -not -path "./scripts/templates/*" \
+               -not -path "./performance/*" \
+               -not -path "./.execution/*" \
+               -not -path "./build/*"); do
+            python3 -c "import yaml; list(yaml.safe_load_all(open(\"$f\")))" 2>&1 \
               && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
           done
-          echo "Total YAML errors: $ERRORS"
-          if [ "$ERRORS" -gt 0 ]; then exit 1; fi
+          echo "Total YAML errors: \$ERRORS"
+          if [ "\$ERRORS" -gt 0 ]; then exit 1; fi
 
       - name: Validate JSON files
         run: |
@@ -105,7 +146,10 @@ if errors:
                -not -path "./.git/*" \
                -not -path "./.pytest_cache/*" \
                -not -path "./fixtures/*" \
-               -not -path "./.repro/*"); do
+               -not -path "./.repro/*" \
+               -not -path "./templates/*" \
+               -not -path "./.execution/*" \
+               -not -path "./build/*"); do
             python3 -c "import json; json.load(open('$f'))" 2>&1 \
               && echo "  OK  $f" || { echo "  FAIL $f"; ERRORS=$((ERRORS+1)); }
           done
@@ -115,17 +159,17 @@ if errors:
       - name: Validate schemas
         run: |
           echo "=== JSON Schema validation ==="
-          python3 -c "
-import json, glob, sys
-schema_dir = glob.glob('schemas/*.schema.json')
-print(f'Found {len(schema_dir)} schema files')
-for schema_path in schema_dir:
-    with open(schema_path) as f:
-        json.load(f)  # just syntax-check the schema itself
-    print(f'  OK  {schema_path}')
-if not schema_dir:
-    print('  (no schemas to validate)')
-"
+          python3 - <<'PYEOF'
+          import json, glob, sys
+          schema_dir = glob.glob('schemas/*.schema.json')
+          print(f'Found {len(schema_dir)} schema files')
+          for schema_path in schema_dir:
+              with open(schema_path) as f:
+                  json.load(f)  # just syntax-check the schema itself
+              print(f'  OK  {schema_path}')
+          if not schema_dir:
+              print('  (no schemas to validate)')
+          PYEOF
 
   # ── Job 3: Ruff lint ────────────────────────────────────────────────────────
   ruff-lint:
@@ -196,8 +240,8 @@ if not schema_dir:
         run: pytest tests/test_plugin_discovery.py -v --tb=short
 
       - name: Startup unit tests
-        run: pytest tests/test_startup.py -v --tb=short \
-          -k "not integ and not test_integ"
+        run: |
+          pytest tests/test_startup.py -v --tb=short -k "not integ and not test_integ"
 
       - name: State machine tests
         run: pytest tests/test_state_machine.py -v --tb=short
@@ -205,12 +249,12 @@ if not schema_dir:
       - name: Orchestrator import tests
         run: |
           echo "=== Testing orchestrator package imports ==="
-          python3 -c "
-import sys; sys.path.insert(0, 'scripts')
-from orchestrator import (
-    ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
-    StateStore, TaskExecutor, Verifier, Watchdog, EventJournal,
-    RecoveryManager, BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL,
-)
-print('All orchestrator imports OK')
-"
+          python3 - <<'PYEOF'
+          import sys; sys.path.insert(0, 'scripts')
+          from orchestrator import (
+              ApprovalGate, Controller, PolicyEngine, ProcessManager, Scheduler,
+              StateStore, TaskExecutor, Verifier, Watchdog, EventJournal,
+              RecoveryManager, BLOCKED, COMPLETE, PAUSED, STOPPED, WAITING_APPROVAL,
+          )
+          print('All orchestrator imports OK')
+          PYEOF

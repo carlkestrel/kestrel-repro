@@ -1,4 +1,5 @@
 """The BOOTSTRAP → … → EXECUTE_NEXT startup state machine."""
+
 from __future__ import annotations
 
 import json
@@ -8,12 +9,26 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
+from . import doctor as _doctor
 from . import lock as _lock
 from . import plan_validate as _plan
-from . import doctor as _doctor
-from . import config as _config
+
+# R3-0: import from canonical core
+try:
+    from scripts.core.state_store import (
+        CURRENT_CANONICALIZATION_VERSION,
+    )
+    from scripts.core.state_store import (
+        StateStore as _CanonicalStateStore,
+    )
+    from scripts.core.state_store import (
+        compute_authorization_bound_hash as _compute_auth_hash,
+    )
+except ImportError:
+    _CanonicalStateStore = None  # type: ignore
+    _compute_auth_hash = None  # type: ignore
+    CURRENT_CANONICALIZATION_VERSION = "1"
 
 EXIT_TASK_FAILED = 6
 EXIT_TASK_BLOCKED = 7
@@ -63,14 +78,20 @@ def _read_state(exec_dir: Path) -> dict | None:
         return json.loads(text)
     except Exception as e:
         # Archive the corrupt state for forensics, then signal the caller.
-        archive = exec_dir / "checkpoints" / f"execution_state.corrupt.{int(__import__('time').time())}.json"
+        archive = (
+            exec_dir
+            / "checkpoints"
+            / f"execution_state.corrupt.{int(__import__('time').time())}.json"
+        )
         archive.parent.mkdir(parents=True, exist_ok=True)
         try:
             archive.write_text(text)
         except Exception:
             pass
-        print(f"[startup] corrupt execution_state.json: {e}; "
-              f"archived to {archive.name}", file=sys.stderr)
+        print(
+            f"[startup] corrupt execution_state.json: {e}; archived to {archive.name}",
+            file=sys.stderr,
+        )
         sys.exit(EXIT_RESUME_FAILED)
 
 
@@ -84,8 +105,11 @@ def _write_state(exec_dir: Path, state: dict) -> None:
 def _git_commit(project_root: Path) -> str:
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=str(project_root),
-            stderr=subprocess.DEVNULL, text=True).strip()
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(project_root),
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
     except Exception:
         return "unknown"
 
@@ -93,8 +117,11 @@ def _git_commit(project_root: Path) -> str:
 def _git_dirty(project_root: Path) -> bool:
     try:
         out = subprocess.check_output(
-            ["git", "status", "--porcelain"], cwd=str(project_root),
-            stderr=subprocess.DEVNULL, text=True)
+            ["git", "status", "--porcelain"],
+            cwd=str(project_root),
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
         return bool(out.strip())
     except Exception:
         return False
@@ -105,8 +132,7 @@ def _git_dirty(project_root: Path) -> bool:
 # ──────────────────────────────────────────────────────────────────────
 
 
-def bootstrap(*, plugin_root: Path, project_root: Path,
-              mode: str) -> dict:
+def bootstrap(*, plugin_root: Path, project_root: Path, mode: str) -> dict:
     return {
         "plugin_version": _plugin_version(plugin_root),
         "plugin_root": str(plugin_root),
@@ -133,10 +159,10 @@ def discover(*, project_root: Path, plan_path: Path) -> dict:
     }
 
 
-def preflight(*, project_root: Path, plan_path: Path,
-              expected_cuda: str | None) -> dict:
-    report = _doctor.run(project_root=project_root, plan_path=plan_path,
-                         expected_cuda=expected_cuda)
+def preflight(*, project_root: Path, plan_path: Path, expected_cuda: str | None) -> dict:
+    report = _doctor.run(
+        project_root=project_root, plan_path=plan_path, expected_cuda=expected_cuda
+    )
     return {
         "overall": report["overall"],
         "summary": report["summary"],
@@ -167,12 +193,14 @@ def state_check(*, project_root: Path) -> dict:
     return res
 
 
-def lock_acquire(*, project_root: Path, command: str,
-                 plan_hash: str, plugin_version: str) -> dict:
+def lock_acquire(*, project_root: Path, command: str, plan_hash: str, plugin_version: str) -> dict:
     lock_path = project_root / ".repro" / "run.lock"
     return _lock.acquire(
-        lock_path, command=command, plan_hash=plan_hash,
-        project_root=str(project_root), plugin_version=plugin_version,
+        lock_path,
+        command=command,
+        plan_hash=plan_hash,
+        project_root=str(project_root),
+        plugin_version=plugin_version,
     )
 
 
@@ -180,11 +208,19 @@ def plan_validate(plan_path: Path) -> str:
     return _plan.validate(plan_path)
 
 
-def ready_summary(*, project_root: Path, plan_path: Path, mode: str,
-                  plugin_version: str, doctor: dict,
-                  state_check_info: dict, plan_hash: str,
-                  next_task: dict | None, last_completed_task: str | None,
-                  dry_run: bool) -> dict:
+def ready_summary(
+    *,
+    project_root: Path,
+    plan_path: Path,
+    mode: str,
+    plugin_version: str,
+    doctor: dict,
+    state_check_info: dict,
+    plan_hash: str,
+    next_task: dict | None,
+    last_completed_task: str | None,
+    dry_run: bool,
+) -> dict:
     return {
         "project_root": str(project_root),
         "plan_path": str(plan_path),
@@ -207,8 +243,7 @@ def ready_summary(*, project_root: Path, plan_path: Path, mode: str,
 # ──────────────────────────────────────────────────────────────────────
 
 
-def claim_one(*, project_root: Path, plan_path: Path,
-              dry_run: bool = False) -> dict:
+def claim_one(*, project_root: Path, plan_path: Path, dry_run: bool = False) -> dict:
     """Claim ONE ready atomic task; persist state on completion.
 
     The state machine:
@@ -225,7 +260,7 @@ def claim_one(*, project_root: Path, plan_path: Path,
     current_hash = ""
     try:
         current_hash = _plan.validate(plan_path)
-    except SystemExit as e:
+    except SystemExit:
         # If the plan can't even be validated, we can't claim anything.
         raise
 
@@ -240,8 +275,7 @@ def claim_one(*, project_root: Path, plan_path: Path,
                 f"- action  : refusing to resume. Use `reproctl resume` after "
                 f"`git checkout` or re-plan.\n"
             )
-            print(f"[startup] plan hash changed; wrote {report}",
-                  file=sys.stderr)
+            print(f"[startup] plan hash changed; wrote {report}", file=sys.stderr)
             sys.exit(EXIT_RESUME_FAILED)
 
     # Task graph
@@ -255,15 +289,17 @@ def claim_one(*, project_root: Path, plan_path: Path,
 
     ready = [t for t in task_graph["tasks"] if t.get("status") == "READY"]
     if not ready:
-        return {"id": None, "status": "NONE",
-                "message": "no READY tasks in task graph"}
+        return {"id": None, "status": "NONE", "message": "no READY tasks in task graph"}
 
     task = ready[0]
 
     if dry_run:
-        return {"id": task["id"], "status": "WOULD_CLAIM",
-                "dry_run": True,
-                "message": "dry-run; no state mutated"}
+        return {
+            "id": task["id"],
+            "status": "WOULD_CLAIM",
+            "dry_run": True,
+            "message": "dry-run; no state mutated",
+        }
 
     # Persist claim
     if state is None:
@@ -289,13 +325,18 @@ def claim_one(*, project_root: Path, plan_path: Path,
     # Append to task_journal.jsonl
     journal = exec_dir / "task_journal.jsonl"
     with journal.open("a", encoding="utf-8") as f:
-        f.write(json.dumps({
-            "task": task["id"], "event": "CLAIMED",
-            "at": _utc_now(),
-        }) + "\n")
+        f.write(
+            json.dumps(
+                {
+                    "task": task["id"],
+                    "event": "CLAIMED",
+                    "at": _utc_now(),
+                }
+            )
+            + "\n"
+        )
 
-    return {"id": task["id"], "status": "CLAIMED",
-            "task": task, "state": state}
+    return {"id": task["id"], "status": "CLAIMED", "task": task, "state": state}
 
 
 def _ensure_task_graph(plan_path: Path, tg_path: Path) -> dict:
@@ -307,10 +348,12 @@ def _ensure_task_graph(plan_path: Path, tg_path: Path) -> dict:
     if tg_path.exists():
         try:
             import yaml  # type: ignore
+
             return yaml.safe_load(tg_path.read_text())
         except Exception:
             pass
     import yaml  # type: ignore
+
     fm_text = plan_path.read_text().split("---", 2)
     if len(fm_text) >= 3:
         fm = yaml.safe_load(fm_text[1]) or {}
@@ -325,9 +368,11 @@ def _ensure_task_graph(plan_path: Path, tg_path: Path) -> dict:
         annotated.append(t2)
     plan_hash = _plan.validate(plan_path)
     graph = {
-        "metadata": {"plan_hash": plan_hash,
-                     "total_tasks": len(annotated),
-                     "generated_at": _utc_now()},
+        "metadata": {
+            "plan_hash": plan_hash,
+            "total_tasks": len(annotated),
+            "generated_at": _utc_now(),
+        },
         "tasks": annotated,
     }
     tg_path.write_text(yaml.safe_dump(graph, sort_keys=False))
@@ -336,12 +381,20 @@ def _ensure_task_graph(plan_path: Path, tg_path: Path) -> dict:
 
 def _default_tasks(plan_path: Path) -> list[dict]:
     return [
-        {"id": "PLAN_REVIEW", "title": "Review the plan with the user",
-         "status": "READY", "depends_on": [],
-         "acceptance": ["user acknowledges plan"]},
-        {"id": "FIRST_ATOMIC_TASK", "title": "Execute the first atomic task",
-         "status": "BLOCKED", "depends_on": ["PLAN_REVIEW"],
-         "acceptance": ["task completes and is recorded"]},
+        {
+            "id": "PLAN_REVIEW",
+            "title": "Review the plan with the user",
+            "status": "READY",
+            "depends_on": [],
+            "acceptance": ["user acknowledges plan"],
+        },
+        {
+            "id": "FIRST_ATOMIC_TASK",
+            "title": "Execute the first atomic task",
+            "status": "BLOCKED",
+            "depends_on": ["PLAN_REVIEW"],
+            "acceptance": ["task completes and is recorded"],
+        },
     ]
 
 

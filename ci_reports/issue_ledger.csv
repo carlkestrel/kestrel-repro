@@ -1,0 +1,18 @@
+id,phase,severity,area,issue,resolution,status,date
+R1-001,R1,high,packaging,no single-source version,_version.py introduced,closed,2026-07-17
+R1-002,R1,high,packaging,data dirs not in wheel,scripts.{commands,agents,skills,rules,templates,fixtures} marker pkgs,closed,2026-07-17
+R1-003,R1,high,packaging,no console script,reproctl entry via pyproject,closed,2026-07-17
+R1-004,R1,medium,packaging,no python -m reproctl,__main__.py added,closed,2026-07-17
+R1-005,R1,high,paths,fixtures need absolute or cwd paths,fixture_locator via importlib.resources,closed,2026-07-17
+R1-006,R1,high,paths,conftest.py can be hacked,strict no-sys.path policy,closed,2026-07-17
+R1-007,R1,medium,deps,torch not optional in baseline,layered extras (core/test/dev/torch/pointcloud),closed,2026-07-17
+R1-008,R1,medium,deps,no isolated env,venv at /tmp/kestrel_r1_workspace/kestrel_r1_venv,closed,2026-07-17
+R1-009,R1,high,review_bundle,fixtures missing in earlier review,kernel docs this is REVIEW-BUNDLE gap not source gap,closed,2026-07-17
+R3-001,R3,high,orchestrator,state machine expects PASS but gets WAITING_APPROVAL,defer to R3,open,2026-07-17
+R3-002,R3,high,chaos,watchdog subcommand unknown,defer to R3,open,2026-07-17
+R3-003,R3,medium,chaos,sqlite lock -15 exit,defer to R3,open,2026-07-17
+R3-004,R3,medium,chaos,disk-full watchdog,defer to R3,open,2026-07-17
+R3-005,R3,medium,chaos,data-file missing treats dir as file,defer to R3,open,2026-07-17
+R3-006,R3,medium,chaos,plan-hash stale,defer to R3,open,2026-07-17
+R3-007,R3,medium,chaos,max-retry limit,defer to R3,open,2026-07-17
+R3-008,R3,high,orchestrator,approval pause/resume/reject/recover,defer to R3,open,2026-07-17

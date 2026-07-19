@@ -1,0 +1,73 @@
+{
+  "refactor_phase": "R3-1+R3-2+R3-3+R3-4-progress",
+  "phase_status": "PARTIALLY_COMPLETE",
+  "date": "2026-07-18",
+  "version": "0.2.0",
+  "python": "3.13.13",
+  "venv": "/tmp/kestrel_r1_workspace/kestrel_r1_venv",
+
+  "r3_0_status": "COMPLETE",
+  "r3_0_completion_date": "2026-07-18",
+  "r3_0_summary": {
+    "single_state_authority": "EVIDENCE_VERIFIED",
+    "r2_status_change": "IMPLEMENTED_ISOLATED (unchanged — R3-0 done but Controller not fully integrated)",
+    "r3_integration_gate": "IN_PROGRESS"
+  },
+
+  "r3_acceptance_tests": {
+    "r3_0": {"total": 17, "passed": 17, "failed": 0, "file": "tests/test_r3_0_acceptance.py"}
+  },
+
+  "full_test_summary": {
+    "collected": 258,
+    "passed": 237,
+    "failed": 21,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 1,
+    "junit_xml": "ci_reports/R3_FULL_JUNIT.xml"
+  },
+
+  "per_file_results": {
+    "tests/test_r1_acceptance.py": {"collected": 12, "passed": 12, "failed": 0},
+    "tests/test_r2_acceptance.py": {"collected": 31, "passed": 31, "failed": 0},
+    "tests/test_r3_0_acceptance.py": {"collected": 17, "passed": 17, "failed": 0},
+    "tests/test_chaos.py": {"collected": 28, "passed": 21, "failed": 7},
+    "tests/test_orchestrator.py": {"collected": 18, "passed": 4, "failed": 14},
+    "tests/test_stabilization.py": {"collected": 12, "passed": 12, "failed": 0},
+    "tests/test_startup.py": {"collected": 53, "passed": 53, "failed": 0},
+    "tests/test_ostar.py": {"collected": 35, "passed": 35, "failed": 0},
+    "tests/test_other_suites": {"collected": 52, "passed": 52, "failed": 0}
+  },
+
+  "r3_progress": {
+    "R3-0_state_consolidation": "COMPLETE",
+    "R3-1_controller_integration": "PARTIAL — state adapters added; executor/scheduler wiring still pending",
+    "R3-2_approval_gate": "PARTIAL — canonical APPROVED/REJECTED/WAIVED states integrated; controller wiring pending",
+    "R3-3_signal_handling": "COMPLETE — stop_hook now thread-safe",
+    "R3-4_process_manager_exit_codes": "COMPLETE — explain_exit_code() added"
+  },
+
+  "remaining_r3_open": [
+    {"id": "R3-1-006", "tests": ["test_orchestrator.py::test_1-3"], "reason": "Scheduler doesn't transition tasks to RUNNING"},
+    {"id": "R3-1-007", "tests": ["test_orchestrator.py::test_4"], "reason": "claim_task was added but tasks don't enter RUNNING"},
+    {"id": "R3-2-002", "tests": ["test_orchestrator.py::test_5-7"], "reason": "ApprovalGate not creating approvals from controller"},
+    {"id": "R3-2-003", "tests": ["test_orchestrator.py::test_15"], "reason": "PolicyEngine not reloading from policy file"},
+    {"id": "R3-3-001", "tests": ["test_orchestrator.py::test_8-10"], "reason": "Verifier doesn't fire for completing tasks"},
+    {"id": "R3-3-002", "tests": ["test_orchestrator.py::test_13"], "reason": "PAUSED state not honored by controller loop"},
+    {"id": "R3-5-001", "tests": ["test_orchestrator.py::test_9"], "reason": "Recovery doesn't restore RUNNING tasks"},
+    {"id": "R3-5-002", "tests": ["test_orchestrator.py::test_14"], "reason": "Final acceptance not run on mandatory tasks"},
+    {"id": "R3-7-001", "tests": ["test_orchestrator.py::test_18"], "reason": "Daemon lifecycle doesn't cleanly stop orphan workers"},
+    {"id": "R3-CHAOS-1", "tests": ["test_chaos.py::*"], "reason": "Tests use legacy status column or PASS/FAIL values"}
+  ],
+
+  "next_steps": [
+    "Wire scheduler ↔ executor: ensure _collect_processes claims ready tasks",
+    "Wire ApprovalGate: when task enters WAITING_APPROVAL, create approval record",
+    "Wire Verifier: when task exits VERIFYING, transition to PASSED/FAILED",
+    "Fix Recovery to restore RUNNING tasks from journal",
+    "Fix chaos tests to use canonical schema names",
+    "R3-6: GPU resource lock implementation",
+    "R3-7: Shell command safety boundary"
+  ]
+}

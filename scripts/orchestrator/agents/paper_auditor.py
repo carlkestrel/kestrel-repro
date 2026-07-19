@@ -3,6 +3,7 @@ Paper Auditor Agent - NORA-style specialist for paper analysis and verification.
 
 This agent analyzes papers, extracts claims, and verifies reproducibility.
 """
+
 from __future__ import annotations
 
 import re
@@ -10,11 +11,10 @@ from pathlib import Path
 from typing import Any
 
 from .base import (
-    AgentResult,
     AgentRegistry,
+    AgentResult,
     HandoffContext,
     SpecialistAgent,
-    utc_now,
 )
 
 
@@ -55,12 +55,15 @@ class PaperAuditorAgent(SpecialistAgent):
         requirements = self._extract_requirements(claims)
         method_summary = self._summarize_method(paper_analysis)
 
-        self.prepare_handoff(context, {
-            "paper_analysis": paper_analysis,
-            "claims": claims,
-            "requirements": requirements,
-            "method_summary": method_summary,
-        })
+        self.prepare_handoff(
+            context,
+            {
+                "paper_analysis": paper_analysis,
+                "claims": claims,
+                "requirements": requirements,
+                "method_summary": method_summary,
+            },
+        )
 
         return AgentResult(
             agent_type=self.agent_type,
@@ -139,7 +142,7 @@ class PaperAuditorAgent(SpecialistAgent):
         for pattern, name in section_patterns:
             match = re.search(pattern, content, re.IGNORECASE)
             if match:
-                sections[name] = content[match.start():match.start() + 1000]
+                sections[name] = content[match.start() : match.start() + 1000]
 
         return sections
 
@@ -149,10 +152,12 @@ class PaperAuditorAgent(SpecialistAgent):
         table_pattern = r"TABLE\s*[IVX\d]+\s*:?\s*([^\n]+)\n([\s\S]*?)(?=\n\n|\n[A-Z]|$)"
 
         for match in re.finditer(table_pattern, content, re.IGNORECASE):
-            tables.append({
-                "title": match.group(1).strip(),
-                "content": match.group(2).strip()[:500],
-            })
+            tables.append(
+                {
+                    "title": match.group(1).strip(),
+                    "content": match.group(2).strip()[:500],
+                }
+            )
 
         return tables
 
@@ -162,9 +167,11 @@ class PaperAuditorAgent(SpecialistAgent):
         fig_pattern = r"FIG\.?\s*[IVX\d]+\s*:?\s*([^\n]+)"
 
         for match in re.finditer(fig_pattern, content, re.IGNORECASE):
-            figures.append({
-                "caption": match.group(1).strip(),
-            })
+            figures.append(
+                {
+                    "caption": match.group(1).strip(),
+                }
+            )
 
         return figures
 
@@ -183,21 +190,25 @@ class PaperAuditorAgent(SpecialistAgent):
         for claim_type, pattern, unit in claim_types:
             matches = re.findall(pattern, method, re.IGNORECASE)
             for match in matches:
-                claims.append({
-                    "type": claim_type,
-                    "value": float(match),
-                    "unit": unit,
-                    "source": "method_section",
-                })
+                claims.append(
+                    {
+                        "type": claim_type,
+                        "value": float(match),
+                        "unit": unit,
+                        "source": "method_section",
+                    }
+                )
 
         if not claims:
-            claims.append({
-                "type": "baseline",
-                "value": 0.0,
-                "unit": "",
-                "source": "unknown",
-                "note": "No quantitative claims found",
-            })
+            claims.append(
+                {
+                    "type": "baseline",
+                    "value": 0.0,
+                    "unit": "",
+                    "source": "unknown",
+                    "note": "No quantitative claims found",
+                }
+            )
 
         return claims
 
@@ -207,33 +218,41 @@ class PaperAuditorAgent(SpecialistAgent):
 
         for claim in claims:
             if claim["type"] == "accuracy":
-                requirements.append({
-                    "type": "metric_target",
-                    "metric": "accuracy",
-                    "target": claim["value"],
-                    "threshold": claim["value"] * 0.95,
-                    "unit": "%",
-                })
+                requirements.append(
+                    {
+                        "type": "metric_target",
+                        "metric": "accuracy",
+                        "target": claim["value"],
+                        "threshold": claim["value"] * 0.95,
+                        "unit": "%",
+                    }
+                )
             elif claim["type"] == "speedup":
-                requirements.append({
-                    "type": "metric_target",
-                    "metric": "speedup",
-                    "target": claim["value"],
-                    "threshold": claim["value"] * 0.8,
-                    "unit": "x",
-                })
+                requirements.append(
+                    {
+                        "type": "metric_target",
+                        "metric": "speedup",
+                        "target": claim["value"],
+                        "threshold": claim["value"] * 0.8,
+                        "unit": "x",
+                    }
+                )
 
-        requirements.append({
-            "type": "dataset",
-            "description": "Dataset as specified in paper experiments",
-            "required": True,
-        })
+        requirements.append(
+            {
+                "type": "dataset",
+                "description": "Dataset as specified in paper experiments",
+                "required": True,
+            }
+        )
 
-        requirements.append({
-            "type": "hardware",
-            "description": "GPU memory and compute requirements",
-            "required": True,
-        })
+        requirements.append(
+            {
+                "type": "hardware",
+                "description": "GPU memory and compute requirements",
+                "required": True,
+            }
+        )
 
         return requirements
 

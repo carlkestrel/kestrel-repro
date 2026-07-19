@@ -14,6 +14,7 @@ A lock is considered stale when ANY of:
 State-consistency check is performed by ``state_machine.is_consistent``
 so that callers can re-enter the locked section safely.
 """
+
 from __future__ import annotations
 
 import json
@@ -23,7 +24,12 @@ import socket
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+
+# R1 INVARIANT: lock default must inherit from scripts/_version.py.
+try:
+    from _version import __version__ as _DEFAULT_PLUGIN_VERSION
+except Exception:  # pragma: no cover
+    _DEFAULT_PLUGIN_VERSION = "0.2.0"
 
 STALE_AFTER_SECONDS = 6 * 3600  # 6 hours
 
@@ -79,10 +85,15 @@ def _is_stale(info: dict) -> bool:
     return False
 
 
-def acquire(lock_path: Path, *, command: str, plan_hash: str,
-            project_root: str | None = None,
-            plugin_version: str = "0.2.0",
-            consistency_check=None) -> dict:
+def acquire(
+    lock_path: Path,
+    *,
+    command: str,
+    plan_hash: str,
+    project_root: str | None = None,
+    plugin_version: str = _DEFAULT_PLUGIN_VERSION,
+    consistency_check=None,
+) -> dict:
     """Acquire the project-level lock.
 
     If a stale lock is found, archive it as ``run.lock.stale.<ts>`` and
@@ -99,8 +110,7 @@ def acquire(lock_path: Path, *, command: str, plan_hash: str,
         )
     if existing:
         # Stale lock — archive it, run consistency check, then clear
-        archive = lock_path.with_name(
-            f"run.lock.stale.{int(time.time())}")
+        archive = lock_path.with_name(f"run.lock.stale.{int(time.time())}")
         try:
             shutil.copy2(lock_path, archive)
         except Exception:
@@ -159,3 +169,24 @@ def inspect(lock_path: Path) -> dict | None:
         return None
     info["is_stale"] = _is_stale(info)
     return info
+
+
+def check_plan_hash(lock_path: Path, expected_hash: str) -> bool:
+    """Return True if the lock's plan_hash matches expected_hash.
+
+    When the lock's plan_hash differs from expected_hash, the original
+    authorization contract is invalidated. This enforces R2 §4:
+    ``plan hash changes → authorization invalidated``.
+
+    Usage after lock acquisition::
+
+        lock_info = lock.acquire(...)
+        current_hash = plan_schema.canonical_hash(plan_path)
+        if not lock.check_plan_hash(lock_path, current_hash):
+            # Authorization invalidated — enter WAITING_DECISION
+            ...
+    """
+    info = _read(lock_path)
+    if not info:
+        return True  # no lock means no prior hash to check
+    return info.get("plan_hash") == expected_hash

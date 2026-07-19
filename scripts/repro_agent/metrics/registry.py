@@ -1,33 +1,33 @@
 """
 Metric Registry - Central registry for all metric definitions.
 """
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 from .models import (
+    AbsentClassPolicy,
+    ClassAggregation,
+    Direction,
+    EvaluationScope,
+    MetricConflict,
     MetricDefinition,
     MetricObservation,
     MetricProtocolFingerprint,
     MetricSource,
-    MetricConflict,
-    RunManifest,
-    TaskType,
-    Direction,
-    Unit,
-    ClassAggregation,
-    SampleAggregation,
-    AbsentClassPolicy,
     PredictionLevel,
-    EvaluationScope,
+    RunManifest,
+    SampleAggregation,
+    TaskType,
+    Unit,
 )
 
 
 class MetricRegistry:
     """Central registry for all metric definitions and observations."""
-    
+
     def __init__(self, registry_path: Path | None = None):
         self.registry_path = registry_path or Path(".repro/metrics/metric_registry.yaml")
         self.metrics: dict[str, MetricDefinition] = {}
@@ -36,49 +36,49 @@ class MetricRegistry:
         self.fingerprints: dict[str, MetricProtocolFingerprint] = {}
         self.conflicts: dict[str, MetricConflict] = {}
         self.runs: dict[str, RunManifest] = {}
-        
+
         # Load existing registry
         if self.registry_path.exists():
             self.load()
-    
+
     def register_metric(self, metric: MetricDefinition) -> None:
         """Register a metric definition."""
         self.metrics[metric.metric_id] = metric
-    
+
     def add_observation(self, observation: MetricObservation) -> None:
         """Add a metric observation."""
         self.observations[observation.observation_id] = observation
-    
+
     def add_source(self, source: MetricSource) -> None:
         """Add a metric source."""
         self.sources[source.source_id] = source
-    
+
     def add_fingerprint(self, fingerprint: MetricProtocolFingerprint) -> str:
         """Add a protocol fingerprint and return its hash."""
         fp_hash = fingerprint.fingerprint_hash
         self.fingerprints[fp_hash] = fingerprint
         return fp_hash
-    
+
     def add_conflict(self, conflict: MetricConflict) -> None:
         """Add a metric conflict."""
         self.conflicts[conflict.conflict_id] = conflict
-    
+
     def add_run(self, run: RunManifest) -> None:
         """Add a run manifest."""
         self.runs[run.run_id] = run
-    
+
     def get_metric(self, metric_id: str) -> MetricDefinition | None:
         """Get a metric definition by ID."""
         return self.metrics.get(metric_id)
-    
+
     def get_observations_for_run(self, run_id: str) -> list[MetricObservation]:
         """Get all observations for a run."""
         return [o for o in self.observations.values() if o.run_id == run_id]
-    
+
     def get_observations_for_metric(self, metric_id: str) -> list[MetricObservation]:
         """Get all observations for a metric."""
         return [o for o in self.observations.values() if o.metric_id == metric_id]
-    
+
     def to_dict(self) -> dict:
         """Convert registry to dictionary."""
         return {
@@ -89,43 +89,38 @@ class MetricRegistry:
             "conflicts": {k: v.to_dict() for k, v in self.conflicts.items()},
             "runs": {k: v.to_dict() for k, v in self.runs.items()},
         }
-    
+
     def save(self, path: Path | None = None) -> None:
         """Save registry to file."""
         path = path or self.registry_path
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with path.open("w") as f:
             json.dump(self.to_dict(), f, indent=2, default=str)
-    
+
     def load(self, path: Path | None = None) -> None:
         """Load registry from file."""
         path = path or self.registry_path
         if not path.exists():
             return
-        
+
         with path.open() as f:
             data = json.load(f)
-        
+
         self.metrics = {
             k: MetricDefinition.from_dict(v) for k, v in data.get("metrics", {}).items()
         }
         self.observations = {
             k: MetricObservation(**v) for k, v in data.get("observations", {}).items()
         }
-        self.sources = {
-            k: MetricSource(**v) for k, v in data.get("sources", {}).items()
-        }
+        self.sources = {k: MetricSource(**v) for k, v in data.get("sources", {}).items()}
         self.fingerprints = {
-            k: MetricProtocolFingerprint.from_dict(v) for k, v in data.get("fingerprints", {}).items()
+            k: MetricProtocolFingerprint.from_dict(v)
+            for k, v in data.get("fingerprints", {}).items()
         }
-        self.conflicts = {
-            k: MetricConflict(**v) for k, v in data.get("conflicts", {}).items()
-        }
-        self.runs = {
-            k: RunManifest(**v) for k, v in data.get("runs", {}).items()
-        }
-    
+        self.conflicts = {k: MetricConflict(**v) for k, v in data.get("conflicts", {}).items()}
+        self.runs = {k: RunManifest(**v) for k, v in data.get("runs", {}).items()}
+
     def summary(self) -> dict:
         """Get summary of registry contents."""
         return {
@@ -142,6 +137,7 @@ class MetricRegistry:
 # Standard Metric Definitions
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def get_standard_metrics() -> dict[str, MetricDefinition]:
     """Get all standard metric definitions."""
     return {
@@ -157,7 +153,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "mean_accuracy": MetricDefinition(
             metric_id="mean_accuracy",
             canonical_name="Mean Accuracy",
@@ -169,7 +164,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.MACRO,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         # IoU metrics
         "per_class_iou": MetricDefinition(
             metric_id="per_class_iou",
@@ -182,7 +176,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "all_class_miou": MetricDefinition(
             metric_id="all_class_miou",
             canonical_name="All-Class Mean IoU",
@@ -194,7 +187,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.MACRO,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "miou_ch": MetricDefinition(
             metric_id="miou_ch",
             canonical_name="Change-Class Mean IoU",
@@ -207,7 +199,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             sample_aggregation=SampleAggregation.GLOBAL,
             excluded_classes=[0],  # Exclude Unchanged
         ),
-        
         "miou_no_bg": MetricDefinition(
             metric_id="miou_no_bg",
             canonical_name="Background-Excluded Mean IoU",
@@ -220,7 +211,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             sample_aggregation=SampleAggregation.GLOBAL,
             ignored_labels=[255],  # Common ignore index
         ),
-        
         # Binary metrics
         "binary_iou": MetricDefinition(
             metric_id="binary_iou",
@@ -233,7 +223,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "binary_precision": MetricDefinition(
             metric_id="binary_precision",
             canonical_name="Binary Precision",
@@ -245,7 +234,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "binary_recall": MetricDefinition(
             metric_id="binary_recall",
             canonical_name="Binary Recall",
@@ -257,7 +245,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "binary_f1": MetricDefinition(
             metric_id="binary_f1",
             canonical_name="Binary F1",
@@ -269,7 +256,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         # Other metrics
         "kappa": MetricDefinition(
             metric_id="kappa",
@@ -282,7 +268,6 @@ def get_standard_metrics() -> dict[str, MetricDefinition]:
             class_aggregation=ClassAggregation.NONE,
             sample_aggregation=SampleAggregation.GLOBAL,
         ),
-        
         "weighted_miou": MetricDefinition(
             metric_id="weighted_miou",
             canonical_name="Weighted Mean IoU",

@@ -1,0 +1,7 @@
+layer,extras_name,required_for,top_deps,status,notes
+core,dependencies,plugin runtime,pyyaml>=6.0; numpy>=1.24,installed,no torch
+test,test,CI + dev,pytest>=7.0; pytest-timeout>=2.0; numpy>=1.24,installed,also needs kestrel-repro itself
+dev,dev,developer,pytest>=7.0; pytest-timeout>=2.0; pytest-cov>=4.0; ruff>=0.1; numpy>=1.24,available,used by lint workflow
+torch,torch,R4 paper adapters only,torch>=2.0; numpy>=1.24,available,N/A in R1 (L0–L3 = stub)
+pointcloud,pointcloud,R4 3D paper adapters,torch>=2.0; torchvision>=0.15; open3d>=0.17; numpy>=1.24,available,N/A in R1
+full,full,everything,torch>=2.0; torchvision>=0.15; open3d>=0.17; numpy>=1.24,available,convenience bundle

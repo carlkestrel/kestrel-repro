@@ -11,13 +11,13 @@ Usage:
 
 All command output (success and failure) follows the spec's required format.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import os
 import platform
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,14 +32,32 @@ if str(_PKG_PARENT) not in sys.path:
 
 from startup import (
     __version__,
+)
+from startup import (
     config as _config,
+)
+from startup import (
     doctor as _doctor,
+)
+from startup import (
     lock as _lock,
+)
+from startup import (
     log_setup as _log,
-    plan_validate as _plan,
+)
+from startup import (
+    plan_schema as _plan_schema,
+)
+from startup import (
+    plan_validate as _plan_legacy,
+)
+from startup import (
     recovery as _recovery,
-    secrets_redactor as _redact,
+)
+from startup import (
     state_machine as _sm,
+)
+from startup import (
     stop as _stop,
 )
 
@@ -106,6 +124,130 @@ def plugin_root() -> Path:
 # Output formatters
 # ──────────────────────────────────────────────────────────────────────
 
+import hashlib
+
+
+def _sha256_text(path: Path) -> str:
+    """Return SHA-256 of a file's UTF-8 text."""
+    return hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+
+
+def _cmd_self_test(
+    project: Path, plan: Path | None, cfg: dict, layout: dict, log_level: str
+) -> int:
+    """R3F-6: Run doctor + plan validation in isolation.
+
+    Writes ``startup_verification_report.json`` and exits 0.
+    Does NOT acquire the lock or claim tasks.
+    """
+    log_path = layout["startup"] / "startup.log"
+    log = _log.get_logger("reproctl.startup", log_file=log_path, level=log_level)
+    report: dict[str, Any] = {
+        "report_type": "startup_self_test",
+        "generated_at": _now(),
+        "project_root": str(project),
+        "plan_path": str(plan) if plan else None,
+        "doctor": None,
+        "plan_validation": None,
+        "lock_status": None,
+        "overall": "PASS",
+        "errors": [],
+    }
+
+    # Doctor
+    pf = _sm.preflight(
+        project_root=project,
+        plan_path=plan or Path(""),
+        expected_cuda=cfg.get("expected_cuda") or None,
+    )
+    doctor_report = pf["report"]
+    report["doctor"] = {
+        "overall": doctor_report["overall"],
+        "summary": doctor_report["summary"],
+        "checks": doctor_report["checks"],
+        "failed_checks": [c["name"] for c in doctor_report["checks"] if c["status"] == "FAIL"],
+    }
+    if doctor_report["overall"] == "FAIL":
+        report["overall"] = "FAIL"
+        report["errors"].append("doctor failed")
+
+    # Plan validation (canonical + legacy fallback)
+    plan_errors: list[str] = []
+    plan_hash = ""
+    if plan and plan.exists():
+        try:
+            plan_schema_obj = _plan_schema.load_plan(plan)
+            plan_hash = plan_schema_obj._canonical_sha256 or _sha256_text(plan)
+        except SystemExit:
+            # Non-frontmatter legacy plan — use migrate_legacy_plan
+            import json as _json
+
+            try:
+                legacy = _json.loads(plan.read_text())
+            except Exception:
+                import yaml as _yaml
+
+                loaded = _yaml.safe_load(plan.read_text())
+                # Handle YAML list of task dicts (not a full plan dict)
+                if isinstance(loaded, list):
+                    legacy = {"tasks": loaded}
+                else:
+                    legacy = loaded
+            if not isinstance(legacy, dict):
+                plan_errors = [f"plan is a {type(legacy).__name__}, not a mapping"]
+            else:
+                migrated = _plan_schema.migrate_legacy_plan(legacy)
+                migrated_obj = _plan_schema._dict_to_plan(
+                    migrated, plan.read_text().encode("utf-8"), loaded_from=plan
+                )
+                schema_errors = [
+                    e
+                    for e in _plan_schema.validate_plan(migrated_obj)
+                    if e.field != "tasks" or "circular" not in e.message
+                ]
+                schema_errors = [
+                    e
+                    for e in schema_errors
+                    if not (e.field == "deps" and "unknown task" in e.message)
+                ]
+                schema_errors = [e for e in schema_errors if not (e.field == "schema_version")]
+                plan_errors = [str(e) for e in schema_errors]
+            plan_hash = _sha256_text(plan)
+    else:
+        plan_errors = ["no plan provided or plan does not exist"]
+
+    report["plan_validation"] = {
+        "plan_hash": plan_hash,
+        "errors": plan_errors,
+        "status": "PASS" if not plan_errors else "FAIL",
+    }
+    if plan_errors:
+        report["overall"] = "FAIL"
+        report["errors"].append("plan validation failed")
+
+    # Lock status (check-only, don't acquire)
+    lock_path = project / ".repro" / "run.lock"
+    lock_held = lock_path.exists()
+    report["lock_status"] = {
+        "lock_file": str(lock_path),
+        "held": lock_held,
+        "acquired": False,
+        "note": "not acquired in self-test mode",
+    }
+
+    # Write report
+    report_path = layout["startup"] / "startup_verification_report.json"
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    if report["overall"] == "PASS":
+        print("[self-test] PASS — all checks ok", file=sys.stdout)
+        print(f"[self-test] report: {report_path}", file=sys.stdout)
+        return EXIT_OK
+    else:
+        print(f"[self-test] FAIL — errors: {report['errors']}", file=sys.stdout)
+        print(f"[self-test] report: {report_path}", file=sys.stdout)
+        return EXIT_BAD_CONFIG
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -128,17 +270,15 @@ def _print_success_summary(state: dict, cfg: dict) -> None:
         f"Last Completed Task: {last}",
         f"Next Task: {nxt.get('id') if isinstance(nxt, dict) else nxt}",
         f"Log: {log_path}",
-        "Status Command: reproctl status --project "
-        f"{cfg['project_root']}",
-        "Stop Command: reproctl stop --project "
-        f"{cfg['project_root']}",
+        f"Status Command: reproctl status --project {cfg['project_root']}",
+        f"Stop Command: reproctl stop --project {cfg['project_root']}",
     ]
     print("\n".join(out))
 
 
-def _print_failure(stage: str, code: int, reason: str,
-                   related_file: str, fix: str,
-                   log_path: str | None = None) -> None:
+def _print_failure(
+    stage: str, code: int, reason: str, related_file: str, fix: str, log_path: str | None = None
+) -> None:
     print("Repro Agent FAILED", file=sys.stderr)
     print(f"  Stage:        {stage}", file=sys.stderr)
     print(f"  Error Number: {code}", file=sys.stderr)
@@ -160,10 +300,13 @@ def cmd_start(args: argparse.Namespace) -> int:
     plan = Path(args.plan).resolve() if args.plan else None
 
     if not project or not project.exists():
-        _print_failure("DISCOVER", EXIT_BAD_CONFIG,
-                        "missing or nonexistent --project",
-                        str(args.project),
-                        "pass --project <PROJECT_ROOT> with an existing directory")
+        _print_failure(
+            "DISCOVER",
+            EXIT_BAD_CONFIG,
+            "missing or nonexistent --project",
+            str(args.project),
+            "pass --project <PROJECT_ROOT> with an existing directory",
+        )
         return EXIT_BAD_CONFIG
 
     # Bootstrap the project layout
@@ -171,48 +314,66 @@ def cmd_start(args: argparse.Namespace) -> int:
 
     # Start logger inside .repro/startup/startup.log
     log_path = layout["startup"] / "startup.log"
-    log = _log.get_logger("reproctl.startup", log_file=log_path,
-                          level=args.log_level)
+    log = _log.get_logger("reproctl.startup", log_file=log_path, level=args.log_level)
 
-    cfg = _config.resolve(project_root=project, plan_path=plan or Path(""),
-                          cli={"mode": args.mode or "",
-                               "expected_cuda": args.expected_cuda or "",
-                               "log_level": args.log_level or ""})
+    cfg = _config.resolve(
+        project_root=project,
+        plan_path=plan or Path(""),
+        cli={
+            "mode": args.mode or "",
+            "expected_cuda": args.expected_cuda or "",
+            "log_level": args.log_level or "",
+        },
+    )
+
+    # R3F-6 --self-test: run doctor + plan validation in isolation, write the
+    # unified startup_verification_report.json, and exit 0 without acquiring the
+    # lock or claiming any tasks. This is safe to run on any project.
+    if getattr(args, "self_test", False):
+        return _cmd_self_test(project, plan, cfg, layout, args.log_level)
 
     if args.mode not in VALID_MODES:
-        _print_failure("CONFIG", EXIT_BAD_CONFIG,
-                        f"invalid --mode: {args.mode!r}",
-                        "scripts/startup/cli.py",
-                        f"valid modes: {', '.join(VALID_MODES)}")
+        _print_failure(
+            "CONFIG",
+            EXIT_BAD_CONFIG,
+            f"invalid --mode: {args.mode!r}",
+            "scripts/startup/cli.py",
+            f"valid modes: {', '.join(VALID_MODES)}",
+        )
         return EXIT_BAD_CONFIG
 
     # BOOTSTRAP
-    boot = _sm.bootstrap(plugin_root=plugin, project_root=project,
-                         mode=args.mode)
+    boot = _sm.bootstrap(plugin_root=plugin, project_root=project, mode=args.mode)
 
     # DISCOVER
     if plan is None or not plan.exists():
-        _print_failure("DISCOVER", EXIT_INVALID_PLAN,
-                        "missing --plan or plan does not exist",
-                        str(plan) if plan else "(not provided)",
-                        "pass --plan <PLAN_PATH> with a YAML-frontmatter plan",
-                        log_path=str(log_path))
+        _print_failure(
+            "DISCOVER",
+            EXIT_INVALID_PLAN,
+            "missing --plan or plan does not exist",
+            str(plan) if plan else "(not provided)",
+            "pass --plan <PLAN_PATH> with a YAML-frontmatter plan",
+            log_path=str(log_path),
+        )
         return EXIT_INVALID_PLAN
 
     disc = _sm.discover(project_root=project, plan_path=plan)
 
     # PREFLIGHT (doctor)
-    pf = _sm.preflight(project_root=project, plan_path=plan,
-                       expected_cuda=cfg.get("expected_cuda") or None)
+    pf = _sm.preflight(
+        project_root=project, plan_path=plan, expected_cuda=cfg.get("expected_cuda") or None
+    )
     doctor_report = pf["report"]
     (layout["startup"] / "doctor_report.json").write_text(
-        json.dumps(doctor_report, indent=2), encoding="utf-8")
+        json.dumps(doctor_report, indent=2), encoding="utf-8"
+    )
 
     if doctor_report["overall"] == "FAIL":
         # Mandatory FAIL in doctor blocks start (per spec).
         failed = [c for c in doctor_report["checks"] if c["status"] == "FAIL"]
         _print_failure(
-            "PREFLIGHT", EXIT_DOCTOR_FAIL,
+            "PREFLIGHT",
+            EXIT_DOCTOR_FAIL,
             f"{len(failed)} mandatory doctor check(s) failed: "
             + ", ".join(c["name"] for c in failed),
             str(plan),
@@ -224,11 +385,14 @@ def cmd_start(args: argparse.Namespace) -> int:
     # STATE_CHECK
     sc = _sm.state_check(project_root=project)
     if sc["corrupt"]:
-        _print_failure("STATE_CHECK", EXIT_RESUME_FAILED,
-                        "execution_state.json is corrupt",
-                        str(project / ".repro" / "execution" / "execution_state.json"),
-                        "remove the corrupt state file or restore from checkpoints",
-                        log_path=str(log_path))
+        _print_failure(
+            "STATE_CHECK",
+            EXIT_RESUME_FAILED,
+            "execution_state.json is corrupt",
+            str(project / ".repro" / "execution" / "execution_state.json"),
+            "remove the corrupt state file or restore from checkpoints",
+            log_path=str(log_path),
+        )
         return EXIT_RESUME_FAILED
 
     exec_dir = project / ".repro" / "execution"
@@ -252,31 +416,91 @@ def cmd_start(args: argparse.Namespace) -> int:
         state = None
 
     # LOCK (only if not dry-run)
+    # PLAN VALIDATION (canonical — R3F-6)
+    # Use the canonical plan_schema module for full schema validation (mode,
+    # dependency cycles, acceptance_tests, non_evidentiary, etc.) with a
+    # legacy-fallback for non-frontmatter plans used in tests.
+    plan_errors: list[str] = []
     plan_hash = ""
     try:
-        plan_hash = _sm.plan_validate(plan)
-    except SystemExit as e:
-        return int(e.code)
+        plan_schema_obj = _plan_schema.load_plan(plan)
+        plan_hash = plan_schema_obj._canonical_sha256 or _sha256_text(plan)
+    except SystemExit:
+        # Non-frontmatter legacy plan — use migrate_legacy_plan
+        import json as _json
+
+        try:
+            legacy = _json.loads(plan.read_text())
+        except Exception:
+            import yaml as _yaml
+
+            loaded = _yaml.safe_load(plan.read_text())
+            # Handle YAML list of task dicts (e.g. `- id: t1` at file start)
+            if isinstance(loaded, list):
+                legacy = {"tasks": loaded}
+            else:
+                legacy = loaded
+        if not isinstance(legacy, dict):
+            _print_failure(
+                "PLAN_SCHEMA",
+                EXIT_INVALID_PLAN,
+                f"plan is {type(legacy).__name__}, not a mapping",
+                str(plan),
+                "wrap plan in a YAML mapping (--- ... ---)",
+                log_path=str(log_path),
+            )
+            return EXIT_INVALID_PLAN
+        migrated = _plan_schema.migrate_legacy_plan(legacy)
+        migrated_obj = _plan_schema._dict_to_plan(
+            migrated, plan.read_text().encode("utf-8"), loaded_from=plan
+        )
+        schema_errors = [
+            e
+            for e in _plan_schema.validate_plan(migrated_obj)
+            if e.field != "tasks" or "circular" not in e.message
+        ]
+        schema_errors = [
+            e for e in schema_errors if not (e.field == "deps" and "unknown task" in e.message)
+        ]
+        schema_errors = [e for e in schema_errors if not (e.field == "schema_version")]
+        if schema_errors:
+            plan_errors = [str(e) for e in schema_errors]
+        else:
+            plan_hash = _sha256_text(plan)
+    if plan_errors:
+        _print_failure(
+            "PLAN_SCHEMA",
+            EXIT_INVALID_PLAN,
+            "plan validation failed: " + "; ".join(plan_errors),
+            str(plan),
+            "fix plan schema errors above",
+            log_path=str(log_path),
+        )
+        return EXIT_INVALID_PLAN
 
     lock_info: dict | None = None
     if not args.dry_run:
         try:
             lock_info = _sm.lock_acquire(
-                project_root=project, command="start",
+                project_root=project,
+                command="start",
                 plan_hash=plan_hash,
                 plugin_version=boot["plugin_version"],
             )
         except _lock.LockHeld as e:
-            _print_failure("LOCK", EXIT_ALREADY_RUNNING,
-                            str(e), str(project / ".repro" / "run.lock"),
-                            "run `reproctl stop --project <root>` or remove the stale lock",
-                            log_path=str(log_path))
+            _print_failure(
+                "LOCK",
+                EXIT_ALREADY_RUNNING,
+                str(e),
+                str(project / ".repro" / "run.lock"),
+                "run `reproctl stop --project <root>` or remove the stale lock",
+                log_path=str(log_path),
+            )
             return EXIT_ALREADY_RUNNING
 
     # EXECUTE_NEXT (claim ONE safe atomic task)
     if args.dry_run:
-        claim = _sm.claim_one(project_root=project, plan_path=plan,
-                              dry_run=True)
+        claim = _sm.claim_one(project_root=project, plan_path=plan, dry_run=True)
     else:
         claim = _sm.claim_one(project_root=project, plan_path=plan)
 
@@ -297,10 +521,10 @@ def cmd_start(args: argparse.Namespace) -> int:
     }
 
     # Write startup_summary.md
-    summary_md = _build_summary_md(boot, disc, doctor_report, sc,
-                                   ready_state, claim, plan_hash, args)
-    (layout["startup"] / "startup_summary.md").write_text(
-        summary_md, encoding="utf-8")
+    summary_md = _build_summary_md(
+        boot, disc, doctor_report, sc, ready_state, claim, plan_hash, args
+    )
+    (layout["startup"] / "startup_summary.md").write_text(summary_md, encoding="utf-8")
 
     # Write startup_state.json
     startup_state = {
@@ -319,11 +543,11 @@ def cmd_start(args: argparse.Namespace) -> int:
         "completed_at": _now(),
     }
     (layout["startup"] / "startup_state.json").write_text(
-        json.dumps(startup_state, indent=2), encoding="utf-8")
+        json.dumps(startup_state, indent=2), encoding="utf-8"
+    )
 
     # Cursor / shell stdout summary
-    _print_success_summary({**ready_state,
-                            "execution_state_label": es_label}, cfg)
+    _print_success_summary({**ready_state, "execution_state_label": es_label}, cfg)
 
     return EXIT_OK
 
@@ -332,16 +556,20 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     plugin = plugin_root()
     project = Path(args.project).resolve() if args.project else None
     if not project or not project.exists():
-        _print_failure("DOCTOR", EXIT_BAD_CONFIG,
-                        "missing or nonexistent --project",
-                        str(args.project),
-                        "pass --project <PROJECT_ROOT>")
+        _print_failure(
+            "DOCTOR",
+            EXIT_BAD_CONFIG,
+            "missing or nonexistent --project",
+            str(args.project),
+            "pass --project <PROJECT_ROOT>",
+        )
         return EXIT_BAD_CONFIG
     plan = Path(args.plan).resolve() if args.plan else None
     if plan is not None and not plan.exists():
         plan = None
-    report = _doctor.run(project_root=project, plan_path=plan,
-                         expected_cuda=args.expected_cuda or None)
+    report = _doctor.run(
+        project_root=project, plan_path=plan, expected_cuda=args.expected_cuda or None
+    )
     out_path = project / ".repro" / "startup" / "doctor_report.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -353,10 +581,13 @@ def cmd_status(args: argparse.Namespace) -> int:
     plugin = plugin_root()
     project = Path(args.project).resolve() if args.project else None
     if not project or not project.exists():
-        _print_failure("STATUS", EXIT_BAD_CONFIG,
-                        "missing or nonexistent --project",
-                        str(args.project),
-                        "pass --project <PROJECT_ROOT>")
+        _print_failure(
+            "STATUS",
+            EXIT_BAD_CONFIG,
+            "missing or nonexistent --project",
+            str(args.project),
+            "pass --project <PROJECT_ROOT>",
+        )
         return EXIT_BAD_CONFIG
 
     es_path = project / ".repro" / "execution" / "execution_state.json"
@@ -370,23 +601,31 @@ def cmd_status(args: argparse.Namespace) -> int:
     lock_path = project / ".repro" / "run.lock"
     lock_info = _lock.inspect(lock_path)
 
-    print(json.dumps({
-        "project_root": str(project),
-        "plugin_version": __version__,
-        "execution_state": state,
-        "lock": lock_info,
-        "checked_at": _now(),
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "project_root": str(project),
+                "plugin_version": __version__,
+                "execution_state": state,
+                "lock": lock_info,
+                "checked_at": _now(),
+            },
+            indent=2,
+        )
+    )
     return EXIT_OK
 
 
 def cmd_resume(args: argparse.Namespace) -> int:
     project = Path(args.project).resolve() if args.project else None
     if not project or not project.exists():
-        _print_failure("RESUME", EXIT_BAD_CONFIG,
-                        "missing or nonexistent --project",
-                        str(args.project),
-                        "pass --project <PROJECT_ROOT>")
+        _print_failure(
+            "RESUME",
+            EXIT_BAD_CONFIG,
+            "missing or nonexistent --project",
+            str(args.project),
+            "pass --project <PROJECT_ROOT>",
+        )
         return EXIT_BAD_CONFIG
 
     es_path = project / ".repro" / "execution" / "execution_state.json"
@@ -400,26 +639,34 @@ def cmd_resume(args: argparse.Namespace) -> int:
         plan = None
 
     if plan is None or not plan.exists():
-        _print_failure("RESUME", EXIT_RESUME_FAILED,
-                        "no plan recorded in execution_state; cannot resume",
-                        str(es_path),
-                        "re-run `reproctl start --plan <PLAN_PATH>`",
-                        log_path=str(project / ".repro" / "startup" / "startup.log"))
+        _print_failure(
+            "RESUME",
+            EXIT_RESUME_FAILED,
+            "no plan recorded in execution_state; cannot resume",
+            str(es_path),
+            "re-run `reproctl start --plan <PLAN_PATH>`",
+            log_path=str(project / ".repro" / "startup" / "startup.log"),
+        )
         return EXIT_RESUME_FAILED
 
     # Re-acquire the lock to fence the resumed project
     try:
-        plan_hash = _plan.validate(plan)
+        plan_hash = _plan_legacy.validate(plan)
         _lock.acquire(
             project / ".repro" / "run.lock",
-            command="resume", plan_hash=plan_hash,
+            command="resume",
+            plan_hash=plan_hash,
             project_root=str(project),
             plugin_version=__version__,
         )
     except _lock.LockHeld as e:
-        _print_failure("RESUME", EXIT_ALREADY_RUNNING, str(e),
-                        str(project / ".repro" / "run.lock"),
-                        "run `reproctl stop` first")
+        _print_failure(
+            "RESUME",
+            EXIT_ALREADY_RUNNING,
+            str(e),
+            str(project / ".repro" / "run.lock"),
+            "run `reproctl stop` first",
+        )
         return EXIT_ALREADY_RUNNING
 
     try:
@@ -433,13 +680,25 @@ def cmd_resume(args: argparse.Namespace) -> int:
 def cmd_stop(args: argparse.Namespace) -> int:
     project = Path(args.project).resolve() if args.project else None
     if not project or not project.exists():
-        _print_failure("STOP", EXIT_BAD_CONFIG,
-                        "missing or nonexistent --project",
-                        str(args.project),
-                        "pass --project <PROJECT_ROOT>")
+        _print_failure(
+            "STOP",
+            EXIT_BAD_CONFIG,
+            "missing or nonexistent --project",
+            str(args.project),
+            "pass --project <PROJECT_ROOT>",
+        )
         return EXIT_BAD_CONFIG
-    out = _stop.run(project_root=project)
+    out = _stop.run(project_root=project, force=getattr(args, "force", False))
     print(json.dumps(out, indent=2))
+    if not out.get("lock_cleared"):
+        _print_failure(
+            "STOP",
+            EXIT_INTERNAL,
+            "lock was not cleared after stop",
+            str(project / ".repro" / "run.lock"),
+            "remove the lock file manually",
+        )
+        return EXIT_INTERNAL
     return EXIT_OK
 
 
@@ -447,45 +706,49 @@ def cmd_verify(args: argparse.Namespace) -> int:
     """Verify the startup evidence chain (state files + lock + plan hash)."""
     project = Path(args.project).resolve() if args.project else None
     if not project or not project.exists():
-        _print_failure("VERIFY", EXIT_BAD_CONFIG,
-                        "missing or nonexistent --project",
-                        str(args.project),
-                        "pass --project <PROJECT_ROOT>")
+        _print_failure(
+            "VERIFY",
+            EXIT_BAD_CONFIG,
+            "missing or nonexistent --project",
+            str(args.project),
+            "pass --project <PROJECT_ROOT>",
+        )
         return EXIT_BAD_CONFIG
 
     results = []
     # 1. startup_state.json present and valid
     ss = project / ".repro" / "startup" / "startup_state.json"
     if not ss.exists():
-        results.append({"check": "startup_state", "status": "FAIL",
-                        "message": "missing startup_state.json"})
+        results.append(
+            {"check": "startup_state", "status": "FAIL", "message": "missing startup_state.json"}
+        )
     else:
         try:
             json.loads(ss.read_text())
             results.append({"check": "startup_state", "status": "PASS"})
         except Exception as e:
-            results.append({"check": "startup_state", "status": "FAIL",
-                            "message": str(e)})
+            results.append({"check": "startup_state", "status": "FAIL", "message": str(e)})
 
     # 2. doctor_report.json present
     dr = project / ".repro" / "startup" / "doctor_report.json"
-    results.append({
-        "check": "doctor_report",
-        "status": "PASS" if dr.exists() else "FAIL",
-        "message": "" if dr.exists() else "missing doctor_report.json"})
+    results.append(
+        {
+            "check": "doctor_report",
+            "status": "PASS" if dr.exists() else "FAIL",
+            "message": "" if dr.exists() else "missing doctor_report.json",
+        }
+    )
 
     # 3. execution_state.json integrity
     es = project / ".repro" / "execution" / "execution_state.json"
     if not es.exists():
-        results.append({"check": "execution_state", "status": "FAIL",
-                        "message": "missing"})
+        results.append({"check": "execution_state", "status": "FAIL", "message": "missing"})
     else:
         try:
             json.loads(es.read_text())
             results.append({"check": "execution_state", "status": "PASS"})
         except Exception as e:
-            results.append({"check": "execution_state", "status": "FAIL",
-                            "message": str(e)})
+            results.append({"check": "execution_state", "status": "FAIL", "message": str(e)})
 
     # 4. plan_hash stable
     es_state = {}
@@ -499,22 +762,86 @@ def cmd_verify(args: argparse.Namespace) -> int:
         plan_path = Path(es_state.get("plan_path", ""))
         if plan_path.exists():
             from startup import plan_validate as _pv
-            cur = _pv.validate(plan_path)
-            results.append({
-                "check": "plan_hash",
-                "status": "PASS" if cur == es_state["plan_hash"] else "FAIL",
-                "message": f"current={cur[:12]} recorded={es_state['plan_hash'][:12]}"})
-        else:
-            results.append({"check": "plan_hash", "status": "SKIP",
-                            "message": "no plan_path in state"})
-    else:
-        results.append({"check": "plan_hash", "status": "SKIP",
-                        "message": "no plan_hash recorded"})
 
-    overall = "PASS" if all(r["status"] in ("PASS", "SKIP")
-                            for r in results) else "FAIL"
+            cur = _pv.validate(plan_path)
+            results.append(
+                {
+                    "check": "plan_hash",
+                    "status": "PASS" if cur == es_state["plan_hash"] else "FAIL",
+                    "message": f"current={cur[:12]} recorded={es_state['plan_hash'][:12]}",
+                }
+            )
+        else:
+            results.append(
+                {"check": "plan_hash", "status": "SKIP", "message": "no plan_path in state"}
+            )
+    else:
+        results.append({"check": "plan_hash", "status": "SKIP", "message": "no plan_hash recorded"})
+
+    overall = "PASS" if all(r["status"] in ("PASS", "SKIP") for r in results) else "FAIL"
     print(json.dumps({"overall": overall, "checks": results}, indent=2))
     return EXIT_OK if overall == "PASS" else EXIT_RESUME_FAILED
+
+
+def cmd_watchdog(args: argparse.Namespace) -> int:
+    """Single-pass watchdog inspection.
+
+    Reports running tasks, their pids, heartbeats, and log freshness.
+    Exits 0 on success (any state), 1 on fatal error.
+    """
+    project = Path(args.project).resolve() if args.project else None
+    if not project or not project.exists():
+        print(
+            json.dumps(
+                {
+                    "command": "watchdog",
+                    "status": "ERROR",
+                    "code": EXIT_BAD_CONFIG,
+                    "message": "missing or nonexistent --project",
+                    "project": str(args.project),
+                }
+            )
+        )
+        return EXIT_BAD_CONFIG
+
+    # Open the canonical SQLite store if present
+    db_path = project / ".repro" / "execution" / "state.sqlite3"
+    summary: dict[str, Any] = {
+        "command": "watchdog",
+        "status": "OK",
+        "project": str(project),
+        "db_present": db_path.exists(),
+        "tasks": [],
+    }
+    if db_path.exists():
+        try:
+            # Lazy import so the watchdog command doesn't require torch
+            import sqlite3
+
+            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=5)
+            try:
+                rows = conn.execute(
+                    "SELECT id, state, pid, log_path, started_at, updated_at "
+                    "FROM tasks ORDER BY rowid"
+                ).fetchall()
+            finally:
+                conn.close()
+            for r in rows:
+                summary["tasks"].append(
+                    {
+                        "id": r[0],
+                        "state": r[1],
+                        "pid": r[2],
+                        "log_path": r[3],
+                        "started_at": r[4],
+                        "updated_at": r[5],
+                    }
+                )
+        except Exception as e:
+            summary["status"] = "DEGRADED"
+            summary["error"] = repr(e)
+    print(json.dumps(summary, indent=2))
+    return EXIT_OK
 
 
 def cmd_version(args: argparse.Namespace) -> int:
@@ -522,16 +849,20 @@ def cmd_version(args: argparse.Namespace) -> int:
     manifest = plugin / ".cursor-plugin" / "plugin.json"
     plugin_version = "unknown"
     try:
-        plugin_version = json.loads(manifest.read_text()).get("version",
-                                                              "unknown")
+        plugin_version = json.loads(manifest.read_text()).get("version", "unknown")
     except Exception:
         pass
-    print(json.dumps({
-        "reproctl": __version__,
-        "plugin": plugin_version,
-        "plugin_root": str(plugin),
-        "platform": platform_tag(),
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "reproctl": __version__,
+                "plugin": plugin_version,
+                "plugin_root": str(plugin),
+                "platform": platform_tag(),
+            },
+            indent=2,
+        )
+    )
     return EXIT_OK
 
 
@@ -545,6 +876,7 @@ def _gpu_label() -> str:
         return "none"
     try:
         import torch  # type: ignore
+
         if not torch.cuda.is_available():
             return "none"
         return f"{torch.cuda.device_count()}× {torch.cuda.get_device_name(0)}"
@@ -564,9 +896,16 @@ def _last_completed(es_path: Path) -> str | None:
         return None
 
 
-def _build_summary_md(boot: dict, disc: dict, doctor: dict, sc: dict,
-                      ready_state: dict, claim: dict, plan_hash: str,
-                      args: argparse.Namespace) -> str:
+def _build_summary_md(
+    boot: dict,
+    disc: dict,
+    doctor: dict,
+    sc: dict,
+    ready_state: dict,
+    claim: dict,
+    plan_hash: str,
+    args: argparse.Namespace,
+) -> str:
     nxt = claim.get("id") if isinstance(claim, dict) else None
     last = ready_state.get("last_completed_task") or "(none)"
     dry = " (DRY RUN)" if args.dry_run else ""
@@ -596,17 +935,19 @@ def _build_summary_md(boot: dict, disc: dict, doctor: dict, sc: dict,
         "|---|---|---|",
     ]
     for c in doctor["checks"]:
-        lines.append(f"| {c['name']} | {c['status']} | {c.get('message','')} |")
-    lines.extend([
-        "",
-        "## Status / Stop Commands",
-        "",
-        "```",
-        f"reproctl status --project {boot['project_root']}",
-        f"reproctl stop   --project {boot['project_root']}",
-        "```",
-        "",
-    ])
+        lines.append(f"| {c['name']} | {c['status']} | {c.get('message', '')} |")
+    lines.extend(
+        [
+            "",
+            "## Status / Stop Commands",
+            "",
+            "```",
+            f"reproctl status --project {boot['project_root']}",
+            f"reproctl stop   --project {boot['project_root']}",
+            "```",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -618,25 +959,31 @@ def _build_summary_md(boot: dict, disc: dict, doctor: dict, sc: dict,
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reproctl",
-        description=("Deep Learning Paper Reproduction Controller "
-                     "— unified startup system"),
+        description=("Deep Learning Paper Reproduction Controller — unified startup system"),
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_common_project(p: argparse.ArgumentParser) -> None:
         p.add_argument("--project", help="project root path")
-        p.add_argument("--log-level", default="",
-                       choices=["", "DEBUG", "INFO", "WARNING", "ERROR"])
+        p.add_argument("--log-level", default="", choices=["", "DEBUG", "INFO", "WARNING", "ERROR"])
 
     p = sub.add_parser("start", help="Bootstrap & start the project")
     add_common_project_project = add_common_project
     add_common_project_project(p)
     p.add_argument("--plan", help="path to the plan file")
     p.add_argument("--mode", choices=list(VALID_MODES), default="strict")
-    p.add_argument("--dry-run", action="store_true",
-                   help="check-only, do not acquire lock or claim tasks")
-    p.add_argument("--expected-cuda", default="",
-                   help="expected CUDA version (e.g. 12.0)")
+    p.add_argument(
+        "--dry-run", action="store_true", help="check-only, do not acquire lock or claim tasks"
+    )
+    p.add_argument(
+        "--self-test",
+        dest="self_test",
+        action="store_true",
+        help="R3F-6: run doctor + plan validation in isolation, write "
+        "startup_verification_report.json, exit 0. Does NOT acquire "
+        "lock or claim tasks.",
+    )
+    p.add_argument("--expected-cuda", default="", help="expected CUDA version (e.g. 12.0)")
 
     p = sub.add_parser("doctor", help="Run preflight checks (no state mutation)")
     add_common_project(p)
@@ -651,9 +998,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("stop", help="Stop gracefully and clear the lock")
     add_common_project(p)
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="R3F-8: after SIGTERM, wait 2s then send SIGKILL to "
+        "unresponsive processes. Also verifies lock was cleared.",
+    )
 
     p = sub.add_parser("verify", help="Verify the startup evidence chain")
     add_common_project(p)
+
+    p = sub.add_parser("watchdog", help="Inspect running tasks and report heartbeat / log status")
+    add_common_project(p)
+    p.add_argument("--once", action="store_true", help="single-pass inspection instead of one loop")
 
     sub.add_parser("version", help="Print plugin + CLI version")
 
@@ -670,6 +1027,7 @@ def main(argv: list[str] | None = None) -> int:
         "resume": cmd_resume,
         "stop": cmd_stop,
         "verify": cmd_verify,
+        "watchdog": cmd_watchdog,
         "version": cmd_version,
     }
     return cmds[args.command](args)
