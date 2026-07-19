@@ -25,17 +25,22 @@ It is designed to work with **any PyTorch-based paper repository**, not just spe
 
 ## Quick Start
 
-### 1. Install
+### 1. Install (Cursor plugin path required)
 
-Clone to your Cursor plugins directory:
+Cursor only discovers agent plugins installed under `~/.cursor/plugins/local/`
+(or via the Marketplace). Installing to any other path works for *editing*
+but the agents and commands will not appear inside Cursor.
 
 ```bash
 mkdir -p ~/.cursor/plugins/local
-git clone https://github.com/kestrel/dl-paper-repro.git \
+git clone https://github.com/carlkestrel/kestrel-repro.git \
   ~/.cursor/plugins/local/kestrel-repro
 ```
 
 Then reload Cursor (`Cmd/Ctrl+Shift+P` → "Reload Window").
+
+> **Just want the code?** You can also clone anywhere (`git clone … ~/work/`)
+> and edit freely — only Cursor-agent integration needs the plugins path.
 
 ### 2. Initialize a reproduction
 
@@ -246,6 +251,27 @@ Its value is making failures **locatable and documented**, not guaranteeing succ
 - PyTorch 1.10+
 - NVIDIA GPU with CUDA 11.0+ (for GPU training)
 - Git
+
+## Continuous Integration
+
+Three layered workflows under `.github/workflows/`. Each one records
+what it covers in a JSON manifest that lives next to `ci_reports/`.
+
+| Workflow | Trigger | What it covers |
+|---|---|---|
+| `ci-l1.yml` | every push & PR | Syntax + import smoke, Ruff lint, Python ≥ 3.10, package discovery, state-machine & startup unit tests. No GPU, no network. Required to merge. |
+| `ci-l2.yml` | every push & PR (after L1) | Startup integration suite (`test_startup.py:integ_*`), version sync check, command-level smoke. CPU-only PyTorch install. |
+| `ci-l3.yml` | `workflow_dispatch` (manual) | Full `pytest` run, GPU parity, L0–L3 verification, end-to-end golden tests. Intended for self-hosted GPU runners. |
+
+To reproduce CI locally:
+
+```bash
+PYTHONPATH="${PWD}:${PWD}/scripts" python -m pytest -q            # full suite (~40s)
+ruff check .                                                       # lint (must be 0)
+```
+
+CI-L1 and CI-L2 must be green before a PR can merge to `main`. CI-L3
+is the release gate.
 
 ## Contributing
 
