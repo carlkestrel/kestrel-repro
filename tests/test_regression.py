@@ -99,9 +99,25 @@ def test_08_traceability_rule():
 
 
 def test_09_rollback_capable():
-    """task_graph.yaml contains rollback_strategy for at least one task."""
-    text = _read(".execution/task_graph.yaml")
-    assert "rollback_strategy:" in text, "no rollback_strategy in task graph"
+    """The PlanDef schema carries a rollback_strategy field with a non-empty default.
+
+    Originally this test read .execution/task_graph.yaml, but that path is a
+    runtime artefact (gitignored) so the regression check was environment-
+    dependent. The correct invariant is the schema itself: every plan must
+    declare how to roll back.
+    """
+    schema_src = (REPO / "scripts" / "startup" / "plan_schema.py").read_text()
+    assert "rollback_strategy" in schema_src, \
+        "plan_schema.py no longer exposes rollback_strategy"
+    # And the field must default to a non-empty sensible value, not None/''.
+    # Quick parse check via import is sufficient — we don't want to require
+    # a live plan here.
+    import importlib
+    schema_mod = importlib.import_module("scripts.startup.plan_schema")
+    PlanClass = getattr(schema_mod, "PlanSchema", None)
+    assert PlanClass is not None, "PlanSchema class missing"
+    plan = PlanClass(plan_id="regression_test")
+    assert plan.rollback_strategy, "rollback_strategy must default to non-empty"
 
 
 # ── runner ─────────────────────────────────────────────────────────────────────
