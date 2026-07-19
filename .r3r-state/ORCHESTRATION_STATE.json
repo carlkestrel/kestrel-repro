@@ -49,109 +49,48 @@
     },
 
     "wave_1": {
-      "name": "R3-1 / R3-2 / R3-3 收尾（修复 14 个 orchestrator test fail）",
-      "estimated_test_recovery": "+6 to +10 pass",
+      "name": "test_chaos.py 收尾（修 3 个 chaos fail）",
+      "estimated_test_recovery": "+3 pass (baseline → 0 fail)",
       "tasks": [
         {
           "id": "W1-1",
-          "title": "Scheduler ↔ Executor 接线（修 R3-1-006, R3-1-007）",
-          "scope_files": ["scripts/orchestrator/controller.py", "scripts/orchestrator/scheduler.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_1-3", "test_orchestrator.py::test_4"],
-          "risk": "中 — 改状态机关键路径"
+          "title": "修 CHAOS-LIVE-1: T1_init status PASSED vs PASS casing",
+          "scope_files": ["tests/test_chaos.py 或 scripts/orchestrator/controller.py"],
+          "expected_test_recovery": ["tests/test_chaos.py::TestTrainingSubprocessKilled::test_training_killed_preserves_checkpoint"],
+          "risk": "低",
+          "decision_pending": "P-2026-07-19-C: 改 controller 还是改 test？"
         },
         {
           "id": "W1-2",
-          "title": "ApprovalGate 接线（修 R3-2-002）",
-          "scope_files": ["scripts/orchestrator/controller.py", "scripts/orchestrator/approval_gate.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_5-7"],
-          "risk": "中"
+          "title": "修 CHAOS-LIVE-2: GPU unavailable exit code 7 → (0, 1)",
+          "scope_files": ["scripts/orchestrator/controller.py 或 tests/test_chaos.py"],
+          "expected_test_recovery": ["tests/test_chaos.py::TestGpuUnavailable::test_gpu_unavailable_graceful_degradation"],
+          "risk": "中 — 改 gate 行为",
+          "decision_pending": "P-2026-07-19-D: 让 GPU 缺失 graceful 还是接受 BLOCKED exit 7？"
         },
         {
           "id": "W1-3",
-          "title": "PolicyEngine hot-reload（修 R3-2-003）",
-          "scope_files": ["scripts/orchestrator/policy_engine.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_15"],
-          "risk": "低"
-        },
-        {
-          "id": "W1-4",
-          "title": "Verifier 触发（修 R3-3-001）",
-          "scope_files": ["scripts/orchestrator/verifier.py", "scripts/orchestrator/controller.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_8-10"],
-          "risk": "低"
-        },
-        {
-          "id": "W1-5",
-          "title": "PAUSED state honored（修 R3-3-002）",
-          "scope_files": ["scripts/orchestrator/controller.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_13"],
-          "risk": "低"
+          "title": "修 CHAOS-LIVE-3: T3_train attempts 0 → ≥2",
+          "scope_files": ["scripts/orchestrator/controller.py 或 tests/test_chaos.py"],
+          "expected_test_recovery": ["tests/test_chaos.py::TestAutoRetryHitsLimit::test_max_retries_then_fail"],
+          "risk": "中 — retry counter 是核心"
         }
       ]
     },
 
     "wave_2": {
-      "name": "R3-5 / R3-CHAOS-1 收尾（修复 7 + 2 = 9 个 test fail）",
-      "estimated_test_recovery": "+5 to +8 pass",
+      "name": "新增功能（已无 fail 可修，进新工作）",
       "tasks": [
         {
           "id": "W2-1",
-          "title": "Recovery 从 journal 恢复 RUNNING（修 R3-5-001）",
-          "scope_files": ["scripts/orchestrator/recovery.py", "scripts/orchestrator/state_store.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_9"],
-          "risk": "高 — 改恢复路径"
+          "title": "R3-6 GPU resource lock 实现",
+          "scope_files": ["scripts/orchestrator/gpu_lock.py", "scripts/orchestrator/controller.py"],
+          "expected_test_recovery": ["新增测试"],
+          "risk": "新功能 — 需要设计 review"
         },
         {
           "id": "W2-2",
-          "title": "Final acceptance mandatory check（修 R3-5-002）",
-          "scope_files": ["scripts/orchestrator/controller.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_14"],
-          "risk": "中"
-        },
-        {
-          "id": "W2-3",
-          "title": "Chaos tests 改 canonical schema（修 R3-CHAOS-1）",
-          "scope_files": ["tests/test_chaos.py"],
-          "expected_test_recovery": ["test_chaos.py::* (7 failures)"],
-          "risk": "低 — 测试代码改 schema 名"
-        }
-      ]
-    },
-
-    "wave_3": {
-      "name": "R3-7 daemon 清理",
-      "estimated_test_recovery": "+1 pass",
-      "tasks": [
-        {
-          "id": "W3-1",
-          "title": "Daemon lifecycle 干净停止 orphan workers（修 R3-7-001）",
-          "scope_files": ["scripts/orchestrator/daemon.py"],
-          "expected_test_recovery": ["test_orchestrator.py::test_18"],
-          "risk": "高 — 改进程管理"
-        }
-      ]
-    },
-
-    "wave_4": {
-      "name": "R3-6 GPU resource lock（新增）",
-      "estimated_test_recovery": "+0/+1 pass（取决于测试覆盖）",
-      "tasks": [
-        {
-          "id": "W4-1",
-          "title": "GPU resource lock 实现",
-          "scope_files": ["scripts/orchestrator/gpu_lock.py", "scripts/orchestrator/controller.py"],
-          "expected_test_recovery": ["新增或扩展测试"],
-          "risk": "新功能 — 需要设计 review"
-        }
-      ]
-    },
-
-    "wave_5": {
-      "name": "Shell command safety boundary (R3-7 后续)",
-      "tasks": [
-        {
-          "id": "W5-1",
-          "title": "Shell command safety boundary",
+          "title": "R3-7 Shell command safety boundary",
           "scope_files": ["scripts/orchestrator/policy_engine.py", "scripts/orchestrator/safety_boundary.py"],
           "risk": "安全敏感 — 需要用户审批"
         }
@@ -165,14 +104,52 @@
       "passed": 237,
       "failed": 21,
       "exit_code": 1,
-      "source": "refactor_state.json full_test_summary"
+      "source": "refactor_state.json full_test_summary (OUTDATED snapshot)",
+      "note": "Stale as of 2026-07-19 — see current field for ground truth"
     },
     "current": {
-      "collected": 258,
-      "passed": 237,
-      "failed": 21,
+      "collected": 301,
+      "passed": 298,
+      "failed": 3,
       "exit_code": 1,
-      "source": "尚未重新跑测试 — 状态文件迁移后才跑首次 baseline 验证"
+      "exit_code_meaning": "FAILED — 3 tests in test_chaos.py still failing",
+      "ran_at": "2026-07-19T18:04 (Asia/Shanghai)",
+      "duration_seconds": 41.67,
+      "pythonpath_required": "/home/carlkestrel/.cursor/plugins/local/kestrel-repro:/home/carlkestrel/.cursor/plugins/local/kestrel-repro/scripts",
+      "runner": "pytest 8.x",
+      "junit_xml": "ci_reports/R3_BASELINE_2026-07-19.xml",
+      "diff_vs_baseline": {
+        "added_tests": 43,
+        "newly_passing": 61,
+        "still_failing": 3,
+        "explanation": "Between refactor_state.json baseline and 2026-07-19, 43 new tests were added and 18 previously-failing tests now pass. Only 3 chaos tests remain."
+      },
+      "remaining_failures": [
+        {
+          "id": "CHAOS-LIVE-1",
+          "test": "tests/test_chaos.py::TestTrainingSubprocessKilled::test_training_killed_preserves_checkpoint",
+          "reason": "state['T1_init']['status'] returns 'PASSED' but test expects 'PASS' — schema value casing inconsistency",
+          "fix_direction": "Either normalize status to 'PASS' in controller, or update test to accept 'PASSED' canonical schema",
+          "expected_test_to_pass": true,
+          "risk": "low"
+        },
+        {
+          "id": "CHAOS-LIVE-2",
+          "test": "tests/test_chaos.py::TestGpuUnavailable::test_gpu_unavailable_graceful_degradation",
+          "reason": "GPU-unavailable subprocess returns exit 7 (BLOCKED) but test expects (0, 1). Test probably expects graceful handling with exit 0/1, but actual exit is BLOCKED exit code.",
+          "fix_direction": "Either make subprocess handle GPU absence as exit 0/1 (graceful), or update test to accept exit 7 as expected BLOCKED behaviour",
+          "expected_test_to_pass": true,
+          "risk": "medium (changes gate semantics)"
+        },
+        {
+          "id": "CHAOS-LIVE-3",
+          "test": "tests/test_chaos.py::TestAutoRetryHitsLimit::test_max_retries_then_fail",
+          "reason": "T3_train['attempts'] is 0 but expected >= 2. Retry counter never increments.",
+          "fix_direction": "Either fix controller retry counter to track attempts, or fix test fixture that creates T3_train",
+          "expected_test_to_pass": true,
+          "risk": "medium (retry path is core orchestration logic)"
+        }
+      ]
     }
   },
 
@@ -187,5 +164,5 @@
 
   "decision_log_pointer": "USER_DECISIONS.md D-2026-07-19-001 至 006",
 
-  "next_action": "完成 W0-2/W0-3 (重写状态文件 + 重定位) → 跑 pytest 验证 baseline → 进 Wave 1"
+  "next_action": "完成 W0 (重写状态文件 + 重定位 + baseline 验证)。Wave 1 启动前需要用户决策 P-2026-07-19-C 和 P-2026-07-19-D（改 controller 还是改 test）",
 }

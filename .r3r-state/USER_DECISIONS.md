@@ -168,7 +168,65 @@
 
 ---
 
+## D-2026-07-19-008 — Baseline 验证：301/298/3，剩 3 fail 全在 test_chaos.py
+
+**Question**: 重写状态文件后，跑 baseline pytest 验证 refactor_state.json 是否还准确？
+
+**Test run**:
+```
+PYTHONPATH="/home/carlkestrel/.cursor/plugins/local/kestrel-repro:/home/carlkestrel/.cursor/plugins/local/kestrel-repro/scripts"
+pytest tests/ --junitxml=ci_reports/R3_BASELINE_2026-07-19.xml
+```
+
+**结果**:
+```
+collected: 301  (vs refactor_state.json 258, +43)
+passed:    298  (vs 237, +61)
+failed:    3    (vs 21, -18)
+duration:  41.67s
+```
+
+**3 个 fail**:
+1. `test_chaos.py::TestTrainingSubprocessKilled::test_training_killed_preserves_checkpoint` — `'PASSED' in ('PASS', 'WAITING_APPROVAL')` schema casing
+2. `test_chaos.py::TestGpuUnavailable::test_gpu_unavailable_graceful_degradation` — `assert 7 in (0, 1)` GPU 缺失时 exit 7 而不是 0/1
+3. `test_chaos.py::TestAutoRetryHitsLimit::test_max_retries_then_fail` — `assert 0 >= 2` retry counter 不增
+
+**Decision**: refactor_state.json 已过期，更新 ORCHESTRATION_STATE.json 的 test_progress 字段以实测为准。
+
+**Rationale**:
+- refactor_state.json 是 stale snapshot
+- 实测 301/298/3 是当前真相
+- 所有 fail 都在 test_chaos.py，test_orchestrator.py 14→0（**R3-1/2/3 实际已修**）
+
+**Impact**:
+- Wave 计划从"修 21 个 fail"压缩成"修 3 个 fail"
+- W2-1/W2-2/W2-3 (R3-5 / R3-CHAOS-1 / R3-7 daemon) 取消（已修）
+- 直接进 W1 (test_chaos.py 3 个) + W2 (R3-6/R3-7 新功能)
+- 待用户决策 P-C/P-D/P-E 决定每个 fail 改 controller 还是改 test
+
+**证据**: `ci_reports/R3_BASELINE_2026-07-19.xml` (32523 bytes, 41.67s)
+
+---
+
 ## 待决策（pending）
+
+### P-2026-07-19-C: CHAOS-LIVE-1 怎么修？
+- **选项 A**: 改 controller 写 'PASS'（test 不变）
+- **选项 B**: 改 test 接受 'PASSED'（canonical schema）
+
+**Recommend**: B — 因为 'PASSED' 是 refactor_state 提到的 canonical schema 名，不应回退到 'PASS'。
+
+### P-2026-07-19-D: CHAOS-LIVE-2 怎么修？
+- **选项 A**: 改 subprocess 让 GPU 缺失时返回 exit 0/1（graceful）
+- **选项 B**: 改 test 接受 exit 7（BLOCKED 也是合理响应）
+
+**Recommend**: A — AUTOMATION_ARCHITECTURE.md §8.1 "GPU 训练" 是 REQUIRE_APPROVAL，BLOCKED 应该是显式 user-facing 信号；test 期望 graceful 说明原意是优雅降级。但需要确认是否与现有 gate 行为冲突。
+
+### P-2026-07-19-E: CHAOS-LIVE-3 怎么修？
+- **选项 A**: 修 controller retry counter
+- **选项 B**: 修 test fixture
+
+**Recommend**: 需要先看 test fixture — 大概率是 fixture 没正确模拟 retry 路径。
 
 ### P-2026-07-19-A: W1 第一刀是 W1-1 还是 W1-4？
 - **W1-1**: Scheduler ↔ Executor 接线（高价值、中风险、修 4 tests）
@@ -187,6 +245,24 @@
 - 然后专门评估 R3-6/7 是否进 R3 final 或者推迟到 R4
 
 需要您确认。
+
+### P-2026-07-19-C: CHAOS-LIVE-1 怎么修？（status PASSED vs PASS）
+- **选项 A**: 改 controller 写 'PASS'（test 不变）
+- **选项 B**: 改 test 接受 'PASSED'（canonical schema）
+
+**Recommend**: B — 'PASSED' 是 refactor_state 提到的 canonical schema 名，不应回退到 'PASS'。
+
+### P-2026-07-19-D: CHAOS-LIVE-2 怎么修？（GPU unavailable exit 7 vs 0/1）
+- **选项 A**: 改 subprocess 让 GPU 缺失时返回 exit 0/1（graceful）
+- **选项 B**: 改 test 接受 exit 7（BLOCKED 也是合理响应）
+
+**Recommend**: A — 优雅降级更符合用户期望；BLOCKED 是给"明确缺 GPU"的状态，缺失也要 graceful。
+
+### P-2026-07-19-E: CHAOS-LIVE-3 怎么修？（retry counter 不增）
+- **选项 A**: 修 controller retry counter
+- **选项 B**: 修 test fixture
+
+**Recommend**: 先看 test fixture。80% 是 fixture 没正确模拟 retry 路径。
 
 ---
 
