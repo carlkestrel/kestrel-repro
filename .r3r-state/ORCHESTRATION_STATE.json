@@ -1,0 +1,191 @@
+{
+  "version": "1.1",
+  "schema_date": "2026-07-19",
+  "source_of_truth_priority": [
+    "refactor_state.json (kestrel-repro 项目自带, 顶级真相源)",
+    "ci_reports/R3_FULL_JUNIT.xml (测试结果)",
+    "git log --oneline -20 (commit 历史)",
+    "ORCHESTRATION_STATE.json (本文件, 协作状态)"
+  ],
+
+  "project_identity": {
+    "name": "kestrel-repro R3-Refactor 推进",
+    "type": "Cursor Plugin 持续维护",
+    "core_repo_path": "/home/carlkestrel/.cursor/plugins/local/kestrel-repro",
+    "git_remote": "gh:carlkestrel/kestrel-repro",
+    "head_commit": "632277d",
+    "python": "3.13.13",
+    "venv": "/tmp/kestrel_r1_workspace/kestrel_r1_venv",
+    "test_runner": "pytest",
+    "junit_xml": "ci_reports/R3_FULL_JUNIT.xml"
+  },
+
+  "current_phase": "R3-CONTINUATION",
+  "phase_status": "PARTIALLY_COMPLETE",
+
+  "wave_plan": {
+    "wave_0": {
+      "name": "基线核验（已完成）",
+      "tasks": [
+        {
+          "id": "W0-1",
+          "title": "读 kestrel-repro 真实 README + AUTOMATION_ARCHITECTURE + refactor_state",
+          "status": "DONE",
+          "evidence": "本目录 PROJECT_CHARTER.md §2 完整记录"
+        },
+        {
+          "id": "W0-2",
+          "title": "重定位状态文件到 kestrel-repro/.r3r-state/ (从错误的 ~/.cursor/agent-projects/kestrel-r3r/)",
+          "status": "IN_PROGRESS",
+          "evidence": "D-2026-07-19-005"
+        },
+        {
+          "id": "W0-3",
+          "title": "重写所有状态文件以对齐真实基线（v1.2 主稿作废）",
+          "status": "IN_PROGRESS",
+          "evidence": "D-2026-07-19-006"
+        }
+      ]
+    },
+
+    "wave_1": {
+      "name": "R3-1 / R3-2 / R3-3 收尾（修复 14 个 orchestrator test fail）",
+      "estimated_test_recovery": "+6 to +10 pass",
+      "tasks": [
+        {
+          "id": "W1-1",
+          "title": "Scheduler ↔ Executor 接线（修 R3-1-006, R3-1-007）",
+          "scope_files": ["scripts/orchestrator/controller.py", "scripts/orchestrator/scheduler.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_1-3", "test_orchestrator.py::test_4"],
+          "risk": "中 — 改状态机关键路径"
+        },
+        {
+          "id": "W1-2",
+          "title": "ApprovalGate 接线（修 R3-2-002）",
+          "scope_files": ["scripts/orchestrator/controller.py", "scripts/orchestrator/approval_gate.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_5-7"],
+          "risk": "中"
+        },
+        {
+          "id": "W1-3",
+          "title": "PolicyEngine hot-reload（修 R3-2-003）",
+          "scope_files": ["scripts/orchestrator/policy_engine.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_15"],
+          "risk": "低"
+        },
+        {
+          "id": "W1-4",
+          "title": "Verifier 触发（修 R3-3-001）",
+          "scope_files": ["scripts/orchestrator/verifier.py", "scripts/orchestrator/controller.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_8-10"],
+          "risk": "低"
+        },
+        {
+          "id": "W1-5",
+          "title": "PAUSED state honored（修 R3-3-002）",
+          "scope_files": ["scripts/orchestrator/controller.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_13"],
+          "risk": "低"
+        }
+      ]
+    },
+
+    "wave_2": {
+      "name": "R3-5 / R3-CHAOS-1 收尾（修复 7 + 2 = 9 个 test fail）",
+      "estimated_test_recovery": "+5 to +8 pass",
+      "tasks": [
+        {
+          "id": "W2-1",
+          "title": "Recovery 从 journal 恢复 RUNNING（修 R3-5-001）",
+          "scope_files": ["scripts/orchestrator/recovery.py", "scripts/orchestrator/state_store.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_9"],
+          "risk": "高 — 改恢复路径"
+        },
+        {
+          "id": "W2-2",
+          "title": "Final acceptance mandatory check（修 R3-5-002）",
+          "scope_files": ["scripts/orchestrator/controller.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_14"],
+          "risk": "中"
+        },
+        {
+          "id": "W2-3",
+          "title": "Chaos tests 改 canonical schema（修 R3-CHAOS-1）",
+          "scope_files": ["tests/test_chaos.py"],
+          "expected_test_recovery": ["test_chaos.py::* (7 failures)"],
+          "risk": "低 — 测试代码改 schema 名"
+        }
+      ]
+    },
+
+    "wave_3": {
+      "name": "R3-7 daemon 清理",
+      "estimated_test_recovery": "+1 pass",
+      "tasks": [
+        {
+          "id": "W3-1",
+          "title": "Daemon lifecycle 干净停止 orphan workers（修 R3-7-001）",
+          "scope_files": ["scripts/orchestrator/daemon.py"],
+          "expected_test_recovery": ["test_orchestrator.py::test_18"],
+          "risk": "高 — 改进程管理"
+        }
+      ]
+    },
+
+    "wave_4": {
+      "name": "R3-6 GPU resource lock（新增）",
+      "estimated_test_recovery": "+0/+1 pass（取决于测试覆盖）",
+      "tasks": [
+        {
+          "id": "W4-1",
+          "title": "GPU resource lock 实现",
+          "scope_files": ["scripts/orchestrator/gpu_lock.py", "scripts/orchestrator/controller.py"],
+          "expected_test_recovery": ["新增或扩展测试"],
+          "risk": "新功能 — 需要设计 review"
+        }
+      ]
+    },
+
+    "wave_5": {
+      "name": "Shell command safety boundary (R3-7 后续)",
+      "tasks": [
+        {
+          "id": "W5-1",
+          "title": "Shell command safety boundary",
+          "scope_files": ["scripts/orchestrator/policy_engine.py", "scripts/orchestrator/safety_boundary.py"],
+          "risk": "安全敏感 — 需要用户审批"
+        }
+      ]
+    }
+  },
+
+  "test_progress": {
+    "baseline": {
+      "collected": 258,
+      "passed": 237,
+      "failed": 21,
+      "exit_code": 1,
+      "source": "refactor_state.json full_test_summary"
+    },
+    "current": {
+      "collected": 258,
+      "passed": 237,
+      "failed": 21,
+      "exit_code": 1,
+      "source": "尚未重新跑测试 — 状态文件迁移后才跑首次 baseline 验证"
+    }
+  },
+
+  "multi_agent_mode": {
+    "mode": "worktree_fallback",
+    "mode_decision_id": "D-2026-07-19-004",
+    "rationale": "MCP 层没有 spawn_subagent 工具（D-004 + 实地核验）",
+    "lead_agent_only": true,
+    "subagent_invocation": "通过 Cursor UI 手动开 Background Subagent（用户操作）",
+    "subagent_report_channel": "用户回贴报告给 Lead agent"
+  },
+
+  "decision_log_pointer": "USER_DECISIONS.md D-2026-07-19-001 至 006",
+
+  "next_action": "完成 W0-2/W0-3 (重写状态文件 + 重定位) → 跑 pytest 验证 baseline → 进 Wave 1"
+}

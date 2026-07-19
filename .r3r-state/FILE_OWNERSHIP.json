@@ -1,0 +1,106 @@
+{
+  "version": "1.1",
+  "schema_date": "2026-07-19",
+  "policy": "Read-only by default. Lead agent (current) is the only writer. Subagents read but never write directly — they propose patches via user report.",
+
+  "agent_files": {
+    "lead_agent": {
+      "id": "lead-agent-current",
+      "role": "Lead / Orchestrator",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.r3r-state/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/scripts/orchestrator/**/*.py",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/tests/test_*.py",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/R3_*.xml",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/R3_*.json"
+      ],
+      "readable_paths": ["**/*"],
+      "approval_for_write": {
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.execution/state.sqlite3": "NEVER_DIRECT (managed by StateStore)",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/artifacts/runs/**/checkpoints/**": "NEVER_DIRECT (managed by EvidenceManager)",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.git/**": "git-only"
+      }
+    },
+
+    "subagent_data_metric_auditor": {
+      "id": "subagent-data-metric-auditor",
+      "role": "Audit data contracts and metric protocols",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/audit_data_*.md",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/audit_metric_*.md"
+      ],
+      "readable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/scripts/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/templates/data_contract.md",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/templates/metric_protocol_audit.md"
+      ],
+      "deliverable_format": "Markdown audit report posted to user, who pastes it to lead agent"
+    },
+
+    "subagent_runtime_optimizer": {
+      "id": "subagent-runtime-optimizer",
+      "role": "Profile runtime, suggest optimizations",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/performance/optimization_*.md"
+      ],
+      "readable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/performance/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/execution/**"
+      ],
+      "deliverable_format": "Markdown recommendation report posted to user"
+    },
+
+    "subagent_evidence_verifier": {
+      "id": "subagent-evidence-verifier",
+      "role": "Verify evidence chain completeness",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/artifacts/verification_*.json"
+      ],
+      "readable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/artifacts/runs/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/ci_reports/**"
+      ],
+      "deliverable_format": "JSON verification report posted to user"
+    },
+
+    "subagent_repo_scout": {
+      "id": "subagent-repo-scout",
+      "role": "Discover candidate repositories for a paper",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/candidate_repositories.csv"
+      ],
+      "readable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/repro_spec.yaml"
+      ],
+      "deliverable_format": "CSV candidate list + Markdown summary"
+    },
+
+    "subagent_hardware_fit_auditor": {
+      "id": "subagent-hardware-fit-auditor",
+      "role": "Match repository requirements to local hardware",
+      "writable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.repro/hardware_fit_report.md"
+      ],
+      "readable_paths": [
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/performance/**",
+        "/home/carlkestrel/.cursor/plugins/local/kestrel-repro/.execution/**"
+      ],
+      "deliverable_format": "Markdown hardware fit report"
+    }
+  },
+
+  "lock_rules": [
+    "Lead agent holds exclusive write lock on scripts/orchestrator/** during Wave 1-3",
+    "Subagents do NOT modify scripts/orchestrator/** — they propose patches via reports",
+    "User owns .git/, push operations",
+    ".execution/state.sqlite3 is exclusively StateStore-managed (no agent writes)",
+    "artifacts/runs/<run_id>/checkpoints/** is exclusively EvidenceManager-managed (no agent writes)"
+  ],
+
+  "handoff_protocol": {
+    "subagent_to_lead": "User pastes Subagent report to lead agent input",
+    "lead_to_user": "Lead posts structured STATUS_REPORT.md or DECISION_PROPOSAL.md",
+    "user_to_lead": "USER_DECISIONS.md appended decisions, then lead reads on next cycle"
+  }
+}
