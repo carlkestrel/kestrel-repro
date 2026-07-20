@@ -116,6 +116,9 @@ class ApprovalGate:
             "init",
             "env_check",
             "audit",
+            # Extension gates (kestrel_extension: PreExistingDetectorAgent + CodeHealerAgent)
+            "detect_existing_env",
+            "code_heal_patch",
         }
 
         # R3R-4: non-evidentiary tasks are NOT auto-approved here; the controller's

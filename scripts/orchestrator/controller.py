@@ -155,6 +155,36 @@ class Controller:
         )
         self._waiting_since: float | None = None
 
+        # ── Extension agents (kestrel_extension) ─────────────────────────────
+        # Lazy import so kestrel_extension is optional — Controller works fine without it.
+        self.pre_existing_detector = None
+        self.code_healer = None
+        try:
+            from kestrel_extension.agents.pre_existing_detector import PreExistingDetectorAgent
+            from kestrel_extension.agents.code_healer import CodeHealerAgent
+            self.pre_existing_detector = PreExistingDetectorAgent()
+            self.code_healer = CodeHealerAgent()
+            # Extend auto_approve_low_risk so detect_existing_env / code_heal_patch
+            # are auto-approved without a runtime monkey-patch.
+            try:
+                from kestrel_extension.gates import EXTENSION_GATES
+                _orig_low_risk = self.approvals.auto_approve_low_risk
+                def _wrapped_low_risk(task):
+                    gate = task.get("gate", "")
+                    if gate in EXTENSION_GATES:
+                        approval_id = self.approvals.request(
+                            task, f"Auto-approved extension gate: {gate}"
+                        )
+                        if approval_id:
+                            self.approvals.approve(approval_id, "Auto-approved (extension)")
+                            return True
+                    return _orig_low_risk(task)
+                self.approvals.auto_approve_low_risk = _wrapped_low_risk  # type: ignore[assignment]
+            except Exception:
+                pass  # gate extension is optional
+        except ImportError:
+            pass  # kestrel_extension not installed — Controller continues without it
+
     def run(self) -> dict:
         self.stop_hook.register()
         recovery = self.recovery.recover()
@@ -256,6 +286,21 @@ class Controller:
         current = self.store.get_task(task["id"])
         if current is None or current["status"] not in {"RUNNING", "VERIFYING"}:
             return
+
+        # Extension: code_healer — attempt a minimal in-scope patch before FAILED.
+        if self.code_healer is not None and "process launch failed" not in reason:
+            from kestrel_extension.hooks import code_healer_attempt
+            if code_healer_attempt(self, task, reason):
+                # Patch applied — re-queue as RETRY_WAIT instead of FAILED.
+                self.store.transition(
+                    task["id"],
+                    "RETRY_WAIT",
+                    expected=current["status"],
+                    fields={"retry_at": time.time() + 1.0},
+                    event_type="CODE_HEAL_RETRY",
+                )
+                return
+
         failed = self.store.transition(
             task["id"],
             "FAILED",
@@ -322,6 +367,13 @@ class Controller:
             claimed = self.store.claim_task(task["id"], self.owner)
             if claimed is None:
                 continue
+            # Extension: pre_existing_detector — skip launch if artifact already exists.
+            if self.pre_existing_detector is not None:
+                from kestrel_extension.hooks import pre_existing_detector_check
+                if not pre_existing_detector_check(self, claimed):
+                    # Artifact was reused — task is already marked PASSED; continue.
+                    progressed = True
+                    continue
             try:
                 self.executor.launch(claimed)
             except Exception as exc:
